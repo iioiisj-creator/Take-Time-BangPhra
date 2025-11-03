@@ -328,6 +328,12 @@ BEGIN TRY
 
     PRINT '  ✓ Using existing Customer_Type_ID column'
 
+    -- ===================================================================
+    -- Step 5: Add foreign key constraints
+    -- ===================================================================
+
+    PRINT 'Step 5: Adding foreign key constraints...'
+
     -- Add FK for LastUpdatedBy_ID
     IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Admin_LastUpdated')
     BEGIN
@@ -355,10 +361,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 5: Add indexes for performance
+    -- Step 6: Add indexes for performance
     -- ===================================================================
 
-    PRINT 'Step 5: Creating performance indexes...'
+    PRINT 'Step 6: Creating performance indexes...'
 
     -- Index on Customer_Audit_Log
     IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Customer_Audit_Log_Customer')
@@ -411,10 +417,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 6: Create stored procedures
+    -- Step 7: Create stored procedures
     -- ===================================================================
 
-    PRINT 'Step 6: Creating stored procedures...'
+    PRINT 'Step 7: Creating stored procedures...'
 
     -- Procedure: Upsert customer (Insert or Update)
     IF OBJECT_ID('dbo.sp_UpsertCustomer', 'P') IS NOT NULL
@@ -787,10 +793,10 @@ BEGIN TRY
     PRINT '  ✓ Created sp_DeleteCustomer'
 
     -- ===================================================================
-    -- Step 7: Create views
+    -- Step 8: Create views
     -- ===================================================================
 
-    PRINT 'Step 7: Creating views...'
+    PRINT 'Step 8: Creating views...'
 
     IF OBJECT_ID('dbo.v_CustomerSummary', 'V') IS NOT NULL
         DROP VIEW dbo.v_CustomerSummary
@@ -830,10 +836,10 @@ BEGIN TRY
     PRINT '  ✓ Created v_CustomerSummary'
 
     -- ===================================================================
-    -- Step 8: Update existing customer records
+    -- Step 9: Update existing customer records
     -- ===================================================================
 
-    PRINT 'Step 8: Updating existing customer records...'
+    PRINT 'Step 9: Updating existing customer records...'
 
     -- Set CreatedDate for existing customers (if NULL)
     UPDATE Customer
