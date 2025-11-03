@@ -136,13 +136,59 @@ BEGIN TRY
     -- ===================================================================
 
     PRINT 'Step 2: Ensuring Customer.MobilePhone is unique...'
+    PRINT ''
+
+    -- Check for duplicates first
+    DECLARE @HasDuplicates BIT = 0
+    IF EXISTS (
+        SELECT MobilePhone, COUNT(*) AS Cnt
+        FROM Customer
+        WHERE MobilePhone IS NOT NULL AND MobilePhone != ''
+        GROUP BY MobilePhone
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        SET @HasDuplicates = 1
+        PRINT '  ⚠ WARNING: Duplicate MobilePhone values detected!'
+        PRINT '  Please run 00_Apply_Fix_Duplicate_MobilePhone.sql first'
+        PRINT ''
+
+        -- Show duplicate summary
+        SELECT TOP 10
+            MobilePhone,
+            COUNT(*) AS DuplicateCount
+        FROM Customer
+        WHERE MobilePhone IS NOT NULL AND MobilePhone != ''
+        GROUP BY MobilePhone
+        HAVING COUNT(*) > 1
+        ORDER BY COUNT(*) DESC
+
+        RAISERROR('Duplicate MobilePhone values found. Run 00_Apply_Fix_Duplicate_MobilePhone.sql first.', 16, 1)
+    END
+
+    -- Check for empty phone numbers
+    DECLARE @HasEmpty BIT = 0
+    DECLARE @EmptyCount INT
+    SELECT @EmptyCount = COUNT(*)
+    FROM Customer
+    WHERE MobilePhone IS NULL OR MobilePhone = '' OR LEN(LTRIM(RTRIM(MobilePhone))) = 0
+
+    IF @EmptyCount > 0
+    BEGIN
+        SET @HasEmpty = 1
+        PRINT '  ⚠ WARNING: ' + CAST(@EmptyCount AS VARCHAR) + ' customer(s) with empty MobilePhone detected!'
+        PRINT '  Please run 00_Apply_Fix_Duplicate_MobilePhone.sql first'
+        PRINT ''
+
+        RAISERROR('Empty MobilePhone values found. Run 00_Apply_Fix_Duplicate_MobilePhone.sql first.', 16, 1)
+    END
 
     -- Create unique constraint on MobilePhone if it doesn't exist
     IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'UQ_Customer_MobilePhone')
     BEGIN
         CREATE UNIQUE NONCLUSTERED INDEX [UQ_Customer_MobilePhone]
         ON [dbo].[Customer] ([MobilePhone] ASC)
-        WHERE [MobilePhone] IS NOT NULL
+        WHERE [MobilePhone] IS NOT NULL AND [MobilePhone] != ''
 
         PRINT '  ✓ Created unique constraint on Customer.MobilePhone'
     END
@@ -150,6 +196,8 @@ BEGIN TRY
     BEGIN
         PRINT '  ⚠ Unique constraint on Customer.MobilePhone already exists'
     END
+
+    PRINT ''
 
     -- ===================================================================
     -- Step 3: Add foreign key constraints
