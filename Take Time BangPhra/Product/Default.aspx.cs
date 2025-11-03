@@ -1,0 +1,966 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Configuration;
+using System.IO;
+using Microsoft.Ajax.Utilities;
+using Take_Time_BangPhra.Account.Report;
+using System.Security.Cryptography;
+using ECertificateAPI;
+using System.Net.Mail;
+using Microsoft.Reporting.WebForms;
+using System.Web.UI.HtmlControls;
+
+namespace Take_Time_BangPhra.Product
+{
+    public partial class Default : System.Web.UI.Page
+    {
+        _Default codeDefault = new _Default();
+        Receipt codeReceipt = new Receipt();
+        code code = new code();
+        string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+        private const int PrimaryInterval = 300000; // 5 minutes = 300000 ms
+        private const int SecondaryInterval = 60000; // 1 minute = 60000 ms
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+            try
+            {
+                try
+                {
+                    if (Session["permission"].ToString() == "True" && (Session["User"].ToString() == "Owner" || Session["User"].ToString() == "Admin"))
+                    {
+
+                    }
+                    else
+                    {
+                        Response.Redirect("/Default");
+                    }
+                }
+                catch
+                {
+                    Response.Redirect("/Default");
+                }
+
+                if (!IsPostBack)
+                {
+
+                    Page.SetFocus(TextBox1);
+                    this.TextBox1.Attributes.Add("onkeypress", "button_click(this,'" + this.Button3.ClientID + "')");
+                    TextBox12.Text = DateTime.Now.ToString("yyyy-MM-dd");
+                    DataTable dtOrder = new DataTable();
+                    try
+                    {
+                        dtOrder.Columns.Add("ID");
+                        dtOrder.Columns.Add("Barcode");
+                        dtOrder.Columns.Add("Product_Name");
+                        dtOrder.Columns.Add("Amount");
+                        dtOrder.Columns.Add("Sell_Price");
+                        dtOrder.Columns.Add("Price_Total");
+                        dtOrder.Columns.Add("Category_ID");
+                        Session["dtOrder"] = dtOrder;
+                    }
+                    catch { }
+                    string yourHTMLstring = "<script> var Material_Name = [";
+                    DataTable dt = code.DatabaseQuery(conn, "SELECT Distinct(Product_Name) as Material_Name FROM [Taketime].[dbo].[Product] Where [Status] = 'True'");
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        yourHTMLstring += "\"" + dt.Rows[i][0].ToString().Replace(",", "") + "\"";
+                        if (i < dt.Rows.Count - 1)
+                        {
+                            yourHTMLstring += ",";
+                        }
+                    }
+                    yourHTMLstring += "];\r\nautocomplete(document.getElementById(\"MainContent_TextBox1\"), Material_Name);</script>";
+                    Literal1.Text = yourHTMLstring;
+                    CheckData();
+                }
+                else
+                {
+                    renderProduct();
+                }
+            }
+
+            catch(Exception ex)
+            { 
+                //Response.Redirect("/Default");  
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('"+ex+"');", true);
+            }
+           
+        }
+
+        public void renderProduct()
+        {
+            DataTable dtProduct = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Product] Where [Product_Name] = N'" + TextBox1.Text + "' OR Barcode = '" + TextBox1.Text + "'");
+            if (dtProduct.Rows.Count > 0)
+            {
+                DataTable dtOrder = (DataTable)Session["dtOrder"];
+                if (dtOrder.Rows.Count == 0)
+                {
+                    int amount = 1;
+                    double total = amount * Convert.ToDouble(dtProduct.Rows[0]["Sell_Price"].ToString());
+                    dtOrder.Rows.Add(dtProduct.Rows[0]["ID"].ToString(), dtProduct.Rows[0]["Barcode"].ToString(), dtProduct.Rows[0]["Product_Name"].ToString(), amount, dtProduct.Rows[0]["Sell_Price"].ToString(), total, dtProduct.Rows[0]["Category_ID"].ToString());
+                }
+                else
+                {
+                    int rowid = 0;
+                    int checkdup = 0;
+                    for (int i = 0; i < dtOrder.Rows.Count; i++)
+                    {
+                        if (dtOrder.Rows[i]["Product_Name"].ToString() == dtProduct.Rows[0]["Product_Name"].ToString())
+                        {
+                            checkdup = 1;
+                            rowid = i;
+                        }
+
+                    }
+                    if (checkdup == 0)
+                    {
+                        int amount = 1;
+                        double total = amount * Convert.ToDouble(dtProduct.Rows[0]["Sell_Price"].ToString());
+                        dtOrder.Rows.Add(dtProduct.Rows[0]["ID"].ToString(), dtProduct.Rows[0]["Barcode"].ToString(), dtProduct.Rows[0]["Product_Name"].ToString(), amount, dtProduct.Rows[0]["Sell_Price"].ToString(), total, dtProduct.Rows[0]["Category_ID"].ToString());
+
+                    }
+                    else
+                    {
+                        int amount = Convert.ToInt32(dtOrder.Rows[rowid]["Amount"].ToString());
+                        amount = amount + 1;
+                        double total = amount * Convert.ToDouble(dtProduct.Rows[0]["Sell_Price"].ToString());
+                        dtOrder.Rows[rowid]["Amount"] = amount;
+                        dtOrder.Rows[rowid]["Price_Total"] = total;
+                    }
+                    
+                }
+                GridView1.DataSource = dtOrder;
+                GridView1.DataBind();
+                Session["dtOrder"] = dtOrder;
+                TextBox1.Text = string.Empty;
+                TextBox1.Focus();
+
+                double pricetotal = 0;
+                for (int i = 0; i < dtOrder.Rows.Count; i++)
+                {
+                    pricetotal += Convert.ToDouble(dtOrder.Rows[i]["Price_Total"].ToString());
+                }
+                TextBox2.Text = pricetotal.ToString();
+            }
+        }
+
+        public string CheckAddressID(string ZipCode, string Province, string District, string SubDistrict)
+        {
+            string ID = "0";
+
+            try
+            {
+                DataTable dt = code.DatabaseQuery(conn, "Select ID from Address Where PostalCode = '" + ZipCode + "' AND Province = N'" + Province + "' AND District = N'" + District + "' AND SubDistrict = N'" + SubDistrict + "'");
+                ID = dt.Rows[0][0].ToString();
+            }
+            catch { }
+
+            return ID;
+        }
+
+
+
+        protected void CheckBox1_CheckedChanged1(object sender, EventArgs e)
+        {
+            
+        }
+
+        protected void CheckBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            if(CheckBox2.Checked == true)
+            {
+                CheckBox1.Checked = true;
+                Panel1.Visible = true;
+            }
+            else
+            {
+                Panel1.Visible = false;
+            }
+        }
+
+        protected void TextBox9_TextChanged(object sender, EventArgs e)
+        {
+            if(TextBox9.Text.Length == 5)
+            {
+                getAddress("SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by SubDistrict ASC");
+            }
+        }
+
+        public void getAddress(string commp, string commd, string commsd)
+        {
+            string Command = Request.QueryString["Command"];
+            string ID = Request.QueryString["ID"];
+            DataTable dtProvince = code.DatabaseQuery(conn, commp);
+            DataTable dtDistrict = code.DatabaseQuery(conn, commd);
+            DataTable dtSubDistrict = code.DatabaseQuery(conn, commsd);
+            try
+            {
+                if (dtProvince.Rows.Count <= 0)
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ไม่พบหมายเลขไปรษณีย์ที่คุณระบุ');", true);
+                }
+                else
+                {
+                    if (Button2.Enabled == true || Command == "View" || Command == "Edit")
+                    {
+                        List<string> ddl = new List<string>();
+
+                        for (int i = 0; i < dtProvince.Rows.Count; i++)
+                        {
+                            ddl.Add(dtProvince.Rows[i][0].ToString());
+                        }
+                        DropDownList3.DataSource = ddl;
+                        DropDownList3.DataBind();
+                        //DropDownList5.SelectedIndex = 0;
+
+                        ddl.Clear();
+
+                        for (int i = 0; i < dtDistrict.Rows.Count; i++)
+                        {
+                            ddl.Add(dtDistrict.Rows[i][0].ToString());
+                        }
+                        DropDownList4.DataSource = ddl;
+                        DropDownList4.DataBind();
+                        //DropDownList6.SelectedIndex = 0;
+
+                        ddl.Clear();
+
+                        for (int i = 0; i < dtSubDistrict.Rows.Count; i++)
+                        {
+                            ddl.Add(dtSubDistrict.Rows[i][0].ToString());
+                        }
+                        DropDownList5.DataSource = ddl;
+                        DropDownList5.DataBind();
+                        //DropDownList7.SelectedIndex = 0;
+                    }
+                    else { }
+                }
+            }
+            catch { }
+        }
+
+        protected void DropDownList1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(DropDownList1.SelectedValue == "1")
+            {
+                CheckBox1.Checked = true;
+                CheckBox1.Enabled = false;
+            }
+            else
+            {
+                CheckBox1.Enabled = true;
+                CheckBox1.Checked = false;
+            }
+        }
+
+        protected void TextBox3_TextChanged(object sender, EventArgs e)
+        {
+            if (TextBox3.Text.Length >= 9 && TextBox6.Text.Length == 0)
+            {
+                fillData("SELECT * FROM[Customer] Where MobilePhone = '" + TextBox3.Text+"'");
+            }
+        }
+
+        public void fillData(string cmd)
+        {
+            DataTable dtCustomer = code.DatabaseQuery(conn, cmd);
+            if (dtCustomer.Rows.Count > 0)
+            {
+                TextBox4.Text = dtCustomer.Rows[0]["FullName"].ToString();
+                TextBox6.Text = dtCustomer.Rows[0]["IDNumber"].ToString();
+                TextBox7.Text = dtCustomer.Rows[0]["Address"].ToString();
+                TextBox8.Text = dtCustomer.Rows[0]["Address1"].ToString();
+                TextBox10.Text = dtCustomer.Rows[0]["Email"].ToString();
+                try
+                {
+                    DropDownList2.ClearSelection();
+                    DropDownList2.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()).Selected = true;
+                    DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()));
+                    DropDownList2.DataBind();
+                }
+                catch
+                {
+
+                }
+
+                try //Address
+                {
+                    TextBox9.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
+                    DropDownList3.ClearSelection();
+                    DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()).Selected = true;
+                    DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()));
+                    DropDownList4.ClearSelection();
+                    DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()).Selected = true;
+                    DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()));
+                    DropDownList5.ClearSelection();
+                    DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()).Selected = true;
+                    DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()));
+
+                    
+                    if (dtCustomer.Rows[0]["Customer_Type_ID"].ToString() == "1")
+                    {
+                        TextBox5.Visible = true;
+                        TextBox5.Text = dtCustomer.Rows[0]["Branch_Number"].ToString();
+                    }
+                }
+                catch { }
+            }
+        }
+        protected void DropDownList2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(DropDownList2.SelectedValue == "1")
+            {
+                TextBox5.Visible = true;
+            }
+            else
+            {
+                TextBox5.Visible = false;
+            }
+        }
+
+        protected void TextBox6_TextChanged(object sender, EventArgs e)
+        {
+            if (TextBox3.Text.Length == 0 && TextBox6.Text.Length == 13)
+            {
+                fillData("SELECT * FROM[Customer] Where IDNumber = '"+TextBox6.Text+"'");
+            }
+        }
+
+        protected void Button2_Click(object sender, EventArgs e)
+        {
+            int AccRecID = 0;
+            string docNum = "0";
+            double total = 0;
+            DataTable dtOrder = (DataTable)Session["dtOrder"];
+            if (CheckBox1.Checked == true)
+            {
+
+                string Year = Convert.ToDateTime(TextBox12.Text).Year.ToString();
+                string Month = Convert.ToDateTime(TextBox12.Text).Month.ToString();
+                string Day = Convert.ToDateTime(TextBox12.Text).Day.ToString();
+                DataTable dtDetail = (DataTable)Session["dtDetail"];
+
+
+                docNum = codeDefault.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
+                total = Convert.ToDouble(TextBox2.Text);
+                int vatpercent = Convert.ToInt32(code.DatabaseQuery(conn, "SELECT [Vat_Percent] FROM [Taketime].[dbo].[Account_Vat_Type] Where ID = 1").Rows[0][0].ToString());
+                double vat = Math.Round(((total * 100) / (100+vatpercent)), 2);
+                double Total_Amount_Exclude_Vat = total - vat;
+                string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
+                try
+                {
+                    System.IO.Directory.CreateDirectory(path + "\\" + Year);
+                    System.IO.Directory.CreateDirectory(path + "\\" + Year + "\\" + Month);
+                }
+                catch (Exception ex)
+                {
+
+                }
+                DataTable dtbusinessinfo = code.DatabaseQuery(conn, "Select * from Business_Info left join Customer_Type on Business_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID");
+
+
+                
+                DataTable dtcustomer = new DataTable();
+                if (CheckBox2.Checked == true)
+                {
+                    if (DropDownList2.SelectedValue == "1")
+                    {
+                        dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox3.Text + "'");
+
+                    }
+                    else
+                    {
+                        dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where IDNumber = '" + TextBox6.Text + "'");
+
+                    }
+
+                    if (dtcustomer.Rows.Count > 0)
+                    {
+                        try
+                        {
+                            code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [MobilePhone] = '" + TextBox3.Text + "',[Status] = '1',[FullName] = N'" + TextBox4.Text + "',[Address] = N'" + TextBox7.Text + "',[Address1] = N'" + TextBox8.Text + "',[Address_ID] = '" + CheckAddressID(TextBox9.Text, DropDownList3.SelectedItem.Text, DropDownList4.SelectedItem.Text, DropDownList5.SelectedItem.Text) + "',[IDNumber] = '" + TextBox6.Text + "',[Email] = '" + TextBox10.Text + "',[Customer_Type_ID] = '" + DropDownList2.SelectedValue + "',[Branch_Number] = '" + TextBox5.Text + "' WHERE MobilePhone = '" + TextBox3.Text + "' or IDNumber = '" + TextBox6.Text + "'");
+                            if (DropDownList2.SelectedValue == "2")
+                            {
+                                dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox3.Text + "'");
+
+                            }
+                            else
+                            {
+                                dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where IDNumber = '" + TextBox6.Text + "'");
+
+                            }
+                        }
+                        catch { }
+                    }
+                    else
+                    {
+                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox3.Text + "',N'',N'','','',N'" + TextBox4.Text.Replace("'", "''") + "',N'" + cleantext(TextBox7.Text.Replace("'", "''")) + "',N'" + TextBox6.Text + "',N'" + TextBox10.Text + "'," + DropDownList2.SelectedValue + "," + CheckAddressID(TextBox9.Text, DropDownList3.SelectedItem.Text, DropDownList4.SelectedItem.Text, DropDownList5.SelectedItem.Text) + ",N'" + TextBox8.Text + "',N'" + TextBox5.Text + "')");
+                        if (DropDownList2.SelectedValue == "2")
+                        {
+                            dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox3.Text + "'");
+
+                        }
+                        else
+                        {
+                            dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where IDNumber = '" + TextBox6.Text + "'");
+
+                        }
+                    }
+                }
+                code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],[Etax],[Customer_ID]) VALUES ('" + docNum + "','0','" + Convert.ToDateTime(TextBox12.Text).ToString("yyyy-MM-dd HH:mm:ss") + "','" + total + "','" + vat + "','" + Total_Amount_Exclude_Vat + "',0,0,N'" + DropDownList1.SelectedItem.Text + "','Normal','" + Session["UserID"].ToString() + "','" + CheckBox3.Checked + "','"+ dtcustomer.Rows[0]["ID"].ToString() + "')");
+                code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt_Detail] ([Number],[Receipt_ID],[ProductType_ID],[Product_ID],[Product_Data],[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount]) VALUES (1,'" + docNum + "','3','0',N'" + TextBox11.Text + "',1,N'ครั้ง'," + total + "," + total + ")");
+                DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + docNum + "'");
+                DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + docNum + "' order by Number ASC");
+                string uid = dtReceipt.Rows[0]["UID"].ToString();
+
+
+                //GridView1.DataSource = dt;
+                //GridView1.DataBind();
+
+                DataTable dtSignature = new DataTable();
+                try
+                {
+                    dtSignature.Columns.Add("AuthorizeName");
+                    dtSignature.Columns.Add("AuthorizeSignaturePath");
+                    dtSignature.Columns.Add("CreatedName");
+                    dtSignature.Columns.Add("CreatedSignaturePath");
+                }
+                catch { }
+
+                string Signaturepath = System.Configuration.ConfigurationSettings.AppSettings["StaffSignatureFolderPath"].ToString();
+                DataTable dtApprover = code.DatabaseQuery(conn, "Select * from Admin Where IsCEO = 'True'");
+                string ApproverFullName = dtApprover.Rows[0]["FirstName"].ToString() + " " + dtApprover.Rows[0]["LastName"].ToString();
+
+                DataTable dtCreator = code.DatabaseQuery(conn, "Select * from Admin Where ID = " + Session["UserID"].ToString());
+                string CreatorFullName = dtCreator.Rows[0]["FirstName"].ToString() + " " + dtCreator.Rows[0]["LastName"].ToString();
+
+                dtSignature.Rows.Add(ApproverFullName, "File:\\" + Signaturepath + "\\" + ApproverFullName.ToLower() + ".png", CreatorFullName, "File:\\" + Signaturepath + "\\" + CreatorFullName.ToLower() + ".png");
+
+                DataTable dtCustomerReport = new DataTable();
+                dtCustomerReport = dtcustomer.Copy();
+                DataTable dtBusinessinfoReport = new DataTable();
+                dtBusinessinfoReport = dtbusinessinfo.Copy();
+
+                try
+                {
+
+
+                    if (CheckBox2.Checked == false)
+                    {
+                        dtCustomerReport.Rows[0]["FullName"] = "ประสงค์ไม่รับใบกำกับภาษี";
+                        dtCustomerReport.Rows[0]["Address"] = "";
+                        dtCustomerReport.Rows[0]["IDNumber"] = "";
+                        dtCustomerReport.Rows[0]["MobilePhone"] = "";
+                        dtCustomerReport.Rows[0]["Email"] = "";
+                    }
+                    else
+                    {
+
+                        
+                        if (DropDownList2.SelectedValue == "1" && TextBox5.Text == "00000")
+                        {
+                            dtCustomerReport.Rows[0]["FullName"] = TextBox4.Text;
+                        }
+                        else if (DropDownList2.SelectedValue == "1" && Convert.ToInt32(TextBox5.Text) > 0)
+                        {
+                            dtCustomerReport.Rows[0]["FullName"] = TextBox4.Text + " สาขาที่ " + TextBox5.Text;
+                        }
+                        else
+                        {
+                            dtCustomerReport.Rows[0]["FullName"] = TextBox4.Text;
+                        }
+                        try
+                        {
+
+                            if (dtcustomer.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                            {
+                                dtCustomerReport.Rows[0]["Address"] = TextBox7.Text + " " + TextBox8.Text + " แขวง " + DropDownList5.SelectedValue + " เขต " + DropDownList4.SelectedValue + " " + DropDownList3.SelectedValue + " " + dtcustomer.Rows[0]["PostalCode"].ToString();
+                            }
+                            else
+                            {
+                                dtCustomerReport.Rows[0]["Address"] = TextBox7.Text + " " + TextBox8.Text + " ต." + DropDownList5.SelectedValue + " อ." + DropDownList4.SelectedValue + " จ." + DropDownList3.SelectedValue + " " + dtcustomer.Rows[0]["PostalCode"].ToString();
+                            }
+                        }
+                        catch
+                        {
+                            dtCustomerReport.Rows[0]["Address"] = dtcustomer.Rows[0]["Address"].ToString();
+                        }
+
+                        dtCustomerReport.Rows[0]["IDNumber"] = TextBox6.Text;
+                        dtCustomerReport.Rows[0]["MobilePhone"] = TextBox3.Text;
+                        dtCustomerReport.Rows[0]["Email"] = TextBox10.Text;
+                    }
+
+
+                    try
+                    {
+                        if (dtbusinessinfo.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                        {
+                            dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " แขวง " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " เขต " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
+                        }
+                        else
+                        {
+                            dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " ต." + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " อ." + dtbusinessinfo.Rows[0]["District"].ToString() + " จ." + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
+                        }
+                    }
+                    catch
+                    {
+                        dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString();
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    Account.Report.DataSet1 dataSet1 = new Account.Report.DataSet1();
+                    dataSet1.Tables.Add(dtBusinessinfoReport);
+                    ReportViewer2.LocalReport.DisplayName = "Receipt";
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet1", dtBusinessinfoReport));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet2", dtCustomerReport));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet3", dtReceiptDetail));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet4", dtReceipt));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet5", dtSignature));
+                    try
+                    {
+
+                        //     var deviceInfo = @"<DeviceInfo>
+                        // <EmbedFonts>None</EmbedFonts>
+                        //</DeviceInfo>";
+
+
+                        Warning[] warnings;
+                        string[] streamids;
+                        string mimeType;
+                        string encoding;
+                        string filenameExtension;
+
+                        byte[] bytes = ReportViewer2.LocalReport.Render(
+                            "PDF", null, out mimeType, out encoding, out filenameExtension,
+                            out streamids, out warnings);
+                        if (File.Exists(path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+".pdf"))
+                        {
+                            File.Delete(path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ ".pdf");
+                        }
+                        using (FileStream fs = new FileStream(path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ ".pdf", FileMode.Append))
+                        {
+
+                            fs.Write(bytes, 0, bytes.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+
+                    if (CheckBox3.Checked == true)
+                    {
+                        try
+                        {
+                            string xmlFilePath = path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ ".xml";
+                            string xmlString = System.IO.File.ReadAllText(ConfigurationSettings.AppSettings["BaseFolderPath"].ToString() + "\\Resources\\template.xml");
+                            xmlString = xmlString.Replace("*invoice_id", docNum);
+                            xmlString = xmlString.Replace("*invoice_name", "ใบเสร็จรับเงิน/ใบกำกับภาษี");
+                            xmlString = xmlString.Replace("*invoice_typecode", "T03");
+                            xmlString = xmlString.Replace("*invoice_issue_date", Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"].ToString()).ToString("yyyy-MM-dd") + "T00:00:00.000");
+                            xmlString = xmlString.Replace("*invoice_purpose", "");
+                            xmlString = xmlString.Replace("*invoice_Purpose_code", "");
+                            xmlString = xmlString.Replace("*invoice_create_date", Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"].ToString()).ToString("yyyy-MM-dd") + "T00:00:00.000");
+                            xmlString = xmlString.Replace("*invoice_remark", "");
+
+                            try
+                            {
+                                xmlString = xmlString.Replace("*seller_type", dtbusinessinfo.Rows[0]["Customer_Code"].ToString());
+                                if (dtbusinessinfo.Rows[0]["Customer_Code"].ToString() == "TXID")
+                                {
+                                    xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString() + dtbusinessinfo.Rows[0]["Branch_Number"].ToString());
+                                }
+                                else
+                                {
+                                    xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString());
+                                }
+                            }
+                            catch
+                            {
+                                xmlString = xmlString.Replace("*seller_type", "TXID");
+                                xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString());
+                            }
+
+                            xmlString = xmlString.Replace("*seller_name", dtbusinessinfo.Rows[0]["Company_Name"].ToString());
+
+                            xmlString = xmlString.Replace("*seller_DefinedCITradeContact", dtbusinessinfo.Rows[0]["Email"].ToString());
+                            xmlString = xmlString.Replace("*seller_PhoneNumber", dtbusinessinfo.Rows[0]["Phone_Number"].ToString());
+                            xmlString = xmlString.Replace("*seller_zipcode", dtbusinessinfo.Rows[0]["PostalCode"].ToString());
+                            xmlString = xmlString.Replace("*seller_address1", dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString());
+                            xmlString = xmlString.Replace("*seller_address2", "");
+                            xmlString = xmlString.Replace("*seller_cityname", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 4));
+                            xmlString = xmlString.Replace("*seller_city_subdivision_name", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 6));
+                            xmlString = xmlString.Replace("*seller_country", "TH");
+                            xmlString = xmlString.Replace("*sellercountry_subdivision_id", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 2));
+                            xmlString = xmlString.Replace("*seller_building_name", dtbusinessinfo.Rows[0]["Address"].ToString());
+                            xmlString = xmlString.Replace("*buyer_name", dtcustomer.Rows[0]["FullName"].ToString());
+
+                            try
+                            {
+
+
+                                xmlString = xmlString.Replace("*buyer_taxtype", dtcustomer.Rows[0]["Customer_Code"].ToString());
+
+
+                                if (dtcustomer.Rows[0]["Customer_Code"].ToString() == "TXID")
+                                {
+                                    string bnumber = "00000";
+                                    if (TextBox7.Text.Length == 5)
+                                    {
+                                        bnumber = dtcustomer.Rows[0]["Branch_Number"].ToString();
+                                    }
+                                    xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString() + bnumber);
+                                }
+                                else
+                                {
+                                    xmlString = xmlString.Replace("*buyer_taxtype", "NIDN");
+                                    xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString());
+                                }
+                            }
+                            catch
+                            {
+                                xmlString = xmlString.Replace("*buyer_taxtype", "NIDN");
+                                xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString());
+                            }
+
+
+                            xmlString = xmlString.Replace("*buyer_DefinedCITradeContact", TextBox10.Text);
+                            xmlString = xmlString.Replace("*buyer_zipcode", dtcustomer.Rows[0]["PostalCode"].ToString());
+                            xmlString = xmlString.Replace("*buyer_address", dtcustomer.Rows[0]["Address"].ToString() + " " + dtcustomer.Rows[0]["Address1"].ToString() + " " + dtcustomer.Rows[0]["SubDistrict"].ToString() + " " + dtcustomer.Rows[0]["District"].ToString() + " " + dtcustomer.Rows[0]["Province"].ToString() + " " + dtcustomer.Rows[0]["PostalCode"].ToString());
+                            xmlString = xmlString.Replace("*buyer_address2", "");
+                            xmlString = xmlString.Replace("*buyer_cityname", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 4));
+                            xmlString = xmlString.Replace("*buyer_city_subdivision_name", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 6));
+                            xmlString = xmlString.Replace("*buyer_country", "TH");
+                            xmlString = xmlString.Replace("*buyercountry_subdivision_id", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 2));
+                            xmlString = xmlString.Replace("*buyer_building_name", dtcustomer.Rows[0]["Address"].ToString());
+                            xmlString = xmlString.Replace("*reference", "");
+                            xmlString = xmlString.Replace("*buyer_contact_person", "");
+                            xmlString = xmlString.Replace("*currency", "THB");
+                            xmlString = xmlString.Replace("*invoice_tax_code", "VAT");
+                            xmlString = xmlString.Replace("*invoice_tax_rate", vatpercent.ToString());
+                            xmlString = xmlString.Replace("*invoice_basis_amount", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                            xmlString = xmlString.Replace("*calculated_amount", dtReceipt.Rows[0]["Vat"].ToString());
+                            xmlString = xmlString.Replace("*invoice_discountallowance", "");
+                            xmlString = xmlString.Replace("*invoice_serviceallowance", "");
+                            xmlString = xmlString.Replace("*invoice_line_total", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                            xmlString = xmlString.Replace("*tax_basis_total_amount", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                            xmlString = xmlString.Replace("*invoice_tax_total", dtReceipt.Rows[0]["Vat"].ToString());
+                            xmlString = xmlString.Replace("*invoice_grand_total", dtReceipt.Rows[0]["Total_Amount"].ToString());
+                            xmlString = xmlString.Replace("*item", "ค่าอาหารและเครื่องดื่ม");
+                            xmlString = xmlString.Replace("*invoice_billedquantity", "1");
+
+                            System.IO.File.WriteAllText(xmlFilePath, xmlString, System.Text.Encoding.UTF8);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            {
+
+
+                                PDFA3Invoice pdf = new PDFA3Invoice();
+                                string pdfFilePath = path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ ".pdf";
+                                string xmlFilePath = path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ ".xml";
+
+                                string xmlFileName = "ETDA-invoice.xml";
+
+
+                                string xmlVersion = "1.0";
+                                string documentID = docNum;
+                                string documentOID = "";
+
+                                string outputPath = path + "\\" + Year + "\\" + Month + "\\" + docNum +"_"+uid+ "_etax.pdf";
+
+                                pdf.CreatePDFA3Invoice(pdfFilePath, xmlFilePath, xmlFileName, xmlVersion, documentID, documentOID, outputPath, "Tax Invoice");
+
+                                if (CheckBox3.Checked == true)
+                                {
+
+                                    DateTime docDate = DateTime.Now;
+
+                                    try
+                                    {
+                                        if (Convert.ToDateTime(TextBox12.Text) < docDate)
+                                        {
+                                            docDate = Convert.ToDateTime(TextBox12.Text);
+                                        }
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    //DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT  [ID] FROM [Account_Receipt] Where RESERVATION_ID = '" + Reservation_ID + "'");
+
+                                    //string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
+                                    //string pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_etax.pdf";
+
+                                    //string pdfFilePath = pdfpath;
+                                    byte[] bytes = System.IO.File.ReadAllBytes(outputPath);
+                                    Attachment[] dataall = new Attachment[1];
+                                    MemoryStream pdf2 = new MemoryStream(bytes);
+                                    Attachment data = new Attachment(pdf2, dtReceipt.Rows[0]["ID"].ToString() +"_"+uid+ "_etax.pdf");
+                                    dataall[0] = data;
+
+                                    string docCreateThaiDate = "";
+
+                                    if (docDate.Day.ToString().Length > 1)
+                                    {
+                                        docCreateThaiDate += docDate.Day.ToString();
+                                    }
+                                    else
+                                    {
+                                        docCreateThaiDate += "0" + docDate.Day.ToString();
+                                    }
+
+                                    if (docDate.Month.ToString().Length > 1)
+                                    {
+                                        docCreateThaiDate += docDate.Month.ToString();
+                                    }
+                                    else
+                                    {
+                                        docCreateThaiDate += "0" + docDate.Month.ToString();
+                                    }
+
+
+                                    if (Convert.ToInt32(docDate.Year.ToString()) > 2500)
+                                    {
+                                        docCreateThaiDate += docDate.Year.ToString();
+                                    }
+                                    else
+                                    {
+                                        docCreateThaiDate += (Convert.ToInt32(docDate.Year.ToString()) + 543).ToString();
+                                    }
+
+
+
+                                    string subject = "[" + docCreateThaiDate + "][INV][" + dtReceipt.Rows[0]["ID"].ToString() + "]";
+                                    string body = "เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br /> หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />ขอแสดงความนับถือ<br /> หจก.แอม แฮปปี้เนส (Take Time) ";
+
+                                    Reservation rs = new Reservation();
+                                    rs.SendEmail(ConfigurationSettings.AppSettings["SMTP"].ToString(), Convert.ToInt32(ConfigurationSettings.AppSettings["SMTP_Port"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_EnableSsl"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_UseDefaultCredentials"].ToString()), ConfigurationSettings.AppSettings["Email_From"].ToString(), ConfigurationSettings.AppSettings["Email_Password_From"].ToString(), TextBox10.Text, ConfigurationSettings.AppSettings["Email_CC"].ToString(), subject, body, dataall);
+
+
+                                }
+                            }
+                        }
+                        catch
+                        {
+
+                        }
+                        //ReportViewer2.LocalReport.Refresh();
+
+                    }
+                }
+
+                catch { }
+
+
+               
+            
+            }
+
+            if (GridView1.Rows.Count > 0)
+            {
+                for(int i = 0;i<dtOrder.Rows.Count;i++)
+                {
+                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Product_Out] ([DateTime_Out],[Product_ID],[Amount],[PricePerUnit],[Account_Receipt_ID],[Account_Paid_How_ID],[Remark]) VALUES ('" +Convert.ToDateTime(TextBox12.Text+" "+DateTime.Now.ToString("HH:mm:ss")).ToString("yyyy-MM-dd HH:mm:ss") + "'," + dtOrder.Rows[i]["ID"].ToString() +","+dtOrder.Rows[i]["Amount"].ToString()+","+dtOrder.Rows[i]["Sell_Price"].ToString()+",'"+docNum+"','"+DropDownList1.SelectedValue+"',N'ขาย')");
+                }
+            }
+            Response.Redirect("/Product");
+        }
+
+        private string cleantext(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return input.Replace(",", "").Replace("'", "").Replace("\"", "");
+        }
+
+        protected void GridView1_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (e.CommandName == "Add")
+            {
+                DataTable dtOrder = (DataTable)Session["dtOrder"];
+                int amount = Convert.ToInt32(dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Amount"].ToString());
+                amount = amount + 1;
+                double total = amount * Convert.ToDouble(dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Sell_Price"].ToString());
+                dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Amount"] = amount;
+                dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Price_Total"] = total;
+                GridView1.DataSource = dtOrder;
+                GridView1.DataBind();
+                Session["dtOrder"] = dtOrder;
+                TextBox1.Text = string.Empty;
+                double pricetotal = 0;
+                for (int i = 0; i < dtOrder.Rows.Count; i++)
+                {
+                    pricetotal += Convert.ToDouble(dtOrder.Rows[i]["Price_Total"].ToString());
+                }
+                TextBox2.Text = pricetotal.ToString();
+            }
+            else if (e.CommandName == "Reduce")
+            {
+                DataTable dtOrder = (DataTable)Session["dtOrder"];
+                int amount = Convert.ToInt32(dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Amount"].ToString());
+                if (amount > 1)
+                {
+                    amount = amount - 1;
+                    double total = amount * Convert.ToDouble(dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Sell_Price"].ToString());
+                    dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Amount"] = amount;
+                    dtOrder.Rows[Convert.ToInt32(e.CommandArgument)]["Price_Total"] = total;
+                    GridView1.DataSource = dtOrder;
+                    GridView1.DataBind();
+                    Session["dtOrder"] = dtOrder;
+                    TextBox1.Text = string.Empty;
+                    double pricetotal = 0;
+                    for (int i = 0; i < dtOrder.Rows.Count; i++)
+                    {
+                        pricetotal += Convert.ToDouble(dtOrder.Rows[i]["Price_Total"].ToString());
+                    }
+                    TextBox2.Text = pricetotal.ToString();
+                }
+            }
+            else if (e.CommandName == "DeleteItem")
+            {
+                DataTable dtOrder = (DataTable)Session["dtOrder"];
+                dtOrder.Rows[Convert.ToInt32(e.CommandArgument)].Delete();
+                dtOrder.AcceptChanges();
+                GridView1.DataSource = dtOrder;
+                GridView1.DataBind();
+                Session["dtOrder"] = dtOrder;
+                TextBox1.Text = string.Empty;
+                double pricetotal = 0;
+                for (int i = 0; i < dtOrder.Rows.Count; i++)
+                {
+                    pricetotal += Convert.ToDouble(dtOrder.Rows[i]["Price_Total"].ToString());
+                }
+                TextBox2.Text = pricetotal.ToString();
+            }
+        }
+        protected void GridView1_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            GridView1.EditIndex = e.NewEditIndex;
+            DataTable dtOrder = (DataTable)Session["dtOrder"];
+            GridView1.DataSource = dtOrder;
+            GridView1.DataBind();
+        }
+
+        protected void GridView1_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            GridView1.EditIndex = -1;
+            DataTable dtOrder = (DataTable)Session["dtOrder"];
+            GridView1.DataSource = dtOrder;
+            GridView1.DataBind();
+        }
+
+        protected void GridView1_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            DataTable dtOrder = (DataTable)Session["dtOrder"];
+            TextBox txtAmount = (TextBox)GridView1.Rows[e.RowIndex].Cells[2].Controls[0];
+            TextBox txtPrice = (TextBox)GridView1.Rows[e.RowIndex].Cells[3].Controls[0];
+            GridView1.EditIndex = -1;
+            dtOrder.Rows[Convert.ToInt32(e.RowIndex)]["Amount"] = txtAmount.Text;
+            dtOrder.Rows[Convert.ToInt32(e.RowIndex)]["Sell_Price"] = txtPrice.Text;
+            GridView1.DataSource = dtOrder;
+            GridView1.DataBind();
+            Session["dtOrder"] = dtOrder;
+            TextBox1.Text = string.Empty;
+            double pricetotal = 0;
+            for (int i = 0; i < dtOrder.Rows.Count; i++)
+            {
+                pricetotal += Convert.ToDouble(dtOrder.Rows[i]["Price_Total"].ToString());
+            }
+            TextBox2.Text = pricetotal.ToString();
+        }
+
+        protected void Button3_Click(object sender, EventArgs e)
+        {
+            renderProduct();
+            Page.SetFocus(TextBox1);
+        }
+
+        protected void TextBox1_TextChanged(object sender, EventArgs e)
+        {
+            renderProduct();
+        }
+
+        private void CheckData()
+        {
+            DataTable dt = GetYourData();
+
+            if (dt.Rows.Count == 0)
+            {
+                // No data - show message and setup 5-minute refresh
+                
+
+                // Setup refresh for primary interval (5 minutes)
+                SetupRefresh(PrimaryInterval);
+            }
+            else
+            {
+                // Data exists - display it and setup 1-minute check
+                
+
+                // Setup check for secondary interval (1 minute)
+                SetupRefresh(SecondaryInterval);
+            }
+        }
+
+        private void SetupRefresh(int intervalSeconds)
+        {
+            // Convert milliseconds to seconds for meta refresh
+            int intervalSec = intervalSeconds / 1000;
+
+            // Clear any existing refresh tags
+            RemoveRefreshMetaTag();
+
+            // Add new refresh tag
+            HtmlMeta meta = new HtmlMeta();
+            meta.HttpEquiv = "refresh";
+            meta.Content = intervalSec.ToString();
+            Page.Header.Controls.Add(meta);
+        }
+
+        private void RemoveRefreshMetaTag()
+        {
+            // Remove any existing refresh meta tags
+            foreach (Control c in Page.Header.Controls)
+            {
+                if (c is HtmlMeta && ((HtmlMeta)c).HttpEquiv == "refresh")
+                {
+                    Page.Header.Controls.Remove(c);
+                    break;
+                }
+            }
+        }
+
+        // Replace with your actual data access method
+        private DataTable GetYourData()
+        {
+            DataTable dt = (DataTable)Session["dtOrder"];
+
+
+            return dt;
+        }
+        protected void TextBox12_TextChanged(object sender, EventArgs e)
+        {
+            if(TextBox12.Text.Length > 8)
+            {
+                try
+                {
+                   TextBox12.Text = Convert.ToDateTime(TextBox12.Text).ToString("yyyy-MM-dd");
+                }
+                catch { }
+            }
+        }
+    }
+}

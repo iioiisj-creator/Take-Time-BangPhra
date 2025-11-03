@@ -1,0 +1,4308 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+using System.IO;
+using Microsoft.Reporting.WebForms;
+using ECertificateAPI;
+using iTextSharp.text.pdf;
+using System.Data.SqlTypes;
+using System.Net;
+using System.Net.Mail;
+using System.Web.Services.Description;
+using Google.Apis.Auth;
+using Google.Apis.Auth.OAuth2;
+using System.Threading;
+using Google.Apis.Gmail.v1;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Globalization;
+using System.Threading.Tasks;
+using Line.Messaging;
+using Line.Messaging.Webhooks;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using Take_Time_BangPhra.Account.Report;
+using Google.Apis.Gmail.v1.Data;
+
+namespace Take_Time_BangPhra
+{
+    public partial class Reserve : System.Web.UI.Page
+    {
+        code code2 = new code();
+        _Default code = new _Default();
+        string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            this.MaintainScrollPositionOnPostBack = true;
+            string date = Request.QueryString["date"];
+            string accom = Request.QueryString["accom"];
+            string couponcode = Request.QueryString["couponcode"];
+            Page.MaintainScrollPositionOnPostBack = true;
+            
+            if (!IsPostBack)
+            {
+                DataTable dtPaidHow = code.DatabaseQuery(SqlDataSource1.ConnectionString, SqlDataSource1.SelectCommand);
+                for (int p = 0; p < dtPaidHow.Rows.Count; p++)
+                {
+                    DropDownList2.Items.Add(new ListItem(dtPaidHow.Rows[p]["Paid_How"].ToString(), dtPaidHow.Rows[p]["ID"].ToString()));
+                }
+                DropDownList2.DataBind();
+
+                Session["Submit"] = false;
+                Session["UseCoupon"] = "false";
+                try
+                {
+                    if (couponcode.Length > 0)
+                    {
+                        TextBox19.Text = couponcode;
+                        Button8_Click(null, null);
+                    }
+                }
+                catch { }
+                DataTable dtCustomerType = code.DatabaseQuery(conn, "Select [Customer_Type],ID From Customer_Type");
+
+
+                for (int q = 0; q < dtCustomerType.Rows.Count; q++)
+                {
+                    DropDownList8.Items.Add(new ListItem(dtCustomerType.Rows[q][0].ToString(), dtCustomerType.Rows[q][1].ToString()));
+                }
+
+                DropDownList8.DataBind();
+
+                DropDownList8.ClearSelection();
+                DropDownList8.Items.FindByValue("2").Selected = true;
+                DropDownList8.SelectedIndex = DropDownList8.Items.IndexOf(DropDownList8.Items.FindByValue("2"));
+
+                getAddress("SELECT DISTINCT [Province] FROM [Address] order by Province ASC", "SELECT DISTINCT [District] FROM [Address] order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] order by SubDistrict ASC");
+
+                DropDownList1.SelectedIndex = 0;
+
+                try
+                {
+                    TextBox12.Text = date;
+                    TextBox12_TextChanged(null, null);
+                    //code2.ParseDate(TextBox12.Text) = DateTime.Parse(date);
+                    //Calendar1.DataBind();
+                    //Calendar1_SelectionChanged(null, null);
+                    DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+                    for (int j = 0; j < dtAccom.Rows.Count; j++)
+                    {
+                        if (dtAccom.Rows[j]["ID"].ToString() == accom)
+                        {
+                            CheckBox chkAccom = GridView1.Rows[j].Cells[0].FindControl("chkSelect") as CheckBox;
+                            if (chkAccom != null)
+                            {
+                                chkAccom.Checked = true;
+                            }
+                            //chkAccom.Checked = true;
+                        }
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (Session["User"].ToString() == "Owner")
+                    {
+                        TextBox11.Visible = true;
+                    }
+                    else
+                    {
+                        TextBox11.Visible = false;
+                    }
+                    if(Session["User"].ToString() == "Owner" || Session["User"].ToString() == "Admin")
+                    {
+                        CheckBox6.Visible = true; 
+                    }
+                }
+                catch { }
+                Image1.ImageUrl = "./Images/บัญชี.png";
+                Image1.DataBind();
+            }
+
+            try
+            {
+                if (Session["permission"].ToString() == "True" && CheckBox6.Checked == true)
+                {
+                    CheckBox4.Visible = true;
+                    if (!IsPostBack)
+                    {
+                        
+
+                        DropDownList2.Enabled = true;
+                        DropDownList2.Items.Insert(0, new ListItem("---โปรดเลือกวิธีการชำระ---", "0"));
+                    }
+                    //TextBox4.Enabled = true;
+                    TextBox5.AutoPostBack = false;
+                    Button1.Enabled = true;
+                    Button4.Visible = true;
+                    GridView1.Columns[5].Visible = true;
+                    GridView2.Columns[5].Visible = true;
+                }
+                else if (Session["permission"].ToString() == "True" && CheckBox6.Checked == false)
+                {
+                    CheckBox4.Visible = true;
+                    if (!IsPostBack)
+                    {
+                        DropDownList2.Enabled = true;
+                        DropDownList2.Items.Insert(0, new ListItem("---โปรดเลือกวิธีการชำระ---", "0"));
+                    }
+                    //TextBox4.Enabled = true;
+                    TextBox5.AutoPostBack = false;
+                    Button1.Enabled = true;
+                    Button4.Visible = true;
+                    GridView1.Columns[5].Visible = false;
+                    GridView2.Columns[5].Visible = false;
+                }
+                else
+                {
+                    Session["permission"] = "No";
+                    GridView1.Columns[5].Visible = false;
+                    GridView2.Columns[5].Visible = false;
+                }
+            }
+            catch
+            {
+                Session["permission"] = "No";
+                GridView1.Columns[5].Visible = false;
+                GridView2.Columns[5].Visible = false;
+            }
+
+            string command = Request.QueryString["command"];
+            string id = Request.QueryString["id"];
+            string check = Request.QueryString["check"];
+            try
+            {
+                if (check[0] == ' ')
+                {
+                    check = "+" + check.Replace(" ", "");
+                }
+            }
+            catch { }
+            Session["OldPrice"] = TextBox4.Text;
+
+            if(command == "checkin")
+            {
+                GridView1.Enabled = false;
+                GridView2.Enabled = false;
+                TextBox5.Enabled = false;
+                Button1.Text = "ยืนยันการเช็คอิน";
+                CheckBox1.Visible = false;
+                Button1.Enabled = true;
+            }
+            else if(command == "edit")
+            {
+                TextBox5.Enabled = false;
+                CheckBox2.Visible = true;
+                Button1.Text = "ยืนยันการแก้ไข";
+                CheckBox1.Visible = false;
+                Button1.Enabled = true;
+                Label7.Visible = false;
+            }
+            else if(command == "rentmore")
+            {
+                TextBox5.Enabled = false;
+                CheckBox2.Visible = true;
+                CheckBox2.Text = "จ่ายเงินเพิ่ม";
+                Button1.Text = "ยืนยันการเช่าเพิ่ม";
+                CheckBox1.Visible = false;
+                Button1.Enabled = true;
+                DropDownList1.Enabled = false;
+                Label7.Visible = false;
+            }
+
+            DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
+            DataTable dtItems = (DataTable)Session["dtItems"];
+
+            int i = 0;
+            double totalPrice = 0;
+            double PriceAccom = 0;
+            int PriceItems = 0;
+            int DepositAmount = 0;
+
+            foreach (GridViewRow row in GridView1.Rows)
+            {
+
+                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                if (chk != null && chk.Checked)
+                {
+                    Calendar1_SelectionChanged(null, null);
+                    row.BackColor = System.Drawing.ColorTranslator.FromHtml("#8D9F7F");
+                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                    txtPeopleStay.Enabled = true;
+                    if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
+                    {
+                        DepositAmount += 50* Convert.ToInt32(txtPeopleStay.Text);
+                        if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
+                        {
+                            for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
+                            {
+                                PriceAccom += Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(TextBox12.Text).Value.AddDays(k)));
+                            }
+                        }
+                        else
+                        {
+                            if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
+                            {
+                                // สำหรับห้องคิดตามคน
+                                PriceAccom += Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                            }
+                            else
+                            {
+                                // สำหรับห้องไม่คิดตามคน - ไม่ต้องคูณกับจำนวนคน
+                                PriceAccom += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                            }
+                        }
+
+                        try
+                        {
+                            if (Session["permission"].ToString() == "True")
+                            {
+
+                            }
+                            else
+                            {
+                                if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
+                                {
+                                    txtPeopleStay.Text = row.Cells[3].Text;
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
+                            {
+                                txtPeopleStay.Text = row.Cells[3].Text;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (dtAccommodation.Rows[i]["ID"].ToString() == "21" || dtAccommodation.Rows[i]["ID"].ToString() == "22" || dtAccommodation.Rows[i]["ID"].ToString() == "23" || dtAccommodation.Rows[i]["ID"].ToString() == "18")
+                        {
+                            DepositAmount += 1000;
+                        }
+                        else
+                        {
+                            DepositAmount += 500;
+                        }
+                            
+                        string ReserveDate = "";
+                        try
+                        {
+                            ReserveDate = TextBox12.Text;
+                        }
+                        catch { }
+                        if ((ReserveDate == null || ReserveDate == "") && command == "edit")
+                        {
+                            DataTable dtReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] Where ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+                            ReserveDate = dtReservation.Rows[0]["CheckinDate"].ToString();
+                        }
+                        if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
+                        {
+                            double PriceThisAccom = 0;
+                            for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
+                            {
+                                PriceThisAccom += Convert.ToInt32(AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(ReserveDate).Value.AddDays(k)));
+                            }
+                            PriceAccom += Convert.ToInt32(PriceThisAccom);
+                            GridView1.Rows[i].Cells[4].Text = (PriceThisAccom / Convert.ToInt32(DropDownList1.SelectedValue)).ToString();
+                        }
+                        else if(CheckBox6.Checked == false)
+                        {
+                            double PriceThisAccom = Convert.ToInt32(AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(ReserveDate).Value));
+                            PriceAccom += PriceThisAccom;
+                            GridView1.Rows[i].Cells[4].Text = PriceThisAccom.ToString();
+                        }
+                        else
+                        {
+                            PriceAccom += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                        }
+                        if (Convert.ToInt32(txtPeopleStay.Text) == 0)
+                        {
+                            txtPeopleStay.Text = dtAccommodation.Rows[i]["People"].ToString();
+                        }
+                        if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
+                        {
+                            txtPeopleStay.Text = row.Cells[3].Text;
+                        }
+                    }
+                }
+                else
+                {
+                    row.BackColor = System.Drawing.Color.White;
+                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                    txtPeopleStay.Enabled = false;
+                    txtPeopleStay.Text = "0";
+                }
+                i++;
+            }
+            Session["PriceAccom"] = PriceAccom;
+            //Label2.Text = (Convert.ToInt32(PriceAccom) * 0.4).ToString();
+            Label2.Text = DepositAmount.ToString();
+            int y = 0;
+            int totalPriceItems = 0;
+            foreach (GridViewRow row in GridView2.Rows)
+            {
+                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                if (chk != null && chk.Checked)
+                {
+
+                    row.BackColor = System.Drawing.ColorTranslator.FromHtml("#8D9F7F");
+                    TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                    txtAmount.Enabled = true;
+                    if (Convert.ToInt32(txtAmount.Text) == 0 && row.Cells[3].Text != "0")
+                    {
+                        txtAmount.Text = "1";
+                    }
+
+                    if (dtItems.Rows[y]["LimitWithAmount"].ToString() == "True")
+                    {
+                        PriceItems += Convert.ToInt32(txtAmount.Text) * Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                        if (Convert.ToInt32(txtAmount.Text) > Convert.ToInt32(row.Cells[3].Text))
+                        {
+                            txtAmount.Text = row.Cells[3].Text;
+                        }
+                    }
+                    else
+                    {
+                        PriceItems += Convert.ToInt32(txtAmount.Text) * Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+
+                        if (Convert.ToInt32(txtAmount.Text) == 0)
+                        {
+                            txtAmount.Text = dtItems.Rows[y]["Amount"].ToString();
+                        }
+                        if (Convert.ToInt32(txtAmount.Text) > Convert.ToInt32(row.Cells[3].Text))
+                        {
+                            txtAmount.Text = row.Cells[3].Text;
+                        }
+                    }
+                    if (row.Cells[3].Text == "0" && Convert.ToInt32(txtAmount.Text) == 0)
+                    {
+                        chk.Checked = false;
+                        row.BackColor = System.Drawing.Color.White;
+                    }
+                }
+                else
+                {
+                    row.BackColor = System.Drawing.Color.White;
+                    TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                    txtAmount.Enabled = false;
+                    txtAmount.Text = "0";
+                }
+                i++;
+            }
+
+            Session["PriceItems"] = PriceItems;
+            totalPrice = PriceAccom + PriceItems;
+            Session["totalPrice"] = totalPrice;
+
+            TextBox4.Text = Session["totalPrice"].ToString();
+
+            if ((command == "edit" || command == "checkin" || command == "rentmore") && Session["permission"].ToString() == "True")
+            {
+                if (!IsPostBack)
+                {
+                    Button1.Enabled = true;
+                    DataTable dtReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] Where ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+                    DataTable dtAccom = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Accommodation on Reservation_Accommodation.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+                    DataTable dtItemsold = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Items on Reservation_Items.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+
+                    DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT  * FROM [Account_Receipt] Where RESERVATION_ID = '" + id + "'");
+                    try
+                    {
+                        if (dtReservation.Rows[0]["NoCreateReceipt"].ToString().ToLower() == "false")
+                        {
+                            CheckBox4.Checked = false;
+                            CheckBox4.DataBind();
+                        }
+                        else
+                        {
+                            if (dtReceipt.Rows.Count == 0 || dtReservation.Rows[0]["NoCreateReceipt"].ToString().ToLower() == "true")
+                            {
+                                CheckBox4.Checked = true;
+                                CheckBox4.DataBind();
+                            }
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (dtReservation.Rows[0]["NoNameinReceipt"].ToString().ToLower() == "false")
+                        {
+                            CheckBox3.Checked = false;
+                            CheckBox3.DataBind();
+                            Panel1.Visible = true;
+
+                            try
+                            {
+                                DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
+                                DropDownList2.DataBind();
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            CheckBox3.Checked = true;
+                            CheckBox3.DataBind();
+                            Panel1.Visible = false;
+
+                            try
+                            {
+                                DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
+                                DropDownList2.DataBind();
+                            }
+                            catch { }
+
+                        }
+                        try
+                        {
+                            if (dtReceipt.Rows.Count == 0 || dtReservation.Rows[0]["NoCreateReceipt"].ToString().ToLower() == "true")
+                            {
+                                CheckBox4.Checked = true;
+                                CheckBox4.DataBind();
+
+                                DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText("เงินสด"));
+                                DropDownList2.DataBind();
+                            }
+                            else
+                            {
+                                CheckBox4.Checked = false;
+                                CheckBox4.DataBind();
+                            }
+                        }
+                        catch { }
+                    
+                    
+                    }
+                    catch { }
+
+                    try
+                    {
+
+                        if (dtReceipt.Rows[0]["Etax"].ToString().ToLower() == "false")
+                        {
+                            CheckBox5.Checked = false;
+                            CheckBox5.DataBind();
+                        }
+                        if (dtReceipt.Rows[0]["Etax"].ToString().ToLower() == "true")
+                        {
+                            Panel1.Visible = true;
+
+                            CheckBox3.Checked = false;
+                            CheckBox3.DataBind();
+
+                            CheckBox4.Checked = false;
+                            CheckBox4.DataBind();
+
+                            CheckBox5.Checked = true;
+                            CheckBox5.DataBind();
+
+
+                        }
+                    }
+                    catch { }
+
+                    
+
+                    try
+                    {
+                        //TextBox12.Text = DateTime.Parse(dtReservation.Rows[0]["CheckinDate"].ToString()).ToString();
+                        //TextBox12.DataBind();
+                        //TextBox12_TextChanged(null, null);
+                    }
+                    catch
+                    {
+
+                    }
+                    DropDownList1.SelectedIndex = DropDownList1.Items.IndexOf(DropDownList1.Items.FindByValue(dtReservation.Rows[0]["StayDays"].ToString()));
+                    //Calendar1_SelectionChanged(null, null);
+                    DataTable dtAccommodationlast = (DataTable)Session["dtAccommodation"];
+                    foreach (GridViewRow row in GridView1.Rows)
+                    {
+                        CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                        TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                        for (int o = 0; o < dtAccom.Rows.Count; o++)
+                        {
+                            if (dtAccommodationlast.Rows[row.RowIndex]["ID"].ToString() == dtAccom.Rows[o]["Accommodation_ID"].ToString())
+                            {
+                                chk.Checked = true;
+                                txtPeopleStay.Text = dtAccom.Rows[o]["Amount"].ToString();
+                                row.Cells[4].Text = dtAccom.Rows[o]["Price"].ToString();
+                            }
+                        }
+                    }
+                    DataTable dtCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] inner join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID left join Account_Receipt on Account_Receipt.Reservation_ID = Reservation.ID  Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+                    try //Address
+                    {
+                        try
+                        {
+                            TextBox16.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
+                            DropDownList5.ClearSelection();
+                            DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()).Selected = true;
+                            DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()));
+                            DropDownList6.ClearSelection();
+                            DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()).Selected = true;
+                            DropDownList6.SelectedIndex = DropDownList6.Items.IndexOf(DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()));
+                            DropDownList7.ClearSelection();
+                            DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()).Selected = true;
+                            DropDownList7.SelectedIndex = DropDownList7.Items.IndexOf(DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()));
+                        }
+                        catch { }
+                        DropDownList8.ClearSelection();
+                        DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()).Selected = true;
+                        DropDownList8.SelectedIndex = DropDownList8.Items.IndexOf(DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()));
+
+                        if(DropDownList8.Items.IndexOf(DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString())) == 0)
+                        {
+                            TextBox18.Visible = true;
+                            TextBox18.Text = dtCustomer.Rows[0]["Branch_Number"].ToString();
+                        }
+
+                        
+
+                    }
+                    catch { }
+
+                    TextBox1.Text = dtCustomer.Rows[0]["MobilePhone"].ToString();
+                    TextBox2.Text = dtCustomer.Rows[0]["Name"].ToString();
+                    TextBox3.Text = dtCustomer.Rows[0]["NickName"].ToString();
+                    //TextBox7.Text = dtCustomer.Rows[0]["FullName"].ToString();
+                    TextBox8.Text = dtCustomer.Rows[0]["Address"].ToString();
+                    TextBox17.Text = dtCustomer.Rows[0]["Address1"].ToString();
+                    TextBox9.Text = dtCustomer.Rows[0]["IDNumber"].ToString();
+                    TextBox13.Text = dtCustomer.Rows[0]["Email"].ToString();
+
+                    DataTable dtItemss = (DataTable)Session["dtItems"];
+                    foreach (GridViewRow row in GridView2.Rows)
+                    {
+                        CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                        TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                        for (int p = 0; p < dtItemsold.Rows.Count; p++)
+                        {
+                            if (dtItemss.Rows[row.RowIndex]["ID"].ToString() == dtItemsold.Rows[p]["Items_ID"].ToString())
+                            {
+                                chk.Checked = true;
+                                txtAmount.Text = dtItemsold.Rows[p]["Amount"].ToString();
+                                row.Cells[3].Text = (Convert.ToInt32(row.Cells[3].Text) + Convert.ToInt32(dtItemsold.Rows[p]["Amount"].ToString())).ToString();
+
+                            }
+                        }
+                    }
+                    TextBox4.Text = dtCustomer.Rows[0]["TotalPrice"].ToString();
+                    TextBox5.Text = dtCustomer.Rows[0]["Deposit"].ToString();
+
+
+                    Image1.ImageUrl = "./Upload/Slip/" + id + "_" + check + ".jpg";
+                    Image1.DataBind();
+                    TextBox6.Text = dtCustomer.Rows[0]["Remark"].ToString();
+
+                    Label7.Visible = true;
+                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + (Convert.ToInt32(TextBox4.Text) - Convert.ToInt32(TextBox5.Text)).ToString() + " บาท";
+
+                    string paidType = dtCustomer.Rows[0]["Paid_Type"].ToString();
+                    try
+                    {
+                        if(paidType.Length > 5)
+                        {
+
+                        }
+                        else{
+                            paidType = "เงินสด";
+                        }
+                    }
+                    catch
+                    {
+                        paidType = "เงินสด";
+                    }
+                    if (command == "checkin")
+                    {
+                        Label7.Text += " ยอดเดิมลูกค้าชำระโดยวิธี "+ paidType;
+                    }
+                }
+                else
+                {
+
+                }
+
+            }
+
+        }
+
+        protected void Calendar1_SelectionChanged(object sender, EventArgs e)
+        {
+            bool usevoucher = false;
+            try
+            {
+
+                Convert.ToBoolean(Session["UseVoucher"].ToString());
+            }
+            catch
+            {
+
+            }
+            try
+            {
+                if (usevoucher == true && DropDownList1.SelectedIndex > 0)
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('Voucher สามารถใช้ได้1ห้อง ต่อ 1 วันเท่านั้น');", true);
+                    DropDownList1.SelectedIndex = 0;
+                    DropDownList1.DataBind();
+                }
+            }
+            catch { }
+            int chkvaluecheck = 0;
+            List<string> listcheck = new List<string>();
+            int countcheck = 0;
+            foreach (GridViewRow gr in GridView1.Rows)
+            {
+                CheckBox chkC = gr.FindControl("chkSelect") as CheckBox;
+
+                //GridViewRow Row = ((GridViewRow)chkC.Parent.Parent);
+
+                bool chkvalue = chkC.Checked;
+
+                if(chkvalue  == true)
+                {
+                    countcheck++;
+                    chkvaluecheck = 1;
+                    listcheck.Add(gr.Cells[1].Text);
+                    if (usevoucher == true)
+                    {
+                        if (countcheck >= 2)
+                        {
+                            chkC.Checked = false;
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('Voucher สามารถใช้ได้1ห้อง ต่อ 1 วันเท่านั้น');", true);
+                        }
+                    }
+                }
+            }
+
+            if (TextBox12.Text.Length > 0 && chkvaluecheck == 1)
+            {
+                string id = Request.QueryString["id"];
+                try { id = Convert.ToInt32(id).ToString(); }
+                catch { id = "0"; }
+                int checkdup = 0;
+                DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+                for (int i = 0;i<Convert.ToInt32(DropDownList1.SelectedValue);i++)
+                {
+                    for(int j = 0;j<listcheck.Count;j++)
+                    {
+                        DataTable dtReserveAccomDup = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID = Accommodation_ID Where CheckinDate = '"+code2.ParseDate(TextBox12.Text).Value.AddDays(i).ToString("yyyy-MM-dd")+"' AND AccomName = N'" + listcheck[j] + "' AND Reservation_ID != "+id);
+                        if(dtReserveAccomDup.Rows.Count > 0 && (dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "False" || dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "0"))
+                        {
+                            checkdup = 1;
+                        }
+                    }
+                }
+                if(checkdup == 1)
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ห้องพักที่คุณเลือกไม่ว่างในการจองหลายวัน');", true);
+                    DropDownList1.SelectedIndex = 0;
+                    DropDownList1.DataBind();
+                }
+                Label1.Text = "Check-Out: " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy");
+            }
+            else
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('โปรดเลือกวันที่ และ ห้องพัก ก่อนเลือกจำนวนวันเพิ่ม');", true);
+                DropDownList1.SelectedIndex = 0;
+                DropDownList1.DataBind();
+            }
+        }
+
+        protected void DropDownList1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Calendar1_SelectionChanged(null, null);
+        }
+
+        protected void FileUpload1_DataBinding(object sender, EventArgs e)
+        {
+            Button1.Enabled = true;
+        }
+
+        protected void GridView1_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+
+        }
+
+        protected void TextBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        protected async void Button1_Click(object sender, EventArgs e)
+        {
+            bool submitcheck = Convert.ToBoolean(Session["Submit"].ToString());
+            if (submitcheck == false)
+            {
+                Session["Submit"] = true;
+                DateTime docCreatedDate = DateTime.Now;
+
+                try
+                {
+                    if (code2.ParseDate(TextBox12.Text) < docCreatedDate)
+                    {
+                        docCreatedDate = code2.ParseDate(TextBox12.Text).Value;
+                    }
+                }
+                catch
+                {
+
+                }
+
+                try
+                {
+                    if (TextBox11.Visible == true && TextBox11.Text.Length > 0)
+                    {
+                        docCreatedDate = code2.ParseDate(TextBox11.Text).Value;
+                    }
+                }
+                catch { }
+
+
+                TextBox4.Text = Session["OldPrice"].ToString();
+                string command = Request.QueryString["command"];
+                string id = Request.QueryString["id"];
+                string check = Request.QueryString["check"];
+                try
+                {
+                    if (check[0] == ' ')
+                    {
+                        check = "+" + check.Replace(" ", "");
+                    }
+                }
+                catch { }
+                int Reservation_ID = 0; ;
+                DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
+                DataTable dtItems = (DataTable)Session["dtItems"];
+                int deposit = 0;
+                bool IsDeposit = true;
+                DataTable dtReserve = new DataTable();
+                try
+                {
+                    dtReserve.Columns.Add("Number");
+                    dtReserve.Columns.Add("Receipt_ID");
+                    dtReserve.Columns.Add("ProductType_ID");
+                    dtReserve.Columns.Add("Product_ID");
+                    dtReserve.Columns.Add("Product_Data");
+                    dtReserve.Columns.Add("Product_Amount");
+                    dtReserve.Columns.Add("Product_Unit");
+                    dtReserve.Columns.Add("Price_PerPeice");
+                    dtReserve.Columns.Add("Price_Amount");
+                }
+                catch { }
+
+                try
+                {
+                    deposit = Convert.ToInt32(TextBox5.Text);
+                }
+                catch { }
+                int checkgrid1 = 0;
+                
+                foreach (GridViewRow row in GridView1.Rows)
+                {
+                    CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                    if (chk != null && chk.Checked)
+                    {
+                        checkgrid1++;
+                    }
+                }
+
+                int checkpaymentselect = 0;
+                try
+                {
+                    if (Session["permission"].ToString() == "True" && (command == "reserve" || command == "checkin" || (command == "edit" && CheckBox2.Checked == true) || (command == "rentmore" && CheckBox2.Checked == true)))
+                    {
+                        if (DropDownList2.SelectedIndex == 0)
+                        {
+                            checkpaymentselect = 1;
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวิธีชำระเงิน');", true);
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                }
+                catch { }
+
+                int checkcustype = 0;
+                if (DropDownList8.SelectedValue == "1")
+                {
+                    if (TextBox18.Text.Length == 5)
+                    {
+                        checkcustype = 1;
+                    }
+                    else
+                    {
+
+                    }
+
+                }
+                else
+                {
+                    checkcustype = 1;
+                }
+
+                if (TextBox1.Text.Length > 0 && checkcustype == 1)
+                {
+                    if (checkgrid1 > 0)
+                    {
+                        if (deposit >= 0 || TextBox1.Text == "02" || CheckBox2.Checked == true)
+                        {
+                            if ((FileUpload1.HasFile || Image1.ImageUrl != "./Images/บัญชี.png" || TextBox1.Text == "02" || DropDownList2.SelectedItem.Text == "เงินสด") && checkpaymentselect == 0)
+                            {
+                                try
+                                {
+                                    //if (command == "edit" && Session["permission"].ToString() == "True")
+                                    //{
+                                    //    TextBox5.Enabled = false;
+                                    //    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = " + id);
+                                    //    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = " + id);
+
+
+                                    //    int Deposit = Convert.ToInt32(TextBox5.Text);
+                                    //    if (CheckBox2.Checked == true)
+                                    //    {
+                                    //        Deposit = Deposit + Convert.ToInt32(TextBox10.Text);
+                                    //    }
+                                    //    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '" + code2.ParseDate(TextBox12.Text).ToString("yyyy-MM-dd") + "' ,[CheckoutDate] = '" + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd") + "' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                    //    code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+
+
+                                    //    Reservation_ID = Convert.ToInt32(id);
+                                    //    if (CheckBox2.Checked == true)
+                                    //    {
+                                    //        IsDeposit = true;
+                                    //        createReceipt(Reservation_ID.ToString(), Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit);
+                                    //    }
+                                    //    Response.Redirect("./Reservation_Confirmed?id=" + Reservation_ID + "&check=" + TextBox1.Text);
+                                    //}
+                                    if ((command == "edit" || command == "rentmore") && Session["permission"].ToString() == "True")
+                                    {
+                                        checkCreateCustomer();
+
+                                        dtReserve.Clear();
+                                        dtReserve.AcceptChanges();
+                                        DataTable dtoldAccom = code.DatabaseQuery(conn, "SELECT * FROM [Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID=Accommodation_ID Where Reservation.ID = " + id);
+                                        DataTable dtoldItem = code.DatabaseQuery(conn, "SELECT * FROM [Reservation_Items] inner join Reservation on Reservation.ID = Reservation_ID Where Reservation.ID = " + id);
+                                        IsDeposit = false;
+                                        string msg = "";
+                                        int totalnew = 0;
+                                        int checkoldAccomRemoved = 0;
+                                        List<string> cmds = new List<string>();
+                                        for (int x = 0; x < dtoldAccom.Rows.Count; x++)
+                                        {
+                                            foreach (GridViewRow row in GridView1.Rows)
+                                            {
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                if (chk != null && chk.Checked)
+                                                {
+                                                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+
+                                                    // ตรวจสอบว่าเป็นห้องเก่าหรือจองเพิ่ม
+                                                    bool isNewRoom = true;
+                                                    for (int x = 0; x < dtoldAccom.Rows.Count; x++)
+                                                    {
+                                                        if (dtoldAccom.Rows[x]["Accommodation_ID"].ToString() == dtAccommodation.Rows[row.RowIndex]["ID"].ToString())
+                                                        {
+                                                            isNewRoom = false;
+
+                                                            // ถ้าเป็นห้องเก่า ให้เอาแค่ส่วนที่เพิ่มมา
+                                                            int oldAmount = Convert.ToInt32(dtoldAccom.Rows[x]["Amount"].ToString());
+                                                            int newAmount = Convert.ToInt32(txtPeopleStay.Text);
+
+                                                            if (newAmount > oldAmount)
+                                                            {
+                                                                int amountDiff = newAmount - oldAmount;
+                                                                double pricePerUnit = Convert.ToDouble(row.Cells[4].Text);
+
+                                                                if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                                {
+                                                                    // คิดตามคน
+                                                                    double totalDiff = TwoDecimalPoints(pricePerUnit * amountDiff * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                                    dtReserve.Rows.Add(
+                                                                        dtReserve.Rows.Count + 1, "", "1",
+                                                                        dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                                        dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เพิ่มจาก " + oldAmount + " เป็น " + newAmount + " คน",
+                                                                        amountDiff * Convert.ToInt32(DropDownList1.SelectedValue),
+                                                                        "คน-คืน",
+                                                                        pricePerUnit,
+                                                                        totalDiff
+                                                                    );
+                                                                    totalnew += (int)totalDiff;
+                                                                }
+                                                            }
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    // ถ้าเป็นห้องใหม่ ให้เพิ่มเต็มจำนวน
+                                                    if (isNewRoom)
+                                                    {
+                                                        double pricePerUnit = Convert.ToDouble(row.Cells[4].Text);
+
+                                                        if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                        {
+                                                            double total = TwoDecimalPoints(pricePerUnit * Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                            dtReserve.Rows.Add(
+                                                                dtReserve.Rows.Count + 1, "", "1",
+                                                                dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                                dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " [จองเพิ่ม]",
+                                                                Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(DropDownList1.SelectedValue),
+                                                                "คน-คืน",
+                                                                pricePerUnit,
+                                                                total
+                                                            );
+                                                            totalnew += (int)total;
+                                                        }
+                                                        else
+                                                        {
+                                                            double total = TwoDecimalPoints(pricePerUnit * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                            dtReserve.Rows.Add(
+                                                                dtReserve.Rows.Count + 1, "", "1",
+                                                                dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                                dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " [จองเพิ่ม]",
+                                                                Convert.ToInt32(DropDownList1.SelectedValue),
+                                                                "คืน",
+                                                                pricePerUnit,
+                                                                total
+                                                            );
+                                                            totalnew += (int)total;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                                
+                                        }
+
+                                        foreach (GridViewRow row in GridView1.Rows)
+                                        {
+                                            TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                            CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                            bool checkdup = false;
+                                            for (int x = 0; x < dtoldAccom.Rows.Count; x++)
+                                            {
+                                                if (chk != null && chk.Checked && dtoldAccom.Rows[x]["Accommodation_ID"].ToString() == dtAccommodation.Rows[row.RowIndex]["ID"].ToString())
+                                                {
+                                                    checkdup = true;
+                                                }
+                                            }
+                                            if (checkdup == false && chk != null && chk.Checked)
+                                            {
+                                                int checkusecoupon = checkAccomUseCoupon(dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), code2.ParseDate(TextBox12.Text).Value);
+                                                if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                {
+                                                    if (command == "edit")
+                                                    {
+                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + txtPeopleStay.Text + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                    }
+                                                    else
+                                                    {
+                                                        cmds.Add("INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + txtPeopleStay.Text + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                    }
+                                                    try
+                                                    {
+                                                        double pricePerPiece = Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(txtPeopleStay.Text);
+                                                        double totalAmount = TwoDecimalPoints(pricePerPiece * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                            dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy") + " " + txtPeopleStay.Text + " คน",
+                                                            Convert.ToInt32(DropDownList1.SelectedValue), "คืน",
+                                                            pricePerPiece,
+                                                            totalAmount);
+                                                    }
+                                                    catch
+                                                    {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน เช็คเอ้าท์ ", txtPeopleStay.Text, dtAccommodation.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                    }
+                                                    totalnew += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                                                    msg += "- " + dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " " + txtPeopleStay.Text + " " + dtAccommodation.Rows[row.RowIndex]["Unit"].ToString() + " [จองเพิ่ม]\r\n";
+                                                }
+                                                else
+                                                {
+                                                    if (command == "edit")
+                                                    {
+                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + DropDownList1.SelectedValue + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                    }
+                                                    else
+                                                    {
+                                                        cmds.Add("INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + DropDownList1.SelectedValue + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                    }
+                                                    try
+                                                    {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), DropDownList1.SelectedValue, dtAccommodation.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                    }
+                                                    catch {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน เช็คเอ้าท์ ", DropDownList1.SelectedValue, dtAccommodation.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                    }
+
+                                                    totalnew += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                                                    msg += "- " + dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " " + DropDownList1.SelectedValue + " " + dtAccommodation.Rows[row.RowIndex]["Unit"].ToString() + "[จองเพิ่ม]\r\n";
+
+                                                }
+                                            }
+                                        }
+                                        msg += "\r\nรายการของเช่า\r\n";
+                                        int checkoldItemRemoved = 0;
+                                        for (int x = 0; x < dtoldItem.Rows.Count; x++)
+                                        {
+                                            foreach (GridViewRow row in GridView2.Rows)
+                                            {
+                                                TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                if (dtoldItem.Rows[x]["Items_ID"].ToString() == dtItems.Rows[row.RowIndex]["ID"].ToString())
+                                                {
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        if (command == "edit")
+                                                        {
+                                                            code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation_Items] SET [Amount] = " + Convert.ToInt32(txtAmount.Text) + " ,[Price] = " + row.Cells[4].Text + " WHERE Items_ID = " + dtoldItem.Rows[x]["Items_ID"].ToString() + " AND Reservation_ID = " + id);
+
+                                                        }
+                                                        else
+                                                        {
+                                                            cmds.Add("UPDATE [dbo].[Reservation_Items] SET [Amount] = " + Convert.ToInt32(txtAmount.Text) + " ,[Price] = " + row.Cells[4].Text + " WHERE Items_ID = " + dtoldItem.Rows[x]["Items_ID"].ToString() + " AND Reservation_ID = " + id);
+                                                        }
+                                                        if (Convert.ToInt32(txtAmount.Text) >= Convert.ToInt32(dtoldItem.Rows[x]["Amount"].ToString()))
+                                                        {
+                                                            int itemmore = Convert.ToInt32(txtAmount.Text) - Convert.ToInt32(dtoldItem.Rows[x]["Amount"].ToString());
+                                                            if (itemmore > 0)
+                                                            {
+                                                                try
+                                                                {
+                                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), itemmore, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * itemmore));
+                                                                }
+                                                                catch
+                                                                {
+                                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน  เช็คเอ้าท์ ", itemmore, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * itemmore));
+                                                                }
+
+                                                                totalnew += Convert.ToInt32(DropDownList1.SelectedValue) * itemmore * Convert.ToInt32(row.Cells[4].Text);
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            checkoldItemRemoved++;
+                                                        }
+                                                        msg += "- " + dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " " + txtAmount.Text + " ชิ้น\r\n";
+                                                    }
+                                                    else
+                                                    {
+                                                        if (command == "edit")
+                                                        {
+                                                            code.DatabaseInsert(conn, "DELETE FROM [dbo].[Reservation_Items] WHERE Items_ID = " + dtoldItem.Rows[x]["Items_ID"].ToString() + " AND Reservation_ID = " + id);
+                                                        }
+                                                        checkoldItemRemoved++;
+                                                    }
+                                                }
+                                                else
+                                                {
+
+                                                }
+                                            }
+                                        }
+
+                                        foreach (GridViewRow row in GridView2.Rows)
+                                        {
+                                            try
+                                            {
+                                                TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                bool checkdup = false;
+                                                for (int x = 0; x < dtoldItem.Rows.Count; x++)
+                                                {
+                                                    if (chk != null && chk.Checked && dtoldItem.Rows[x]["Items_ID"].ToString() == dtItems.Rows[row.RowIndex]["ID"].ToString())
+                                                    {
+                                                        checkdup = true;
+                                                    }
+                                                }
+                                                if (chk != null && chk.Checked && checkdup == false)
+                                                {
+                                                    if (command == "edit")
+                                                    {
+                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Items] ([Reservation_ID],[Items_ID],[Amount],[Price]) VALUES (" + id + "," + dtItems.Rows[row.RowIndex]["ID"].ToString() + "," + txtAmount.Text + "," + row.Cells[4].Text + ") ");
+                                                    }
+                                                    else
+                                                    {
+                                                        cmds.Add("INSERT INTO [dbo].[Reservation_Items] ([Reservation_ID],[Items_ID],[Amount],[Price]) VALUES (" + id + "," + dtItems.Rows[row.RowIndex]["ID"].ToString() + "," + txtAmount.Text + "," + row.Cells[4].Text + ") ");
+                                                    }
+                                                    try
+                                                    {
+                                                        double pricePerPiece = Convert.ToInt32(row.Cells[4].Text);
+                                                        double totalAmount = TwoDecimalPoints(pricePerPiece * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text));
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(),
+                                                            dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"),
+                                                            txtAmount.Text, dtItems.Rows[row.RowIndex]["Unit"].ToString(),
+                                                            pricePerPiece,
+                                                            totalAmount);
+                                                    }
+                                                    catch {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน เช็คเอ้าท์ ", txtAmount.Text, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text)));
+                                                    }
+                                                    msg += "- " + dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " " + txtAmount.Text + " ชิ้น\r\n";
+                                                    totalnew += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text);
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            { }
+                                        }
+                                        msg += "\r\nหมายเหตุ: " + TextBox6.Text;
+                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+
+                                        uploadSlip(id);
+                                        if (command == "edit")
+                                        {
+
+                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            if (CheckBox2.Checked == true && TextBox1.Text != "02")
+                                            {
+                                                Deposit += Convert.ToInt32(TextBox10.Text);
+                                                IsDeposit = true;
+                                                if (CheckBox4.Checked == false)
+                                                {
+                                                    createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                }
+                                            }
+                                            else
+                                            {
+
+                                            }
+                                            try
+                                            {
+                                                code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '" + code2.ParseDate(TextBox12.Text).Value.ToString("yyyy-MM-dd") + "' ,[CheckoutDate] = '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd") + "' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                if (TextBox12.Text == null || TextBox12.Text == "")
+                                                {
+                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '1990-01-01' ,[CheckoutDate] = '1990-01-01' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                                }
+                                                else
+                                                {
+                                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('โปรแกรมคำนวนยอดไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');", true);
+                                                }
+                                            }
+                                            try
+                                            {
+                                                //code2.SendLineMessageAPI("Ccf82e94eb4f39cc97eaecdeae2edfd16", "แก้ไขการจองหมายเลข: " + id + "\r\nหมายเลขโทรศัพท์: " + TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n" + msg, "", "") ;
+                                                //Thread.Sleep(1000);
+                                                //SendLineNotify("แก้ไขการจองหมายเลข: "+ id+ "\r\nหมายเลขโทรศัพท์: " + TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n"+msg);
+                                                ////                                        using (var client = new HttpClient())
+                                                ////                                        {
+                                                ////                                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ConfigurationManager.AppSettings["linechannelaccesstokentaketime"]);
+                                                ////                                            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                                                ////                                            var jsonPayload = new
+                                                ////                                            {
+                                                ////                                                to = ConfigurationManager.AppSettings["lineuserid"],
+                                                ////                                                messages = new[]
+                                                ////                                                {
+                                                ////    new { type = "text", text = "แก้ไขการจองหมายเลข: " + id + "\r\nหมายเลขโทรศัพท์: " + TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n" + msg }
+                                                ////}
+                                                ////                                            };
+
+                                                ////                                            var json = JsonConvert.SerializeObject(jsonPayload);
+                                                ////                                            var content = new StringContent(json, Encoding.UTF8, "application/json");
+                                                ////                                            if(msg.Contains("[จองเพิ่ม]"))
+                                                ////                                                    {
+                                                ////                                                ////var response = await client.PostAsync("https://api.line.me/v2/bot/message/push", content);
+                                                ////                                                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                                                ////                                            }
+
+                                                ////                                        }
+                                                ///                                     bool hasRoomChanges = false;
+                                                // ในส่วนของ command == "edit" ให้แทนที่ส่วนตรวจสอบการเปลี่ยนแปลงด้วย:
+
+                                                bool hasAnyChanges = false;
+                                                StringBuilder changeDetails = new StringBuilder();
+
+                                                // 1. ตรวจสอบการเปลี่ยนแปลงข้อมูลลูกค้า
+                                                DataTable dtOldCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Customer] WHERE MobilePhone = '" + TextBox1.Text + "'");
+                                                if (dtOldCustomer.Rows.Count > 0)
+                                                {
+                                                    if (dtOldCustomer.Rows[0]["Name"].ToString() != TextBox2.Text)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"👤 เปลี่ยนชื่อ: {dtOldCustomer.Rows[0]["Name"]} → {TextBox2.Text}");
+                                                    }
+
+                                                    if (dtOldCustomer.Rows[0]["NickName"].ToString() != TextBox3.Text)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"🎭 เปลี่ยนชื่อเล่น: {dtOldCustomer.Rows[0]["NickName"]} → {TextBox3.Text}");
+                                                    }
+                                                }
+
+                                                // 2. ตรวจสอบการเปลี่ยนแปลงวันที่
+                                                DataTable dtOldReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] WHERE ID = " + id);
+                                                if (dtOldReservation.Rows.Count > 0)
+                                                {
+                                                    DateTime oldCheckin = Convert.ToDateTime(dtOldReservation.Rows[0]["CheckinDate"]);
+                                                    DateTime oldCheckout = Convert.ToDateTime(dtOldReservation.Rows[0]["CheckoutDate"]);
+                                                    int oldStayDays = Convert.ToInt32(dtOldReservation.Rows[0]["StayDays"]);
+
+                                                    DateTime newCheckin = code2.ParseDate(TextBox12.Text).Value;
+                                                    DateTime newCheckout = newCheckin.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
+                                                    int newStayDays = Convert.ToInt32(DropDownList1.SelectedValue);
+
+                                                    if (oldCheckin != newCheckin)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"📅 เปลี่ยนเช็คอิน: {oldCheckin.ToString("dd MMM yyyy")} → {newCheckin.ToString("dd MMM yyyy")}");
+                                                    }
+
+                                                    if (oldCheckout != newCheckout)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"📅 เปลี่ยนเช็คเอ้าท์: {oldCheckout.ToString("dd MMM yyyy")} → {newCheckout.ToString("dd MMM yyyy")}");
+                                                    }
+
+                                                    if (oldStayDays != newStayDays)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"🕐 เปลี่ยนจำนวนคืน: {oldStayDays} → {newStayDays} คืน");
+                                                    }
+
+                                                    // ตรวจสอบการเปลี่ยนแปลงราคา
+                                                    decimal oldPrice = Convert.ToDecimal(dtOldReservation.Rows[0]["TotalPrice"]);
+                                                    decimal newPrice = Convert.ToDecimal(TextBox4.Text);
+                                                    if (oldPrice != newPrice)
+                                                    {
+                                                        hasAnyChanges = true;
+                                                        changeDetails.AppendLine($"💰 เปลี่ยนราคา: {oldPrice:N0} → {newPrice:N0} บาท");
+                                                    }
+                                                }
+
+                                                // 3. ตรวจสอบการเปลี่ยนแปลงห้องพัก
+                                                List<string> oldRoomList = new List<string>();
+                                                List<string> newRoomList = new List<string>();
+
+                                                // รายการห้องเดิม
+                                                foreach (DataRow row in dtoldAccom.Rows)
+                                                {
+                                                    string roomInfo = $"{row["AccomName"]} ({row["Amount"]} คน)";
+                                                    oldRoomList.Add(roomInfo);
+                                                }
+
+                                                // รายการห้องใหม่
+                                                foreach (GridViewRow row in GridView1.Rows)
+                                                {
+                                                    CheckBox chk = (row.Cells[0].FindControl("chkSelect")) as CheckBox;
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay")) as TextBox;
+                                                        string roomInfo = $"{row.Cells[1].Text} ({txtPeopleStay.Text} คน)";
+                                                        newRoomList.Add(roomInfo);
+                                                    }
+                                                }
+
+                                                // เปรียบเทียบรายการห้อง
+                                                bool roomsIdentical = oldRoomList.Count == newRoomList.Count;
+                                                if (roomsIdentical)
+                                                {
+                                                    for (int i = 0; i < oldRoomList.Count; i++)
+                                                    {
+                                                        if (oldRoomList[i] != newRoomList[i])
+                                                        {
+                                                            roomsIdentical = false;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                // ถ้าห้องไม่เหมือนเดิมเป๊ะๆ
+                                                if (!roomsIdentical)
+                                                {
+                                                    hasAnyChanges = true;
+                                                    changeDetails.AppendLine("🏨 การเปลี่ยนแปลงห้องพัก:");
+
+                                                    // หาห้องที่เพิ่ม
+                                                    var addedRooms = newRoomList.Except(oldRoomList).ToList();
+                                                    foreach (var room in addedRooms)
+                                                    {
+                                                        changeDetails.AppendLine($"   ➕ {room}");
+                                                    }
+
+                                                    // หาห้องที่ลบ
+                                                    var removedRooms = oldRoomList.Except(newRoomList).ToList();
+                                                    foreach (var room in removedRooms)
+                                                    {
+                                                        changeDetails.AppendLine($"   ➖ {room}");
+                                                    }
+
+                                                    // หาห้องที่แก้ไข
+                                                    var commonRooms = newRoomList.Intersect(oldRoomList).ToList();
+                                                    foreach (var room in commonRooms)
+                                                    {
+                                                        // แสดงห้องที่ยังคงอยู่แต่อาจมีการเปลี่ยนแปลงอื่น
+                                                        changeDetails.AppendLine($"   ✅ {room}");
+                                                    }
+                                                }
+
+                                                // 4. ตรวจสอบการเปลี่ยนแปลงของเช่า
+                                                List<string> oldItemList = new List<string>();
+                                                List<string> newItemList = new List<string>();
+
+                                                // รายการของเดิม
+                                                foreach (DataRow row in dtoldItem.Rows)
+                                                {
+                                                    string itemInfo = $"{row["ItemName"]} ({row["Amount"]} ชิ้น)";
+                                                    oldItemList.Add(itemInfo);
+                                                }
+
+                                                // รายการของใหม่
+                                                foreach (GridViewRow row in GridView2.Rows)
+                                                {
+                                                    CheckBox chk = (row.Cells[0].FindControl("chkSelect")) as CheckBox;
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        TextBox txtAmount = (row.Cells[2].FindControl("txtAmount")) as TextBox;
+                                                        string itemInfo = $"{row.Cells[1].Text} ({txtAmount.Text} ชิ้น)";
+                                                        newItemList.Add(itemInfo);
+                                                    }
+                                                }
+
+                                                // เปรียบเทียบรายการของเช่า
+                                                bool itemsIdentical = oldItemList.Count == newItemList.Count;
+                                                if (itemsIdentical)
+                                                {
+                                                    for (int i = 0; i < oldItemList.Count; i++)
+                                                    {
+                                                        if (oldItemList[i] != newItemList[i])
+                                                        {
+                                                            itemsIdentical = false;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                if (!itemsIdentical)
+                                                {
+                                                    hasAnyChanges = true;
+                                                    changeDetails.AppendLine("🛍️ การเปลี่ยนแปลงของเช่า:");
+
+                                                    var addedItems = newItemList.Except(oldItemList).ToList();
+                                                    foreach (var item in addedItems)
+                                                    {
+                                                        changeDetails.AppendLine($"   ➕ {item}");
+                                                    }
+
+                                                    var removedItems = oldItemList.Except(newItemList).ToList();
+                                                    foreach (var item in removedItems)
+                                                    {
+                                                        changeDetails.AppendLine($"   ➖ {item}");
+                                                    }
+                                                }
+
+                                                // 5. ตรวจสอบการเปลี่ยนแปลงหมายเหตุ
+                                                string oldRemark = dtOldReservation.Rows[0]["Remark"].ToString();
+                                                if (oldRemark != TextBox6.Text)
+                                                {
+                                                    hasAnyChanges = true;
+                                                    changeDetails.AppendLine($"💬 เปลี่ยนหมายเหตุ: {oldRemark} → {TextBox6.Text}");
+                                                }
+
+                                                // ส่งข้อความถ้ามีการเปลี่ยนแปลงใดๆ
+                                                if (hasAnyChanges)
+                                                {
+                                                    string message = $@"✏️ *แก้ไขการจองหมายเลข: {id}*
+
+📞 โทรศัพท์: {TextBox1.Text}
+👤 ชื่อ: {TextBox2.Text}
+📅 เช็คอิน: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy")}
+📅 เช็คเอ้าท์: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy")}
+🕐 จำนวนคืน: {DropDownList1.SelectedValue} คืน
+💰 ราคารวม: {TextBox4.Text} บาท
+
+{changeDetails}
+
+👤 แก้ไขโดย: {Session["UserName"]?.ToString() ?? "System"}";
+
+                                                    var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
+                                                    await bot.SendMessageAsync("-4969611371", message);
+                                                }
+                                            }
+                                            catch { }
+                                            Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text,false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+
+
+
+                                        }
+                                        else if (command == "rentmore" && TextBox1.Text != "02")
+                                        {
+                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            if (checkoldAccomRemoved == 0 && checkoldItemRemoved == 0 && totalnew.ToString() == TextBox10.Text)
+                                            {
+                                                if (CheckBox2.Checked == true)
+                                                {
+                                                    for (int i = 0; i < cmds.Count; i++)
+                                                    {
+                                                        code.DatabaseInsert(conn, cmds[i]);
+                                                    }
+                                                    Deposit += Convert.ToInt32(TextBox10.Text);
+                                                    IsDeposit = false;
+                                                    if (CheckBox4.Checked == false)
+                                                    {
+                                                        createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    }
+                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '" + code2.ParseDate(TextBox12.Text).Value.ToString("yyyy-MM-dd") + "' ,[CheckoutDate] = '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd") + "' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                                    Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                TextBox10.Text = "";
+                                                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('โปรแกรมคำนวนยอดไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');", true);
+
+                                            }
+                                        }
+                                        else
+                                        {
+
+                                            Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text);
+                                        }
+                                    }
+                                    else if (command == "checkin" && Session["permission"].ToString() == "True" && TextBox1.Text != "02")
+                                    {
+                                        IsDeposit = false;
+                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+
+                                        if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
+                                        {
+                                            code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                        }
+                                        else
+                                        {
+                                            TextBox5.Enabled = false;
+                                            DataTable dtfindDeposit = code.DatabaseQuery(conn, "Select * From Account_Receipt Where Reservation_ID = " + id + " AND IsDeposit = 'True' AND Status = 'Normal' AND UseDeposit = 'false'");
+
+                                            dtReserve.Clear();
+                                            dtReserve.AcceptChanges();
+                                            foreach (GridViewRow row in GridView1.Rows)
+                                            {
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                if (chk != null && chk.Checked)
+                                                {
+                                                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                                    IsDeposit = false;
+                                                    if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                    {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), txtPeopleStay.Text, dtAccommodation.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(txtPeopleStay.Text));
+                                                    }
+                                                    else
+                                                    {
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), DropDownList1.SelectedValue, dtAccommodation.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue));
+                                                    }
+                                                }
+                                            }
+                                            foreach (GridViewRow row in GridView2.Rows)
+                                            {
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                                                if (chk != null && chk.Checked)
+                                                {
+                                                    IsDeposit = false;
+                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), txtAmount.Text, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text)));
+                                                }
+                                            }
+                                            int DepositAmount = 0;
+                                            int totalAmount = Convert.ToInt32(TextBox4.Text);
+                                            if (dtfindDeposit.Rows.Count <= 0)
+                                            {
+
+                                                int Deposit = Convert.ToInt32(TextBox5.Text);
+                                                dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", Deposit * -1, Deposit * -1);
+                                                id = Request.QueryString["id"];
+                                                if (CheckBox4.Checked == false)
+                                                {
+                                                    createReceipt(id, totalAmount - Deposit, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                }
+                                                code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                            }
+                                            else
+                                            {
+                                                for (int j = 0; j < dtfindDeposit.Rows.Count; j++)
+                                                {
+                                                    DataTable dtDepositDetail = code.DatabaseQuery(conn, "Select * From Account_Receipt_Detail Where Receipt_ID = '" + dtfindDeposit.Rows[j]["ID"].ToString() + "'");
+                                                    for (int k = 0; k < dtDepositDetail.Rows.Count; k++)
+                                                    {
+                                                        DepositAmount += Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", dtDepositDetail.Rows[0]["ProductType_ID"].ToString(), dtDepositDetail.Rows[0]["Product_ID"].ToString(), dtDepositDetail.Rows[0]["Product_Data"].ToString(), dtDepositDetail.Rows[0]["Product_Amount"].ToString(), dtDepositDetail.Rows[0]["Product_Unit"].ToString(), Convert.ToInt32(dtDepositDetail.Rows[0]["Price_PerPeice"].ToString()) * -1, Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString()) * -1);
+                                                    }
+                                                }
+
+
+                                                if (DepositAmount == Convert.ToInt32(TextBox5.Text))
+                                                {
+                                                    totalAmount = totalAmount - DepositAmount;
+                                                    id = Request.QueryString["id"];
+                                                    if (CheckBox4.Checked == false)
+                                                    {
+                                                        createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    }
+                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                                }
+                                                else
+                                                {
+                                                    int remain = Convert.ToInt32(TextBox5.Text) - (DepositAmount);
+                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", remain * -1, remain * -1);
+                                                    id = Request.QueryString["id"];
+                                                    totalAmount = totalAmount - (DepositAmount + remain);
+                                                    if (DepositAmount + remain + totalAmount == Convert.ToInt32(TextBox4.Text))
+                                                    {
+                                                        if (CheckBox4.Checked == false)
+                                                        {
+                                                            createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        }
+                                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Response.Redirect("/ReserveTable",false);
+                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                    }
+                                    else if (command == "reserve")
+                                    {
+                                        try
+                                        {
+                                            string insertQuery = "";
+                                            DateTime? checkinDate = code2.ParseDate(TextBox12.Text);
+                                            DateTime now = DateTime.Now;
+
+                                            // Use proper SQL datetime format
+                                            string sqlFormattedNow = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                            string reserveBy = Session["permission"].ToString() == "True" ?
+                                                Session["UserName"].ToString().Replace("'", "''") : "User";
+
+                                            if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
+                                            {
+                                                insertQuery = $@"INSERT INTO [dbo].[Reservation] 
+            ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],
+            [TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],
+            NoCreateReceipt,NoNameinReceipt) 
+            VALUES 
+            ('{TextBox1.Text}',
+            '{checkinDate.Value.ToString("yyyy-MM-dd")}',
+            '{checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd")}',
+            {DropDownList1.SelectedValue},
+            N'มัดจำแล้ว',
+            {Session["totalPrice"]?.ToString() ?? "0"},
+            {TextBox5.Text ?? "0"},
+            N'{TextBox6.Text.Replace("'", "''")}',
+            N'{reserveBy}',
+            '{sqlFormattedNow}',
+            '{(CheckBox4.Checked ? "True" : "False")}',
+            '{(CheckBox3.Checked ? "True" : "False")}');
+            SELECT SCOPE_IDENTITY();";
+                                            }
+                                            else
+                                            {
+                                                insertQuery = $@"INSERT INTO [dbo].[Reservation] 
+            ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],
+            [TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],
+            NoCreateReceipt,NoNameinReceipt) 
+            VALUES 
+            ('{TextBox1.Text}',
+            '1990-01-01',
+            '1990-01-01',
+            {DropDownList1.SelectedValue},
+            N'มัดจำแล้ว',
+            {Session["totalPrice"]?.ToString() ?? "0"},
+            {TextBox5.Text ?? "0"},
+            N'{TextBox6.Text.Replace("'", "''")}',
+            N'{reserveBy}',
+            '{sqlFormattedNow}',
+            '{(CheckBox4.Checked ? "True" : "False")}',
+            '{(CheckBox3.Checked ? "True" : "False")}');
+            SELECT SCOPE_IDENTITY();";
+                                            }
+
+                                            System.Diagnostics.Debug.WriteLine("Reservation Insert Query: " + insertQuery);
+
+                                            Reservation_ID = code.DatabaseInsert(conn, insertQuery);
+
+                                            System.Diagnostics.Debug.WriteLine("Returned Reservation ID: " + Reservation_ID);
+
+                                            if (Reservation_ID <= 0)
+                                            {
+                                                throw new Exception("Failed to create reservation - returned ID is 0");
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            code2.Logs(conn, "Reservation Creation Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", $"alert('เกิดข้อผิดพลาดในการสร้างการจอง: {ex.Message}');", true);
+                                            Session["Submit"] = false;
+                                            return;
+                                        }
+                                        string ID = "";
+                                        try
+                                        {
+                                            if (Reservation_ID > 0)
+                                            {
+                                                ID = Reservation_ID.ToString();
+                                            }
+                                            else if (Convert.ToInt32(id) > 0)
+                                            {
+                                                ID = id.ToString();
+                                            }
+                                        }
+                                        catch { }
+                                        int i = 0;
+                                        string msg = "";
+                                        int PriceAccom = 0;
+
+                                        foreach (GridViewRow row in GridView1.Rows)
+                                        {
+                                            CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                            if (chk != null && chk.Checked)
+                                            {
+                                                TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+
+                                                // ใช้ราคาจาก GridView โดยตรง (ราคาที่ admin แก้ไขแล้ว)
+                                                double pricePerNight = Convert.ToDouble(row.Cells[4].Text);
+                                                int nights = Convert.ToInt32(DropDownList1.SelectedValue);
+
+                                                if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                {
+                                                    // ห้องคิดตามจำนวนคน
+                                                    int people = Convert.ToInt32(txtPeopleStay.Text);
+                                                    double pricePerPiece = pricePerNight * people; // ราคาต่อคืน (รวมทุกคน)
+                                                    double totalAmount = TwoDecimalPoints(pricePerPiece * nights); // ราคารวมทุกคืน
+
+                                                    PriceAccom += (int)totalAmount;
+
+                                                    if (Convert.ToDouble(TextBox5.Text) == Convert.ToDouble(TextBox4.Text))
+                                                    {
+                                                        IsDeposit = false;
+                                                        dtReserve.Rows.Add(
+                                                            dtReserve.Rows.Count + 1,
+                                                            "",
+                                                            "1",
+                                                            dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                            dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() +
+                                                                " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") +
+                                                                " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(nights).ToString("dd MMMM yyyy") +
+                                                                " " + people + " คน",
+                                                            nights,
+                                                            "คืน",
+                                                            pricePerPiece,  // ราคาต่อคืน (รวมทุกคน)
+                                                            totalAmount     // ราคารวมทั้งหมด
+                                                        );
+                                                    }
+
+                                                    msg += "- " + dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() +
+                                                           " " + people + " คน " + nights + " คืน\r\n";
+                                                }
+                                                else
+                                                {
+                                                    // ห้องไม่คิดตามจำนวนคน
+                                                    double totalAmount = TwoDecimalPoints(pricePerNight * nights);
+
+                                                    PriceAccom += (int)totalAmount;
+
+                                                    if (Convert.ToDouble(TextBox5.Text) == Convert.ToDouble(TextBox4.Text))
+                                                    {
+                                                        IsDeposit = false;
+                                                        dtReserve.Rows.Add(
+                                                            dtReserve.Rows.Count + 1,
+                                                            "",
+                                                            "1",
+                                                            dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                            dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() +
+                                                                " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") +
+                                                                " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(nights).ToString("dd MMMM yyyy"),
+                                                            nights,
+                                                            "คืน",
+                                                            pricePerNight,  // ราคาต่อคืน
+                                                            totalAmount     // ราคารวมทั้งหมด
+                                                        );
+                                                    }
+
+                                                    msg += "- " + dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString() +
+                                                           " " + nights + " คืน\r\n";
+                                                }
+
+                                                // บันทึกราคาลงฐานข้อมูล (ใช้ราคาที่แก้ไขแล้ว)
+                                                int checkusecoupon = checkAccomUseCoupon(dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
+                                                                                          code2.ParseDate(TextBox12.Text).Value);
+                                                code.DatabaseInsert(conn,
+                                                    "INSERT INTO [dbo].[Reservation_Accommodation] " +
+                                                    "([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) " +
+                                                    "VALUES (" + Reservation_ID + "," +
+                                                    dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," +
+                                                    txtPeopleStay.Text + "," +
+                                                    pricePerNight + "," + // ใช้ราคาต่อคืนที่แก้ไขแล้ว
+                                                    "'" + checkusecoupon + "')");
+                                            }
+                                            i++;
+                                        }
+                                        i = 0;
+                                        msg += "\r\nรายการของเช่า\r\n";
+                                        foreach (GridViewRow row in GridView2.Rows)
+                                        {
+                                            CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                            if (chk != null && chk.Checked)
+                                            {
+                                                TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                                                int Price = 0;
+                                                if (dtItems.Rows[row.RowIndex]["LimitWithAmount"].ToString() == "True")
+                                                {
+
+                                                    Price = Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text) * Convert.ToInt32(row.Cells[4].Text);
+                                                }
+                                                else
+                                                {
+                                                    Price = Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(row.Cells[4].Text);
+                                                }
+                                                if (Convert.ToDouble(TextBox5.Text) < Convert.ToDouble(TextBox4.Text))
+                                                {
+
+                                                }
+                                                else if (Convert.ToDouble(TextBox5.Text) == Convert.ToDouble(TextBox4.Text))
+                                                {
+                                                    IsDeposit = false;
+                                                    double pricePerPiece = Convert.ToDouble(row.Cells[4].Text);
+                                                    double totalAmount = TwoDecimalPoints(pricePerPiece * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text));
+                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[i]["ID"].ToString(),
+                                                        dtItems.Rows[i]["ItemName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"),
+                                                        txtAmount.Text, dtItems.Rows[i]["Unit"].ToString(),
+                                                        pricePerPiece,
+                                                        totalAmount);
+
+                                                }
+                                                code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Items] ([Reservation_ID],[Items_ID],[Amount],[Price]) VALUES (" + Reservation_ID + "," + dtItems.Rows[i]["ID"].ToString() + "," + txtAmount.Text + "," + Price + ") ");
+                                                try { msg += "- " + dtItems.Rows[i]["ItemName"].ToString() + " " + txtAmount.Text + " ชิ้น"; } catch { }
+                                            }
+                                            i++;
+                                        }
+                                        checkCreateCustomer();
+                                        try
+                                        {
+                                            if (Reservation_ID > 0)
+                                            {
+                                                ID = Reservation_ID.ToString();
+                                            }
+                                            else if (Convert.ToInt32(id) > 0)
+                                            {
+                                                ID = id.ToString();
+                                            }
+                                        }
+                                        catch { }
+
+                                        try
+                                        {
+                                            uploadSlip(Reservation_ID.ToString());
+                                        }
+                                        catch { }
+
+                                        if (TextBox1.Text != "02" && CheckBox4.Checked == false)
+                                        {
+                                            if (CheckBox4.Checked == false)
+                                            {
+                                                createReceipt(ID, Convert.ToDouble(TextBox5.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                            }
+                                        }
+                                        msg += "\r\nหมายเหตุ:" + TextBox6.Text;
+
+                                        try
+                                        {
+                                            //code2.SendLineMessageAPI("Ccf82e94eb4f39cc97eaecdeae2edfd16", "ลูกค้าจองห้องพักใหม่หมายเลขการจอง: " + Reservation_ID + "\r\nหมายเลขโทรศัพท์: " + TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n" + msg, "", "");
+                                            //Thread.Sleep(1000);
+
+                                            //                                    using (var client = new HttpClient())
+                                            //                                    {
+                                            //                                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ConfigurationManager.AppSettings["linechannelaccesstokentaketime"]);
+                                            //                                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                                            //                                        var jsonPayload = new
+                                            //                                        {
+                                            //                                            to = ConfigurationManager.AppSettings["lineuserid"],
+                                            //                                            messages = new[]
+                                            //                                            {
+                                            //    new { type = "text", text = "ลูกค้าจองห้องพักใหม่หมายเลขการจอง: " + Reservation_ID + "\r\nหมายเลขโทรศัพท์: " + TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n" + msg }
+                                            //}
+                                            //                                        };
+
+                                            //                                        var json = JsonConvert.SerializeObject(jsonPayload);
+                                            //                                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                                            //                                        var response = await client.PostAsync("https://api.line.me/v2/bot/message/push", content);
+                                            //                                        Console.WriteLine(await response.Content.ReadAsStringAsync());
+                                            //                                    }
+                                            //                                    Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text+"&sendline=ok", false);
+                                            //                                    HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            // สำหรับการจองใหม่ (command == "reserve") ให้แทนที่ส่วนส่งข้อความด้วย:
+                                            string message = $@"🎉 *การจองใหม่หมายเลข: {Reservation_ID}*
+
+📞 โทรศัพท์: {TextBox1.Text}
+👤 ชื่อ: {TextBox2.Text}
+📅 เช็คอิน: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy")}
+📅 เช็คเอ้าท์: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy")}
+🕐 จำนวนคืน: {DropDownList1.SelectedValue} คืน
+💰 ยอดรวม: {TextBox4.Text} บาท
+💰 มัดจำ: {TextBox5.Text} บาท
+
+🏨 *รายการห้องพัก:*
+{msg}
+
+💬 หมายเหตุ: {TextBox6.Text}";
+
+                                            var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
+                                            await bot.SendMessageAsync("-4969611371", message); 
+                                            
+                                            Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text + "&sendline=ok", false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                        }
+                                        catch(Exception ex) {
+                                            code2.Logs(conn, "Check Telegram", "Error"+ex, "SYSTEM");
+                                            Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text, false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                        }
+                                        //SendLineNotify("ลูกค้าจองห้องพักใหม่หมายเลขการจอง: "+Reservation_ID+"\r\nหมายเลขโทรศัพท์: "+ TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n"+msg);
+
+
+                                        
+                                    }
+                                }
+                                catch(Exception ex)
+                                {
+                                    string ID = "";
+                                    try
+                                    {
+                                        if (Reservation_ID > 0)
+                                        {
+                                            ID = Reservation_ID.ToString();
+                                        }
+                                        else if (Convert.ToInt32(id) > 0)
+                                        {
+                                            ID = id.ToString();
+                                        }
+                                    }
+                                    catch { }
+                                    
+                                }
+                                
+                            }
+                            else
+                            {
+                                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาอัพโหลดสลิป');", true);
+                            }
+                        }
+                        else
+                        {
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุยอดจำนวนเงินที่โอนมามัดจำ');", true);
+                        }
+                    }
+                    else
+                    {
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกที่พักที่ต้องการจอง');", true);
+                    }
+                }
+                else
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุเบอร์โทรศัพท์ หรือ เลขสาขาให้ครบ5หลัก');", true);
+                }
+            }
+           
+        }
+
+
+
+        public void CouponRecord(string couponcode, string RevID,string AccomID,DateTime reserveday,int priceafterdiscount)
+        {
+            string coupontype = "";
+            try
+            {
+                coupontype = Session["UseCoupon"].ToString();
+            }
+            catch
+            {
+
+            }
+            bool usevoucher = false;
+            try
+            {
+                usevoucher = Convert.ToBoolean(Session["UseVoucher"].ToString());
+            }
+            catch { }
+
+            if(coupontype == "Affiliate")
+            {
+                int affiRatePlanID = checkAccomUseCoupon(AccomID, reserveday);
+                if (affiRatePlanID > 0)
+                {
+                    DataTable dt = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] inner join Affiliate_Discount on Affiliate_Discount.ID = Affiliate_Discount_ID Where Coupon_Code = '" + couponcode + "'");
+                    if (dt.Rows.Count > 0)
+                    {
+                        double commission = 0;
+                        double incentivepercent = Convert.ToDouble(dt.Rows[0]["IncentivePercent"].ToString());
+                        commission = TwoDecimalPoints((priceafterdiscount * incentivepercent) / 100);
+                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Affiliate_Reservation] ([Affiliate_Member_Coupon_Code],[Reservation_ID],[Accommodation_ID],[Affiliate_Discount_RatePlan_ID],[PriceAfterDiscount],[Commission],StayDate,[Status]) VALUES ('" + TextBox19.Text + "','" + RevID + "','" + AccomID + "','" + affiRatePlanID + "','" + priceafterdiscount.ToString() + "','" + commission + "','" + reserveday.ToString("yyyy-MM-dd") + "','NEW')");
+                    }
+                }
+            }
+            else if(coupontype == "Voucher" && usevoucher == true)
+            {
+                string useVoucherAccomID = "";
+                try
+                {
+                    useVoucherAccomID = Session["UseVoucherAccomID"].ToString();
+                }
+                catch { }
+                string[] AccomIDs = useVoucherAccomID.Split(';');
+                for(int i = 0;i<AccomIDs.Length;i++)
+                {
+                    if (AccomIDs[i] == AccomID)
+                    {
+                        code.DatabaseInsert(conn, "UPDATE [dbo].[Voucher] SET [Used_Status] = 'True',[Used_Date] = '"+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+"',[Reservation_ID] = '"+RevID+"' WHERE [Voucher_Number] = '"+couponcode+"'");
+                    }
+                }
+            }
+                
+        }
+        private static UserCredential Login(string googleClientId, string googleClientSecret, string[] scopes)
+        {
+            ClientSecrets secrets = new ClientSecrets()
+            {
+                ClientId = googleClientId,
+                ClientSecret = googleClientSecret
+            };
+            return GoogleWebAuthorizationBroker.AuthorizeAsync(secrets, scopes,user:"user",CancellationToken.None).Result;
+        }
+
+        //public void SendLineNotify(string Message)
+        //{
+        //    try
+        //    {
+        //        string lineToken = ConfigurationSettings.AppSettings["linetoken"].ToString();
+        //        string message = Message;
+        //        int stickerPackageID = 0;
+        //        int stickerID = 0;
+        //        //string pictureUrl = ConfigurationSettings.AppSettings["prefixurl"].ToString() + HttpContext.Current.Request.Url.Authority + "/" + ConfigurationSettings.AppSettings["virtualprefixpicturepath"].ToString() + "/Images/CheckIn_Display/" + ID + ".jpg";
+        //        //string message = HttpUtility.UrlEncode(message, Encoding.UTF8);
+        //        var request = (HttpWebRequest)WebRequest.Create(ConfigurationSettings.AppSettings["lineurl"].ToString());
+        //        var postData = string.Format("message={0}", message.Replace("*", "x").Replace("\"", ""));
+
+        //        if (stickerPackageID > 0 && stickerID > 0)
+        //        {
+        //            var stickerPackageId = string.Format("stickerPackageId={0}", stickerPackageID);
+        //            var stickerId = string.Format("stickerId={0}", stickerID);
+        //            postData += "&" + stickerPackageId.ToString() + "&" + stickerId.ToString();
+        //        }
+        //        //if (pictureUrl != "")
+        //        //{
+        //        //    var imageThumbnail = string.Format("imageThumbnail={0}", pictureUrl);
+        //        //    var imageFullsize = string.Format("imageFullsize={0}", pictureUrl);
+        //        //    postData += "&" + imageThumbnail.ToString() + "&" + imageFullsize.ToString();
+        //        //}
+        //        var data = Encoding.UTF8.GetBytes(postData);
+        //        request.Method = "POST";
+        //        request.ContentType = "application/x-www-form-urlencoded";
+        //        request.ContentLength = data.Length;
+        //        request.Headers.Add("Authorization", "Bearer " + lineToken);
+        //        using (var stream = request.GetRequestStream()) stream.Write(data, 0, data.Length);
+        //        var response = (HttpWebResponse)request.GetResponse();
+        //        var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+        //    }
+        //    catch { }
+        //}
+
+        public void SendEmail(string SMTP,int Port,bool EnableSsl,bool UseDefaultCredentials, string from,string password, string to, string cc, string subject, string body, Attachment[] data)
+        {
+            
+            MailMessage mail = new MailMessage(from, to);
+            SmtpClient client = new SmtpClient();
+            client.Host = SMTP;
+            client.Port = Port;
+            client.EnableSsl = EnableSsl;
+            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+            client.UseDefaultCredentials = UseDefaultCredentials;
+            client.Credentials = new NetworkCredential(from,password);
+            try
+            {
+                mail.CC.Add(cc);
+            }
+            catch { }
+            mail.Subject = subject;
+            mail.Body = body;
+            mail.IsBodyHtml = true;
+            try
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    mail.Attachments.Add(data[i]);
+                }
+
+            }
+            catch { }
+            client.Send(mail);
+        }
+
+        public void uploadSlip(string ID)
+        {
+           
+            try
+            {
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                {
+                    try
+                    {
+                        if (Convert.ToInt32(ID) > 0)
+                        {
+                            if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg"))
+                            {
+                                File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                            }
+                            File.Move(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg", AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                        }
+                    }
+                    catch
+                    {
+                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg", AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                    }
+
+                }
+                else
+                {
+                    if (FileUpload1.HasFile)
+                    {
+                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                        {
+                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg");
+                        }
+                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg"))
+                        {
+                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                        }
+
+                        string FileSaveWithPath = "";
+                        string filename = ID + "_" + TextBox1.Text + ".jpg";
+                        FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename.Replace("/", "").Replace("\\", "").Replace("'", ""));
+                        FileUpload1.SaveAs(FileSaveWithPath);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        public string cleantext(string input)
+        {
+            string output = input.Replace(",", "").Replace("'", "").Replace("\"", "");
+            return output;
+        }
+
+        public void createReceipt(string Reservation_ID, double Total_Amount,DataTable dtReserve,bool IsDeposit,DateTime docDate,bool etax)
+        {
+            string status = "Normal";
+            if (Total_Amount > 0)
+            {
+                string ReceiptID = code.createDocNumber(conn, "Account_Receipt", "REC",docDate.Year.ToString(),docDate.Month.ToString(),docDate.Day.ToString());
+                DataTable dtuseVat = code.DatabaseQuery(conn, "select Use_Vat from Business_Info");
+                double PriceExcludeVat = Total_Amount;
+                double Vat = 0;
+                if (dtuseVat.Rows[0][0].ToString() == "True")
+                {
+                    PriceExcludeVat = (Total_Amount * 100) / 107;
+                    Vat = Total_Amount - PriceExcludeVat;
+                    PriceExcludeVat = TwoDecimalPoints(PriceExcludeVat);
+                    Vat = TwoDecimalPoints(Vat);
+                }
+                else
+                {
+
+                }
+                string created_By_ID = "";
+                try
+                {
+                    created_By_ID = Session["UserID"].ToString();
+                }
+                catch
+                {
+                    created_By_ID = "0";
+                }
+                string customerId = "0";
+                try
+                {
+                    DataTable dtCustomer = code.DatabaseQuery(conn, "Select * from Customer inner join Reservation on MobilePhone = Customer_MobilePhone Where Reservation.ID = '" + Reservation_ID + "'");
+                    if(dtCustomer.Rows.Count > 0)
+                    {
+                        customerId = dtCustomer.Rows[0]["ID"].ToString();
+                    }
+                }
+                catch
+                {
+
+                }
+
+                if (!ValidateReserveData(dtReserve, Total_Amount))
+                {
+                    // Log warning หรือจัดการกับความไม่ตรงกัน
+                    code2.Logs(conn, "Receipt Validation",
+                        $"Reserve data validation failed for Reservation {Reservation_ID}. Expected: {Total_Amount}, Calculated: {CalculateTotalFromReserve(dtReserve)}",
+                        "SYSTEM");
+                }
+
+                if (IsDeposit == true)
+                {
+                    code.DatabaseInsert(conn,
+                        "INSERT INTO [dbo].[Account_Receipt] " +
+                        "(ID,[Reservation_ID],[Created_Date],[Total_Amount],[Vat]," +
+                        "[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],Status,Paid_Type," +
+                        "Created_By_ID,Etax,Customer_ID) " +
+                        "VALUES ('" + ReceiptID + "','" + Reservation_ID + "'," +
+                        "'" + docDate.ToString("yyyy-MM-dd") + "'," +
+                        Total_Amount + "," + Vat + "," + PriceExcludeVat + "," +
+                        "'True','False','Normal',N'" + DropDownList2.SelectedItem.Text + "'," +
+                        "N'" + created_By_ID + "','" + CheckBox5.Checked + "','" + customerId + "');");
+
+                    code.DatabaseInsert(conn,
+                        "INSERT INTO [dbo].[Account_Receipt_Detail] " +
+                        "([Number],[Receipt_ID],[ProductType_ID],[Product_ID]," +
+                        "[Product_Data],[Product_Amount],[Product_Unit]," +
+                        "[Price_PerPeice],[Price_Amount]) " +
+                        "Values ('1','" + ReceiptID + "',1,7," +
+                        "N'ค่ามัดจำที่พักของหมายเลขการจอง " + Reservation_ID + " [" + ReceiptID + "]'," +
+                        "'1',N'ครั้ง'," + Total_Amount + "," + Total_Amount + ")");
+                }
+                else
+                {
+                    code.DatabaseInsert(conn,
+                        "INSERT INTO [dbo].[Account_Receipt] " +
+                        "(ID,[Reservation_ID],[Created_Date],[Total_Amount],[Vat]," +
+                        "[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],Status,Paid_Type," +
+                        "Created_By_ID,Etax,Customer_ID) " +
+                        "VALUES ('" + ReceiptID + "','" + Reservation_ID + "'," +
+                        "'" + docDate.ToString("yyyy-MM-dd") + "'," +
+                        Total_Amount + "," + Vat + "," + PriceExcludeVat + "," +
+                        "'False','False','Normal',N'" + DropDownList2.SelectedItem.Text + "'," +
+                        "N'" + created_By_ID + "','" + CheckBox5.Checked + "','" + customerId + "');");
+
+                    // เพิ่ม Receipt Detail โดยตรวจสอบความถูกต้องก่อน
+                    double receiptTotal = 0;
+
+                    for (int i = 0; i < dtReserve.Rows.Count; i++)
+                    {
+                        double pricePerPiece = Convert.ToDouble(dtReserve.Rows[i]["Price_PerPeice"]);
+                        double productAmount = Convert.ToDouble(dtReserve.Rows[i]["Product_Amount"]);
+
+                        // คำนวณ Price_Amount ใหม่ให้แน่ใจว่าถูกต้อง
+                        double calculatedAmount = TwoDecimalPoints(pricePerPiece * productAmount);
+                        receiptTotal += calculatedAmount;
+
+                        code.DatabaseInsert(conn,
+                            "INSERT INTO [dbo].[Account_Receipt_Detail] " +
+                            "([Number],[Receipt_ID],[ProductType_ID],[Product_ID]," +
+                            "[Product_Data],[Product_Amount],[Product_Unit]," +
+                            "[Price_PerPeice],[Price_Amount]) " +
+                            "Values ('" + dtReserve.Rows[i]["Number"].ToString() + "'," +
+                            "'" + ReceiptID + "'," +
+                            dtReserve.Rows[i]["ProductType_ID"].ToString() + "," +
+                            dtReserve.Rows[i]["Product_ID"].ToString() + "," +
+                            "N'" + dtReserve.Rows[i]["Product_Data"].ToString() + "'," +
+                            dtReserve.Rows[i]["Product_Amount"].ToString() + "," +
+                            "N'" + dtReserve.Rows[i]["Product_Unit"].ToString() + "'," +
+                            pricePerPiece.ToString() + "," +
+                            calculatedAmount.ToString() + ")");
+                    }
+
+                    // ตรวจสอบว่ายอดรวมตรงกัน
+                    if (Math.Abs(receiptTotal - Total_Amount) > 0.01)
+                    {
+                        code2.Logs(conn, "Receipt Total Mismatch",
+                            $"Receipt {ReceiptID}: Expected {Total_Amount}, Calculated {receiptTotal}",
+                            "SYSTEM");
+                    }
+                }
+                if (CheckBox4.Checked == false)
+                {
+                    createReport(ReceiptID, status, docDate);
+                }
+
+                if (etax == true)
+                {
+                    DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT  [ID],[UID] FROM [Account_Receipt] Where RESERVATION_ID = '" + Reservation_ID + "' order by ID desc");
+                    string uid = dtReceipt.Rows[0]["UID"].ToString();
+                    string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
+                    string pdfpath = "";
+                    if (File.Exists(path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_" + uid + "_etax.pdf"))
+                    {
+                        pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_" + uid + "_etax.pdf";
+                    }
+                    else 
+                    {
+                        pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_etax.pdf";
+                    }
+
+                       
+
+                    string pdfFilePath = pdfpath;
+                    byte[] bytes = System.IO.File.ReadAllBytes(pdfFilePath);
+                    Attachment[] dataall = new Attachment[1];
+                    MemoryStream pdf = new MemoryStream(bytes);
+                    Attachment data = new Attachment(pdf, dtReceipt.Rows[0]["ID"].ToString() + "_etax.pdf");
+                    dataall[0] = data;
+
+                    string docCreateThaiDate = "";
+
+                    if (docDate.Day.ToString().Length > 1)
+                    {
+                        docCreateThaiDate += docDate.Day.ToString();
+                    }
+                    else
+                    {
+                        docCreateThaiDate += "0" + docDate.Day.ToString();
+                    }
+
+                    if (docDate.Month.ToString().Length > 1)
+                    {
+                        docCreateThaiDate += docDate.Month.ToString();
+                    }
+                    else
+                    {
+                        docCreateThaiDate += "0" + docDate.Month.ToString();
+                    }
+
+
+                    if (Convert.ToInt32(docDate.Year.ToString()) > 2500)
+                    {
+                        docCreateThaiDate += docDate.Year.ToString();
+                    }
+                    else
+                    {
+                        docCreateThaiDate += (Convert.ToInt32(docDate.Year.ToString()) + 543).ToString();
+                    }
+
+
+
+                    string subject = "[" + docCreateThaiDate + "][INV][" + dtReceipt.Rows[0]["ID"].ToString() + "]";
+                    string body = "เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br /> หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />ขอแสดงความนับถือ<br /> หจก.แอม แฮปปี้เนส (Take Time) ";
+
+                    SendEmail(ConfigurationSettings.AppSettings["SMTP"].ToString(), Convert.ToInt32(ConfigurationSettings.AppSettings["SMTP_Port"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_EnableSsl"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_UseDefaultCredentials"].ToString()), ConfigurationSettings.AppSettings["Email_From"].ToString(), ConfigurationSettings.AppSettings["Email_Password_From"].ToString(), TextBox13.Text, ConfigurationSettings.AppSettings["Email_CC"].ToString(), subject, body, dataall);
+                }
+            }
+
+            
+        }
+
+        private bool ValidateReceiptDetails(DataTable dtReserve, double expectedTotal)
+        {
+            double calculatedTotal = 0;
+
+            foreach (DataRow row in dtReserve.Rows)
+            {
+                double pricePerPiece = Convert.ToDouble(row["Price_PerPeice"]);
+                double productAmount = Convert.ToDouble(row["Product_Amount"]);
+                calculatedTotal += TwoDecimalPoints(pricePerPiece * productAmount);
+            }
+
+            // ตรวจสอบว่าผลรวมตรงกัน (ให้ผิดพลาดได้ 0.01 บาท)
+            return Math.Abs(calculatedTotal - expectedTotal) <= 0.01;
+        }
+        private double CalculateTotalFromReserve(DataTable dtReserve)
+        {
+            double total = 0;
+            foreach (DataRow row in dtReserve.Rows)
+            {
+                total += Convert.ToDouble(row["Price_Amount"]);
+            }
+            return TwoDecimalPoints(total);
+        }
+        private bool ValidateReserveData(DataTable dtReserve, double expectedTotal)
+        {
+            double calculatedTotal = 0;
+
+            foreach (DataRow row in dtReserve.Rows)
+            {
+                double pricePerPiece = Convert.ToDouble(row["Price_PerPeice"]);
+                double productAmount = Convert.ToDouble(row["Product_Amount"]);
+                double priceAmount = Convert.ToDouble(row["Price_Amount"]);
+
+                double calculatedAmount = TwoDecimalPoints(pricePerPiece * productAmount);
+
+                // ตรวจสอบว่า Price_Amount ถูกคำนวณถูกต้อง
+                if (Math.Abs(priceAmount - calculatedAmount) > 0.01) // 容许误差 0.01
+                {
+                    // แก้ไขค่าให้ถูกต้อง
+                    row["Price_Amount"] = calculatedAmount;
+                }
+
+                calculatedTotal += calculatedAmount;
+            }
+
+            // ตรวจสอบว่ายอดรวมตรงกับที่คาดหวัง
+            return Math.Abs(calculatedTotal - expectedTotal) <= 0.01;
+        }
+        public void checkCreateCustomer()
+        {
+            if (DropDownList8.SelectedValue == "1")
+            {
+                DataTable dtCustomer = code.DatabaseQuery(conn, "Select * From Customer Where IDNumber = '" + TextBox9.Text + "' AND Branch_Number = '" + TextBox18.Text + "'");
+                if (dtCustomer.Rows.Count == 1)
+                {
+                    code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' Where IDNumber = '" + TextBox9.Text + "' AND Branch_Number = '" + TextBox18.Text + "'");
+                }
+                else
+                {
+                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox1.Text + "',N'" + TextBox2.Text.Replace("'", "''") + "',N'" + TextBox3.Text.Replace("'", "''") + "','','',N'" + TextBox2.Text + "',N'" + cleantext(TextBox8.Text) + "',N'" + TextBox9.Text + "',N'" + TextBox13.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox17.Text.Replace("'", "''") + "',N'" + TextBox18.Text.Replace("'", "''") + "')");
+                }
+            }
+            else
+            {
+                DataTable dtCustomer = code.DatabaseQuery(conn, "Select * From Customer Where MobilePhone = '" + TextBox1.Text + "'");
+                if (dtCustomer.Rows.Count == 1)
+                {
+                    code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+                }
+                else
+                {
+                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox1.Text + "',N'" + TextBox2.Text.Replace("'", "''") + "',N'" + TextBox3.Text.Replace("'", "''") + "','','',N'" + TextBox2.Text + "',N'" + cleantext(TextBox8.Text) + "',N'" + TextBox9.Text + "',N'" + TextBox13.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox17.Text.Replace("'", "''") + "',N'" + TextBox18.Text.Replace("'", "''") + "')");
+                }
+            }
+        }
+        public void createReport(string DocNumber,string status,DateTime docDate)
+        {
+            string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
+            try
+            {
+                System.IO.Directory.CreateDirectory(path+"\\"+docDate.Year.ToString());
+                System.IO.Directory.CreateDirectory(path + "\\" + docDate.Year.ToString() + "\\" + DateTime.Now.Month.ToString());
+            }
+            catch(Exception ex)
+            {
+
+            }
+            string RecNumber = DocNumber;
+            DataTable dtbusinessinfo = code.DatabaseQuery(conn, "Select * from Business_Info left join Customer_Type on Business_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID");
+
+            DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + RecNumber + "' order by Number ASC");
+            DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
+            string uid = dtReceipt.Rows[0]["UID"].ToString();
+            DataTable dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + dtReceipt.Rows[0]["Customer_MobilePhone"].ToString() + "'");
+
+            DataTable dtCustomerReport = new DataTable();
+            dtCustomerReport = dtcustomer.Copy();
+            DataTable dtBusinessinfoReport = new DataTable();
+            dtBusinessinfoReport = dtbusinessinfo.Copy();
+
+            try
+            {
+                try
+                {
+                    if (DropDownList8.SelectedIndex == 0 && TextBox18.Text == "00000")
+                    {
+                        dtCustomerReport.Rows[0]["FullName"] = TextBox2.Text;
+                    }
+                    else if (DropDownList8.SelectedIndex == 0 && Convert.ToInt32(TextBox18.Text) > 0)
+                    {
+                        dtCustomerReport.Rows[0]["FullName"] = TextBox2.Text + " สาขาที่ " + TextBox18.Text;
+                    }
+                    else
+                    {
+                        dtCustomerReport.Rows[0]["FullName"] = TextBox2.Text;
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (dtcustomer.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    {
+                        dtCustomerReport.Rows[0]["Address"] = dtcustomer.Rows[0]["Address"].ToString() + " " + dtcustomer.Rows[0]["Address1"].ToString() + " แขวง " + dtcustomer.Rows[0]["SubDistrict"].ToString() + " เขต " + dtcustomer.Rows[0]["District"].ToString() + " " + dtcustomer.Rows[0]["Province"].ToString() + " " + dtcustomer.Rows[0]["PostalCode"].ToString();
+                    }
+                    else
+                    {
+                        dtCustomerReport.Rows[0]["Address"] = dtcustomer.Rows[0]["Address"].ToString() + " " + dtcustomer.Rows[0]["Address1"].ToString() + " ต." + dtcustomer.Rows[0]["SubDistrict"].ToString() + " อ." + dtcustomer.Rows[0]["District"].ToString() + " จ." + dtcustomer.Rows[0]["Province"].ToString() + " " + dtcustomer.Rows[0]["PostalCode"].ToString();
+                    }
+                }
+                catch
+                {
+                    dtCustomerReport.Rows[0]["Address"] = dtcustomer.Rows[0]["Address"].ToString();
+                }
+                dtCustomerReport.Rows[0]["IDNumber"] = TextBox9.Text;
+                dtCustomerReport.Rows[0]["MobilePhone"] = TextBox1.Text;
+                dtCustomerReport.Rows[0]["Email"] = TextBox13.Text;
+                try
+                {
+                    if (dtbusinessinfo.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    {
+                        dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " แขวง " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " เขต " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
+                    }
+                    else
+                    {
+                        dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " ต." + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " อ." + dtbusinessinfo.Rows[0]["District"].ToString() + " จ." + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
+                    }
+                }
+                catch
+                {
+                    dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString();
+                }
+            }
+            catch { }
+
+            if (CheckBox3.Checked == true)
+            {
+                dtCustomerReport.Rows[0]["FullName"] = "ประสงค์ไม่รับใบกำกับภาษี";
+                dtCustomerReport.Rows[0]["Address"] = "";
+                dtCustomerReport.Rows[0]["IDNumber"] = "";
+            }
+
+            DataTable dtSignature = new DataTable();
+            try
+            {
+                dtSignature.Columns.Add("AuthorizeName");
+                dtSignature.Columns.Add("AuthorizeSignaturePath");
+                dtSignature.Columns.Add("CreatedName");
+                dtSignature.Columns.Add("CreatedSignaturePath");
+            }
+            catch { }
+            string Signaturepath = System.Configuration.ConfigurationSettings.AppSettings["StaffSignatureFolderPath"].ToString();
+            DataTable dtApprover = code.DatabaseQuery(conn, "Select * from Admin Where IsCEO = 'True'");
+            string ApproverFullName = dtApprover.Rows[0]["FirstName"].ToString() + " " + dtApprover.Rows[0]["LastName"].ToString();
+
+            DataTable dtCreator = new DataTable();
+            string CreatorFullName = "";
+            string createdsigpath = "";
+            try
+            {
+                dtCreator = code.DatabaseQuery(conn, "Select * from Admin Where ID = " + Session["UserID"].ToString());
+                CreatorFullName = dtCreator.Rows[0]["FirstName"].ToString() + " " + dtCreator.Rows[0]["LastName"].ToString();
+                createdsigpath = "File:\\" + Signaturepath + "\\" + CreatorFullName.ToLower() + ".png";
+            }
+            catch
+            {
+                CreatorFullName = dtApprover.Rows[0]["FirstName"].ToString() + " " + dtApprover.Rows[0]["LastName"].ToString();
+                createdsigpath = "File:\\" + Signaturepath + "\\" + ApproverFullName.ToLower() + ".png";
+            }
+
+            dtSignature.Rows.Add(ApproverFullName, "File:\\" + Signaturepath + "\\" + ApproverFullName.ToLower() + ".png", CreatorFullName,createdsigpath);
+
+            //GridView1.DataSource = dt;
+            //GridView1.DataBind();
+            uid = dtReceipt.Rows[0]["UID"].ToString();
+            string pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + DocNumber +"_"+uid+ ".pdf";
+
+            try
+            {
+
+               
+
+                Account.Report.DataSet1 dataSet1 = new Account.Report.DataSet1();
+                dataSet1.Tables.Add(dtbusinessinfo);
+                ReportViewer2.LocalReport.DisplayName = "Receipt";
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet1", dtBusinessinfoReport));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet2", dtCustomerReport));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet3", dtReceiptDetail));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet4", dtReceipt));
+                    ReportViewer2.LocalReport.DataSources.Add(new ReportDataSource("DataSet5", dtSignature));
+
+                try
+                    {
+
+                   //     var deviceInfo = @"<DeviceInfo>
+                   // <EmbedFonts>None</EmbedFonts>
+                   //</DeviceInfo>";
+
+
+                        Warning[] warnings;
+                        string[] streamids;
+                        string mimeType;
+                        string encoding;
+                        string filenameExtension;
+
+
+                    byte[] bytes = ReportViewer2.LocalReport.Render(
+                            "PDF", null, out mimeType, out encoding, out filenameExtension,
+                            out streamids, out warnings);
+
+
+
+                    using (FileStream fs = new FileStream(pdfpath, FileMode.Create))
+                        {
+                            fs.Write(bytes, 0, bytes.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+
+                    //ReportViewer2.LocalReport.Refresh();
+
+
+                }
+            
+            catch { }
+
+            if (CheckBox5.Checked == true)
+            {
+                try
+                {
+                    uid = dtReceipt.Rows[0]["UID"].ToString();
+                    string xmlFilePath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + DocNumber +"_"+uid+ ".xml";
+                    string xmlString = System.IO.File.ReadAllText(ConfigurationSettings.AppSettings["BaseFolderPath"].ToString() + "\\Resources\\template.xml");
+                    xmlString = xmlString.Replace("*invoice_id", DocNumber);
+                    xmlString = xmlString.Replace("*invoice_name", "ใบเสร็จรับเงิน/ใบกำกับภาษี");
+                    xmlString = xmlString.Replace("*invoice_typecode", "T03");
+                    xmlString = xmlString.Replace("*invoice_issue_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd") + "T00:00:00.000");
+                    xmlString = xmlString.Replace("*invoice_purpose", "");
+                    xmlString = xmlString.Replace("*invoice_Purpose_code", "");
+                    xmlString = xmlString.Replace("*invoice_create_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd") + "T00:00:00.000");
+                    xmlString = xmlString.Replace("*invoice_remark", "");
+
+                    try
+                    {
+                        xmlString = xmlString.Replace("*seller_type", dtbusinessinfo.Rows[0]["Customer_Code"].ToString());
+                        if (dtbusinessinfo.Rows[0]["Customer_Code"].ToString() == "TXID")
+                        {
+                            xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString() + dtbusinessinfo.Rows[0]["Branch_Number"].ToString());
+                        }
+                        else
+                        {
+                            xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString());
+                        }
+                    }
+                    catch
+                    {
+                        xmlString = xmlString.Replace("*seller_type", "TXID");
+                        xmlString = xmlString.Replace("*seller_taxid", dtbusinessinfo.Rows[0]["LegalEntity_Number"].ToString());
+                    }
+
+                    xmlString = xmlString.Replace("*seller_name", dtbusinessinfo.Rows[0]["Company_Name"].ToString());
+
+                    xmlString = xmlString.Replace("*seller_DefinedCITradeContact", dtbusinessinfo.Rows[0]["Email"].ToString());
+                    xmlString = xmlString.Replace("*seller_PhoneNumber", dtbusinessinfo.Rows[0]["Phone_Number"].ToString());
+                    xmlString = xmlString.Replace("*seller_zipcode", dtbusinessinfo.Rows[0]["PostalCode"].ToString());
+                    xmlString = xmlString.Replace("*seller_address1", dtbusinessinfo.Rows[0]["Address"].ToString()+" "+ dtbusinessinfo.Rows[0]["Address1"].ToString() + " " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString());
+                    xmlString = xmlString.Replace("*seller_address2", "");
+                    xmlString = xmlString.Replace("*seller_cityname", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 4));
+                    xmlString = xmlString.Replace("*seller_city_subdivision_name", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 6));
+                    xmlString = xmlString.Replace("*seller_country", "TH");
+                    xmlString = xmlString.Replace("*sellercountry_subdivision_id", dtbusinessinfo.Rows[0]["Address_Code"].ToString().Substring(0, 2));
+                    xmlString = xmlString.Replace("*seller_building_name", dtbusinessinfo.Rows[0]["Address"].ToString());
+                    xmlString = xmlString.Replace("*buyer_name", dtcustomer.Rows[0]["FullName"].ToString());
+
+                    try
+                    {
+                        xmlString = xmlString.Replace("*buyer_taxtype", dtcustomer.Rows[0]["Customer_Code"].ToString());
+                        if (dtcustomer.Rows[0]["Customer_Code"].ToString() == "TXID")
+                        {
+                            string bnumber = "00000";
+                            if(dtcustomer.Rows[0]["Branch_Number"].ToString().Length == 5)
+                            {
+                                bnumber = dtcustomer.Rows[0]["Customer_Code"].ToString();
+                            }
+                            xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString() + bnumber);
+                        }
+                        else
+                        {
+                            xmlString = xmlString.Replace("*buyer_taxtype", "NIDN");
+                            xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString());
+                        }
+                    }
+                    catch
+                    {
+                        xmlString = xmlString.Replace("*buyer_taxtype", "NIDN");
+                        xmlString = xmlString.Replace("*buyer_taxid", dtcustomer.Rows[0]["IDNumber"].ToString());
+                    }
+
+
+                    xmlString = xmlString.Replace("*buyer_DefinedCITradeContact", TextBox13.Text);
+                    xmlString = xmlString.Replace("*buyer_zipcode", dtcustomer.Rows[0]["PostalCode"].ToString());
+                    xmlString = xmlString.Replace("*buyer_address", dtcustomer.Rows[0]["Address"].ToString() + " " + dtcustomer.Rows[0]["Address1"].ToString() + " " + dtcustomer.Rows[0]["SubDistrict"].ToString() + " " + dtcustomer.Rows[0]["District"].ToString() + " " + dtcustomer.Rows[0]["Province"].ToString() + " " + dtcustomer.Rows[0]["PostalCode"].ToString());
+                    xmlString = xmlString.Replace("*buyer_address2", "");
+                    xmlString = xmlString.Replace("*buyer_cityname", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 4));
+                    xmlString = xmlString.Replace("*buyer_city_subdivision_name", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 6));
+                    xmlString = xmlString.Replace("*buyer_country", "TH");
+                    xmlString = xmlString.Replace("*buyercountry_subdivision_id", dtcustomer.Rows[0]["Address_Code"].ToString().Substring(0, 2));
+                    xmlString = xmlString.Replace("*buyer_building_name", dtcustomer.Rows[0]["Address"].ToString());
+                    xmlString = xmlString.Replace("*reference", "");
+                    xmlString = xmlString.Replace("*buyer_contact_person", "");
+                    xmlString = xmlString.Replace("*currency", "THB");
+                    xmlString = xmlString.Replace("*invoice_tax_code", "VAT");
+                    xmlString = xmlString.Replace("*invoice_tax_rate", "7");
+                    xmlString = xmlString.Replace("*invoice_basis_amount", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                    xmlString = xmlString.Replace("*calculated_amount", dtReceipt.Rows[0]["Vat"].ToString());
+                    xmlString = xmlString.Replace("*invoice_discountallowance", "");
+                    xmlString = xmlString.Replace("*invoice_serviceallowance", "");
+                    xmlString = xmlString.Replace("*invoice_line_total", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                    xmlString = xmlString.Replace("*tax_basis_total_amount", dtReceipt.Rows[0]["Total_Amount_Exclude_Vat"].ToString());
+                    xmlString = xmlString.Replace("*invoice_tax_total", dtReceipt.Rows[0]["Vat"].ToString());
+                    xmlString = xmlString.Replace("*invoice_grand_total", dtReceipt.Rows[0]["Total_Amount"].ToString());
+                    xmlString = xmlString.Replace("*item", "ค่าที่พักหรือค่ามัดจำที่พัก");
+                    xmlString = xmlString.Replace("*invoice_billedquantity", "1");
+
+                    System.IO.File.WriteAllText(xmlFilePath, xmlString, System.Text.Encoding.UTF8);
+                }
+                catch { }
+
+                try
+                {
+                    {
+
+
+                        PDFA3Invoice pdf = new PDFA3Invoice();
+                        string pdfFilePath = path + "\\" + docDate.Year.ToString()+ "\\" + docDate.Month.ToString() + "\\" + DocNumber +"_"+uid+ ".pdf";
+                        string xmlFilePath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + DocNumber + "_"+uid+".xml";
+
+                        string xmlFileName = "ETDA-invoice.xml";
+
+
+                        string xmlVersion = "1.0";
+                        string documentID = DocNumber;
+                        string documentOID = "";
+
+                        string outputPath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + DocNumber +"_"+uid+ "_etax.pdf";
+
+                        pdf.CreatePDFA3Invoice(pdfFilePath, xmlFilePath, xmlFileName, xmlVersion, documentID, documentOID, outputPath, "Tax Invoice");
+
+
+                    }
+                }
+                catch
+                {
+
+                }
+                //ReportViewer2.LocalReport.Refresh();
+
+            }
+
+
+        }
+
+        public double TwoDecimalPoints(double num)
+        {
+            var totalCost = Convert.ToDouble(String.Format("{0:0.00}", num));
+            return totalCost;
+        }
+
+        protected void TextBox5_TextChanged(object sender, EventArgs e)
+        {
+            
+            int minDeposit = Convert.ToInt32(Label2.Text);
+            try
+            {
+                if (Session["permission"].ToString() == "True")
+                {
+
+                }
+                else
+                {
+                    if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                    {
+                        TextBox5.Text = "0";
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
+                    }
+                }
+            }
+            catch
+            {
+                if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                {
+                    TextBox5.Text = "0";
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
+                }
+            }
+
+
+
+
+
+
+        }
+
+        protected void TextBox1_TextChanged(object sender, EventArgs e)
+        {
+            
+            TextBox1.Text = TextBox1.Text.Replace("ชื่อเล่น", "").Replace("ชื่อ", "").Replace("คะ", "").Replace("ค่ะ", "").Replace("ค่า", "").Replace("ครับ", "").Replace("คับ", "").Replace("เบอร์", "").Replace("เบอ", "");
+            string[] txt1input = TextBox1.Text.Split(' ');
+            int phoneid = -1;
+            string name = "";
+            for (int i = 0; i < txt1input.Length; i++)
+            {
+                int checkint1;
+                int checkint2;
+                try
+                {
+                    if (Int32.TryParse(txt1input[i][0].ToString(), out checkint1) && Int32.TryParse(txt1input[i][txt1input.Length - 1].ToString(), out checkint2))
+                    {
+                        if (checkint1 >= 0 && checkint2 >= 0)
+                        {
+                            TextBox1.Text = txt1input[i].Replace("-", "");
+                            phoneid = i;
+                        }
+                    }
+                    else
+                    {
+
+                    }
+                }
+                catch { }
+            }
+            if (TextBox2.Text == string.Empty || TextBox2.Text == "")
+            {
+                for (int j = 0; j < txt1input.Length; j++)
+                {
+                    if (j != phoneid)
+                    {
+                        name += txt1input[j] + " ";
+                    }
+                }
+
+                string[] names = name.Split(' ');
+                name = "";
+                for (int i = 0; i < names.Length; i++)
+                {
+                    if (names[i] == " ")
+                    {
+
+                    }
+                    else
+                    {
+                        name += names[i] + " ";
+                    }
+                }
+                for (int i = 0; i < names.Length; i++)
+                {
+                    if (name[name.Length - 1] == ' ')
+                    {
+                        name = name.Substring(0, name.Length - 1);
+                    }
+                }
+                TextBox2.Text = name;
+            }
+
+
+
+
+            TextBox1.Text = TextBox1.Text.Replace(" ", "").Replace("-", "");
+            DataTable dtCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Customer] left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox1.Text + "'");
+            
+            if (dtCustomer.Rows.Count >= 1)
+            {
+                try //Address
+                {
+                    TextBox16.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
+                    DropDownList5.ClearSelection();
+                    DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()).Selected = true;
+                    DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()));
+                    DropDownList6.ClearSelection();
+                    DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()).Selected = true;
+                    DropDownList6.SelectedIndex = DropDownList6.Items.IndexOf(DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()));
+                    DropDownList7.ClearSelection();
+                    DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()).Selected = true;
+                    DropDownList7.SelectedIndex = DropDownList7.Items.IndexOf(DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()));
+
+                    DropDownList8.ClearSelection();
+                    DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()).Selected = true;
+                    DropDownList8.SelectedIndex = DropDownList8.Items.IndexOf(DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()));
+
+                }
+                catch { }
+
+                TextBox1.Text = dtCustomer.Rows[0]["MobilePhone"].ToString();
+                TextBox2.Text = dtCustomer.Rows[0]["Name"].ToString();
+                TextBox3.Text = dtCustomer.Rows[0]["NickName"].ToString();
+                //TextBox7.Text = dtCustomer.Rows[0]["FullName"].ToString();
+                TextBox8.Text = dtCustomer.Rows[0]["Address"].ToString();
+                TextBox17.Text = dtCustomer.Rows[0]["Address1"].ToString();
+                TextBox9.Text = dtCustomer.Rows[0]["IDNumber"].ToString();
+                TextBox13.Text = dtCustomer.Rows[0]["Email"].ToString();
+
+                if (Session["permission"].ToString() == "True")
+                {
+                    Button5.Visible = true;
+                    Button5.Text = "เคยมาแล้ว "+ code.DatabaseQuery(conn, "SELECT count([Customer_MobilePhone]) as CountReserved FROM [Reservation] Where Customer_MobilePhone = '" + TextBox1.Text + "' AND Status = N'เช็คอินแล้ว'").Rows[0][0].ToString()+" ครั้ง" ;
+                }
+            }
+            else
+            {
+
+            }
+
+            if (TextBox1.Text.Length == 11)
+            {
+                TextBox1.Text = TextBox1.Text.Remove(TextBox1.Text.Length - 1);
+            }
+
+            
+        }
+
+        protected void Calendar1_DayRender(object sender, DayRenderEventArgs e)
+        {
+            DataTable dtReservation = code.DatabaseQuery(conn, "Select * From Reservation right join Reservation_Accommodation on Reservation.ID = Reservation_Accommodation.Reservation_ID Where '" + e.Day.Date.ToString("yyyy-MM-dd") + "' >= CheckinDate AND '" + e.Day.Date.ToString("yyyy-MM-dd") + "' < CheckoutDate");
+            DataTable dtAccommodation = code.DatabaseQuery(conn, "Select * From Accommodation Where Status = 1");
+            int maxAccommodation = dtAccommodation.Rows.Count;
+            int totalAmount = 0;
+            for (int j = 0; j < dtAccommodation.Rows.Count; j++)
+            {
+                for (int i = 0; i < dtReservation.Rows.Count; i++)
+                {
+
+                    if (dtReservation.Rows[i]["Accommodation_ID"].ToString() == dtAccommodation.Rows[j]["ID"].ToString() || dtAccommodation.Rows[j]["LimitWithPeople"].ToString() == "True")
+                    {
+                        dtAccommodation.Rows.RemoveAt(j);
+                        dtAccommodation.AcceptChanges();
+                        i = dtReservation.Rows.Count + 1;
+                        j = -1;
+                    }
+                }
+            }
+
+            if (dtAccommodation.Rows.Count == 0)
+            {
+                //e.Cell.BackColor = System.Drawing.Color.Red;
+                e.Cell.ForeColor = System.Drawing.ColorTranslator.FromHtml("#BC8F8F");
+                e.Cell.Font.Bold = true;
+            }
+            if (dtAccommodation.Rows.Count == maxAccommodation)
+            {
+                //e.Cell.ForeColor = System.Drawing.Color.DarkGreen;
+                //e.Cell.Font.Bold = true;
+            }
+        }
+
+        protected void Button2_Click(object sender, EventArgs e)
+        {
+            TextBox12.Text = "";
+        }
+
+        protected void Button3_Click(object sender, EventArgs e)
+        {
+            if (TextBox1.Text.Length > 0)
+            {
+                if (FileUpload1.HasFile)
+                {
+                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                    {
+                        File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg");
+                    }
+
+                    string FileSaveWithPath = "";
+                    string filename = TextBox1.Text + ".jpg";
+                    FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename);
+                    FileUpload1.SaveAs(FileSaveWithPath);
+                    
+                    Image1.ImageUrl = "\\Upload\\Slip\\" + filename;
+                    Image1.DataBind();
+                }
+                else
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกไฟล์ที่ต้องการจะอัพโหลดก่อน');", true);
+                }
+            }
+            else
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเระบุเบอร์โทรศัพท์ก่อน');", true);
+            }
+        }
+
+        protected void GridView2_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            GridView2.EditIndex = e.NewEditIndex;
+            DataTable dtItems = (DataTable)Session["dtItems"];
+            GridView2.DataSource = dtItems;
+            GridView2.DataBind();
+        }
+
+        protected void GridView1_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            GridView1.EditIndex = e.NewEditIndex;
+            DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+            GridView1.DataSource = dtAccom;
+            GridView1.DataBind();
+        }
+
+        protected void GridView1_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            GridView1.EditIndex = -1;
+            DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+            GridView1.DataSource = dtAccom;
+            GridView1.DataBind();
+        }
+
+        protected void GridView2_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            GridView2.EditIndex = -1;
+            DataTable dtItems = (DataTable)Session["dtItems"];
+            GridView2.DataSource = dtItems;
+            GridView2.DataBind();
+        }
+
+        protected void GridView1_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+            TextBox txtPrice = (TextBox)GridView1.Rows[e.RowIndex].Cells[4].Controls[0];
+            GridView1.EditIndex = -1;
+
+            // อัพเดทราคาใหม่
+            dtAccom.Rows[Convert.ToInt32(e.RowIndex)]["Price"] = txtPrice.Text;
+
+            // คำนวณยอดรวมใหม่ทันที
+            RecalculateTotalPrice();
+
+            GridView1.DataSource = dtAccom;
+            GridView1.DataBind();
+        }
+
+        private void RecalculateTotalPrice()
+        {
+            DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
+            DataTable dtItems = (DataTable)Session["dtItems"];
+
+            double totalPrice = 0;
+            double PriceAccom = 0;
+            int PriceItems = 0;
+
+            // คำนวณราคาห้องพัก
+            foreach (GridViewRow row in GridView1.Rows)
+            {
+                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                if (chk != null && chk.Checked)
+                {
+                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+
+                    if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                    {
+                        PriceAccom += Convert.ToDouble(txtPeopleStay.Text) * Convert.ToDouble(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                    }
+                    else
+                    {
+                        PriceAccom += Convert.ToDouble(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                    }
+                }
+            }
+
+            // คำนวณราคาของเช่า
+            foreach (GridViewRow row in GridView2.Rows)
+            {
+                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                if (chk != null && chk.Checked)
+                {
+                    TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                    PriceItems += Convert.ToInt32(txtAmount.Text) * Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                }
+            }
+
+            totalPrice = PriceAccom + PriceItems;
+            Session["totalPrice"] = totalPrice;
+            Session["PriceAccom"] = PriceAccom;
+            Session["PriceItems"] = PriceItems;
+
+            TextBox4.Text = totalPrice.ToString();
+        }
+
+        protected void GridView2_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            DataTable dtItems = (DataTable)Session["dtItems"];
+            TextBox txtPrice = (TextBox)GridView2.Rows[e.RowIndex].Cells[4].Controls[0];
+            GridView2.EditIndex = -1;
+            dtItems.Rows[Convert.ToInt32(e.RowIndex)]["Price"] = txtPrice.Text;
+            GridView2.DataSource = dtItems;
+            GridView2.DataBind();
+        }
+
+        protected void CheckBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CheckBox1.Checked == true)
+            {
+                Button1.Enabled = true;
+                Session["Submit"] = "False";
+            }
+            else
+            {
+                Button1.Enabled = false;
+            }
+        }
+
+        protected void Button4_Click(object sender, EventArgs e)
+        {
+
+            if (GridView1.Rows.Count <= 0)
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวันที่ต้องการทำการจอง หรือวันที่เลือกไม่สามารถทำการเหมาลานได้');", true);
+            }
+            else
+            {
+                foreach (GridViewRow gr in GridView1.Rows)
+                {
+                    CheckBox chkC = gr.FindControl("chkSelect") as CheckBox;
+
+
+                    //GridViewRow Row = ((GridViewRow)chkC.Parent.Parent);
+
+                    chkC.Checked = true;
+
+
+                }
+            }
+
+        }
+
+        protected void CheckBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            if(CheckBox2.Checked == true)
+            {
+                TextBox10.Visible = true;
+            }
+            else
+            {
+                TextBox10.Visible = false;
+            }
+        }
+
+        protected void TextBox9_TextChanged(object sender, EventArgs e)
+        {
+            TextBox9.Text = TextBox9.Text.Replace(" ", "").Replace("-", "");
+            if (TextBox9.Text.Length == 13 && TextBox8.Text.Length > 10)
+            {
+                CheckBox3.Checked = false;
+                CheckBox3.DataBind();
+            }
+        }
+
+        protected void TextBox10_TextChanged(object sender, EventArgs e)
+        {
+            string command = Request.QueryString["command"];
+            if (command == "rentmore")
+            {
+                int total = Convert.ToInt32(TextBox4.Text);
+                int deposit = Convert.ToInt32(TextBox5.Text);
+                int paymore = Convert.ToInt32(TextBox10.Text);
+                if(total == deposit+paymore)
+                { }
+                else
+                {
+                    TextBox10.Text = "";
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('จำนวนเงินที่จ่ายเพิ่มไม่ตรงกับยอดที่ต้องจ่าย');", true);
+                }
+            }
+        }
+
+        protected void DropDownList2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(DropDownList2.SelectedItem.Text == "เงินสด" && CheckBox4.Checked == false)
+            {
+                FileUpload1.Visible = false;
+            }
+            else
+            {
+                FileUpload1.Visible = true;
+            }
+
+            if(DropDownList2.SelectedItem.Text == "เงินโอน บัญชี ธ.กสิกรไทย เลขที่ 064-1-70621-3")
+            {
+                CheckBox4.Checked = false;
+                CheckBox4.DataBind();
+            }
+        }
+
+        protected void CheckBox3_CheckedChanged(object sender, EventArgs e)
+        {
+            if(CheckBox3.Checked == false)
+            {
+                Panel1.Visible = true;
+                CheckBox5.Visible = true;
+            }
+            else
+            {
+                Panel1.Visible = false;
+                CheckBox5.Visible = false;
+            }
+        }
+
+        protected void CheckBox4_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                string id = Request.QueryString["id"];
+                string command = Request.QueryString["command"];
+
+                DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT  [ID] FROM [Account_Receipt] Where RESERVATION_ID = '" + id + "'");
+                if ((command == "edit" || command == "checkin" || command == "rentmore") && dtReceipt.Rows.Count > 0)
+                {
+                    CheckBox4.Checked = false;
+                    CheckBox4.DataBind();
+                }
+            }
+            catch { }
+            if (CheckBox4.Checked == true & CheckBox3.Checked == false)
+            {
+                CheckBox4.Checked = false;
+                CheckBox4.DataBind();
+            }
+            if (DropDownList2.SelectedItem.Text == "เงินโอน บัญชี ธ.กสิกรไทย เลขที่ 064-1-70621-3")
+            {
+                CheckBox4.Checked = false;
+                CheckBox4.DataBind();
+            }
+        }
+
+        protected void Button5_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("./CountReserved?telnum=" + TextBox1.Text);
+        }
+
+        public int checkAccomUseCoupon(string AccomID, DateTime datereserve)
+        {
+            int check = 0;
+
+            DataTable dtRatePlan = code.DatabaseQuery(conn, "Select * from Accommodation_RatePlan Where Accom_ID = " + AccomID);
+
+            for (int j = 0; j < dtRatePlan.Rows.Count; j++)
+            {
+                int Start_Month = Convert.ToInt32(dtRatePlan.Rows[j]["Start_Month"].ToString());
+                int End_Month = Convert.ToInt32(dtRatePlan.Rows[j]["End_Month"].ToString());
+                bool checkMonth = false;
+                if (Start_Month < End_Month)
+                {
+                    for (int k = Start_Month - 1; k < End_Month; k++)
+                    {
+                        if (Convert.ToInt32(datereserve.Month) == (k + 1))
+                        {
+                            checkMonth = true;
+                        }
+                    }
+                }
+                else if (End_Month < Start_Month)
+                {
+                    int startmonth = Start_Month;
+                    for (int k = Start_Month - 1; k < (End_Month + 12); k++)
+                    {
+                        if (startmonth > 12)
+                        {
+                            startmonth = startmonth - 12;
+                        }
+                        if (Convert.ToInt32(datereserve.Month) == (startmonth))
+                        {
+                            checkMonth = true;
+                        }
+                        startmonth++;
+                    }
+                }
+                else if (Start_Month == End_Month)
+                {
+                    if (Convert.ToInt32(datereserve.Month) == (Start_Month))
+                    {
+                        checkMonth = true;
+                    }
+                }
+
+                if (checkMonth == true)
+                {
+                    bool Holiday = false;
+                    DataTable dtHoliday = code.DatabaseQuery(conn, "Select * from Accommodation_Holiday Where [Status] = 1");
+                    for (int k = 0; k < dtHoliday.Rows.Count; k++)
+                    {
+                        if (datereserve == code2.ParseDate((dtHoliday.Rows[k]["Holiday_Date"].ToString())))
+                        {
+                            Holiday = true;
+                        }
+                    }
+                    DataTable dtRatePlanDayType = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Accommodation_RatePlan] inner join Accommodation_DayType on Accommodation_DayType.ID = DayType_Name_ID Where Accommodation_RatePlan.ID = " + dtRatePlan.Rows[j]["ID"].ToString());
+                    string[] days = dtRatePlanDayType.Rows[0]["Day"].ToString().Split(',');
+                    var culture = CultureInfo.CurrentCulture;
+                    for (int k = 0; k < days.Length; k++)
+                    {
+                        string dayss = datereserve.DayOfWeek.ToString();
+                        if (days[k].ToLower() == dayss.Substring(0, 3).ToLower() || (days[k].ToLower() == "holiday" && Holiday == true))
+                        {
+                            string UseCoupon = Session["UseCoupon"].ToString();
+
+
+                            if (UseCoupon == "Affiliate")
+                            {
+                                DataTable dtCoupon = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] inner join Affiliate_Discount on Affiliate_Discount.ID = Affiliate_Member.Affiliate_Discount_ID inner join Affiliate_Discount_RatePlan on Affiliate_Discount_RatePlan.Affiliate_Discount_ID = Affiliate_Member.Affiliate_Discount_ID Where Accommodation_RatePlan_ID = " + dtRatePlan.Rows[j]["ID"].ToString());
+                                if (dtCoupon.Rows.Count >= 1)
+                                {
+                                    check = Convert.ToInt32(dtCoupon.Rows[0]["ID2"].ToString());
+                                }
+                                else
+                                {
+                                    
+                                }
+                            }
+                            else
+                            {
+                                
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            return check;
+        }
+
+        public string AccomPrice(string AccomID,DateTime datereserve)
+        {
+            string Price = "";
+
+            DataTable dtRatePlan = code.DatabaseQuery(conn, "Select * from Accommodation_RatePlan Where Accom_ID = " + AccomID);
+
+            for (int j = 0; j < dtRatePlan.Rows.Count; j++)
+            {
+                int Start_Month = Convert.ToInt32(dtRatePlan.Rows[j]["Start_Month"].ToString());
+                int End_Month = Convert.ToInt32(dtRatePlan.Rows[j]["End_Month"].ToString());
+                bool checkMonth = false;
+                if (Start_Month < End_Month)
+                {
+                    for (int k = Start_Month - 1; k < End_Month; k++)
+                    {
+                        if (Convert.ToInt32(datereserve.Month) == (k + 1))
+                        {
+                            checkMonth = true;
+                        }
+                    }
+                }
+                else if (End_Month < Start_Month)
+                {
+                    int startmonth = Start_Month;
+                    for (int k = Start_Month - 1; k < (End_Month + 12); k++)
+                    {
+                        if (startmonth > 12)
+                        {
+                            startmonth = startmonth - 12;
+                        }
+                        if (Convert.ToInt32(datereserve.Month) == (startmonth))
+                        {
+                            checkMonth = true;
+                        }
+                        startmonth++;
+                    }
+                }
+                else if (Start_Month == End_Month)
+                {
+                    if (Convert.ToInt32(datereserve.Month) == (Start_Month))
+                    {
+                        checkMonth = true;
+                    }
+                }
+
+                if (checkMonth == true)
+                {
+                    bool Holiday = false;
+                    DataTable dtHoliday = code.DatabaseQuery(conn, "Select * from Accommodation_Holiday Where [Status] = 1");
+                    for (int k = 0; k < dtHoliday.Rows.Count; k++)
+                    {
+                        if (datereserve == code2.ParseDate((dtHoliday.Rows[k]["Holiday_Date"].ToString())))
+                        {
+                            Holiday = true;
+                        }
+                    }
+                    DataTable dtRatePlanDayType = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Accommodation_RatePlan] inner join Accommodation_DayType on Accommodation_DayType.ID = DayType_Name_ID Where Accommodation_RatePlan.ID = " + dtRatePlan.Rows[j]["ID"].ToString());
+                    string[] days = dtRatePlanDayType.Rows[0]["Day"].ToString().Split(',');
+                    var culture = CultureInfo.CurrentCulture;
+                    for (int k = 0; k < days.Length; k++)
+                    {
+                        string dayss = datereserve.DayOfWeek.ToString();
+                        if (days[k].ToLower() == dayss.Substring(0, 3).ToLower() || (days[k].ToLower() == "holiday" && Holiday == true))
+                        {
+                            string UseCoupon = Session["UseCoupon"].ToString();
+
+                            if (UseCoupon == "Affiliate")
+                            {
+                                DataTable dtCoupon = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] inner join Affiliate_Discount on Affiliate_Discount.ID = Affiliate_Member.Affiliate_Discount_ID inner join Affiliate_Discount_RatePlan on Affiliate_Discount_RatePlan.Affiliate_Discount_ID = Affiliate_Member.Affiliate_Discount_ID Where Accommodation_RatePlan_ID = " + dtRatePlan.Rows[j]["ID"].ToString());
+                                if(dtCoupon.Rows.Count >= 1)
+                                {
+                                    Price = (Convert.ToInt32(dtRatePlan.Rows[j]["Price"].ToString()) - Convert.ToInt32(dtCoupon.Rows[0]["Discount_Amount"].ToString())).ToString();
+                                }
+                                else
+                                {
+                                    Price = dtRatePlan.Rows[j]["Price"].ToString();
+                                }
+                            }
+                            else if(UseCoupon == "Voucher")
+                            {
+                                DataTable dtVoucher = new DataTable();
+                                try
+                                {
+                                    dtVoucher = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Voucher] inner join Voucher_RatePlan_Group on Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number inner join Accommodation_RatePlan_Group on Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID inner join Accommodation_RatePlan on Accommodation_RatePlan.ID = Rateplan_ID Where Voucher.Voucher_Number = N'" + TextBox19.Text + "' AND Used_Status = 'False' AND Accommodation_RatePlan.ID = "+ dtRatePlan.Rows[j]["ID"].ToString() + " AND Expired_Date >= '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") + "'");
+
+                                }
+                                catch
+                                {
+                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวันที่ต้องการจองก่อน');", true);
+                                }
+                                
+                                if (dtVoucher.Rows.Count >= 1)
+                                {
+                                    Price = Convert.ToInt32(dtVoucher.Rows[0]["PriceTo"].ToString()).ToString();
+                                    Session["UseVoucher"] = true;
+                                    string oldvalue = "";
+                                    try
+                                    {
+                                        oldvalue = Session["UseVoucherAccomID"].ToString();
+                                        Session["UseVoucherAccomID"] += oldvalue +dtVoucher.Rows[0]["Accom_ID"].ToString()+";";
+                                    }
+                                    catch
+                                    {
+                                        Session["UseVoucherAccomID"] += dtVoucher.Rows[0]["Accom_ID"].ToString()+";";
+                                    }
+                                }
+                                else
+                                {
+                                    Price = dtRatePlan.Rows[j]["Price"].ToString();
+                                }
+                            }
+                            else
+                            {
+                                Price = dtRatePlan.Rows[j]["Price"].ToString();
+                            }
+                            
+                        }
+                    }
+                }
+            }
+
+            try
+            {
+                if(Price.Length > 0)
+                {
+
+                }
+                else
+                {
+                    Price = "";
+                }
+            }
+            catch
+            {
+                Price = "";
+            }
+            return Price;
+        }
+
+        private DateTime? NormalizeAndParseDate(string dateString)
+        {
+            if (string.IsNullOrEmpty(dateString))
+                return null;
+
+            // Remove any time portion if present
+            dateString = dateString.Split(' ')[0];
+
+            DateTime? parsedDate = code2.ParseDate(dateString);
+
+            if (parsedDate.HasValue)
+            {
+                return parsedDate;
+            }
+
+            // Additional manual parsing for common formats
+            string[] parts = dateString.Split('-', '/', '.');
+
+            if (parts.Length == 3)
+            {
+                int day, month, year;
+
+                // Try dd-MM-yyyy format
+                if (int.TryParse(parts[0], out day) &&
+                    int.TryParse(parts[1], out month) &&
+                    int.TryParse(parts[2], out year))
+                {
+                    // Check if it's a valid date in dd-MM-yyyy format
+                    if (IsValidDate(day, month, year))
+                        return new DateTime(year, month, day);
+
+                    // Try MM-dd-yyyy format
+                    if (IsValidDate(month, day, year))
+                        return new DateTime(year, month, day);
+                }
+            }
+
+            return null;
+        }
+
+        // Helper method to validate date components
+        private bool IsValidDate(int day, int month, int year)
+        {
+            if (year < 1900 || year > 2100) return false;
+            if (month < 1 || month > 12) return false;
+            if (day < 1 || day > 31) return false;
+
+            try
+            {
+                DateTime testDate = new DateTime(year, month, day);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        protected void TextBox12_TextChanged(object sender, EventArgs e)
+        {
+            DateTime? datereserve = code2.ParseDate(TextBox12.Text);
+            if (!datereserve.HasValue)
+            {
+                TextBox12.Text = DateTime.Now.ToString("yyyy-MM-dd");
+                datereserve = code2.ParseDate(TextBox12.Text);
+            }
+
+            // Permission checks
+            if (DateTime.Now > datereserve.Value.AddDays(1) && Session["permission"] == "No")
+            {
+                GridView1.Visible = false;
+                return;
+            }
+
+            GridView1.Visible = true;
+
+            // Check if booking is too far in future
+            if (code2.ParseDate(TextBox12.Text) > DateTime.Now.AddMonths(3) &&
+                (Session["permission"] == null || Session["permission"].ToString() != "True"))
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                    "alert('ระบบไม่อนุญาติให้จองเกิน 3 เดือน กรุณาติดต่อ Admin');", true);
+                TextBox12.Text = "";
+                return;
+            }
+
+            // Get query parameters
+            string command = Request.QueryString["command"];
+            string id = Request.QueryString["id"];
+            string check = Request.QueryString["check"]?.Replace(" ", "+");
+
+            try
+            {
+                Label1.Text = "Check-Out: " + datereserve.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue))
+                    .ToString("dd MMMM yyyy");
+            }
+            catch
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                    "alert('กรุณาติดต่อ Admin กรณีต้องการจองเกิน 3 เดือน');", true);
+            }
+
+            // Get all active accommodations
+            DataTable dtAccommodation = code.DatabaseQuery(conn,
+                "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
+
+            // Add status columns
+            if (!dtAccommodation.Columns.Contains("StatusOnDate"))
+                dtAccommodation.Columns.Add("StatusOnDate", typeof(string));
+            if (!dtAccommodation.Columns.Contains("AvailableAmount"))
+                dtAccommodation.Columns.Add("AvailableAmount", typeof(int));
+
+            // Calculate date range
+            DateTime checkInDate = datereserve.Value;
+            DateTime checkOutDate = checkInDate.AddDays(Convert.ToInt32(DropDownList1.SelectedValue));
+
+            // Get all reservations that overlap with our date range
+            string reservationQuery = $@"
+SELECT ra.* 
+FROM Reservation r
+JOIN Reservation_Accommodation ra ON r.ID = ra.Reservation_ID
+WHERE r.CheckinDate < '{checkOutDate.ToString("yyyy-MM-dd")}' 
+AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
+
+            if (command == "edit" || command == "checkin" || command == "rentmore")
+            {
+                reservationQuery += $" AND r.ID != {id}";
+            }
+
+            DataTable dtAllReservations = code.DatabaseQuery(conn, reservationQuery);
+
+            // Create a list to store rows to remove (instead of deleting directly)
+            List<DataRow> rowsToRemove = new List<DataRow>();
+
+            // Check availability for each accommodation
+            foreach (DataRow accomRow in dtAccommodation.Rows)
+            {
+                if (accomRow.RowState == DataRowState.Deleted) continue;
+
+                string accomId = accomRow["ID"].ToString();
+                bool isLimitWithPeople = accomRow["LimitWithPeople"].ToString() == "True";
+                int maxCapacity = Convert.ToInt32(accomRow["People"]);
+                int totalReserved = 0;
+
+                // Calculate total reserved for this accommodation
+                foreach (DataRow resRow in dtAllReservations.Rows)
+                {
+                    if (resRow["Accommodation_ID"].ToString() == accomId)
+                    {
+                        if (isLimitWithPeople)
+                        {
+                            totalReserved += Convert.ToInt32(resRow["Amount"]);
+                        }
+                        else
+                        {
+                            // For non-people limited accommodations, any reservation means fully booked
+                            totalReserved = maxCapacity;
+                            break;
+                        }
+                    }
+                }
+
+                // Set status and available amount
+                if (isLimitWithPeople)
+                {
+                    int available = maxCapacity - totalReserved;
+                    accomRow["AvailableAmount"] = available;
+                    accomRow["StatusOnDate"] = available > 0 ?
+                        $"Available ({available} left)" : "Fully Booked";
+
+                    // Mark for removal if no availability
+                    if (available <= 0)
+                    {
+                        rowsToRemove.Add(accomRow);
+                    }
+                    else
+                    {
+                        accomRow["People"] = accomRow["AvailableAmount"].ToString();
+                    }
+                }
+                else
+                {
+                    accomRow["AvailableAmount"] = totalReserved > 0 ? 0 : 1;
+                    accomRow["StatusOnDate"] = totalReserved > 0 ?
+                        "Fully Booked" : "Available";
+
+                    // Mark for removal if booked
+                    if (totalReserved > 0)
+                    {
+                        rowsToRemove.Add(accomRow);
+                    }
+                }
+            }
+
+            // Remove marked rows
+            foreach (DataRow row in rowsToRemove)
+            {
+                dtAccommodation.Rows.Remove(row);
+            }
+
+            // Set prices
+            foreach (DataRow accomRow in dtAccommodation.Rows)
+            {
+                if (accomRow.RowState == DataRowState.Deleted) continue;
+                accomRow["Price"] = AccomPrice(accomRow["ID"].ToString(), checkInDate);
+            }
+
+            // Bind to grid
+            GridView1.DataSource = dtAccommodation;
+            GridView1.DataBind();
+            Session["dtAccommodation"] = dtAccommodation;
+
+            // Items processing
+            DataTable dtItems = code.DatabaseQuery(conn, "SELECT * FROM Items WHERE Status = 1 ORDER BY OrderID ASC");
+
+            for (int x = 0; x < Convert.ToInt32(DropDownList1.SelectedValue); x++)
+            {
+                DataTable dtReservation_Items = code.DatabaseQuery(conn,
+                    "Select * From Reservation right join Reservation_Items on Reservation.ID = Reservation_Items.Reservation_ID " +
+                    "Where '" + Convert.ToDateTime(TextBox12.Text).AddDays((double)x).ToString("yyyy-MM-dd") + "' >= CheckinDate AND '" +
+                    Convert.ToDateTime(TextBox12.Text).AddDays((double)x).ToString("yyyy-MM-dd") + "' < CheckoutDate");
+
+                if (command == "edit" || command == "checkin")
+                {
+                    DataTable dtItem = code.DatabaseQuery(conn,
+                        "SELECT * FROM [Reservation] right join Reservation_Items on Reservation_Items.Reservation_ID = Reservation.ID " +
+                        "Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+
+                    for (int i = 0; i < dtReservation_Items.Rows.Count; i++)
+                    {
+                        for (int j = 0; j < dtItems.Rows.Count; j++)
+                        {
+                            if (dtItems.Rows[j].RowState == DataRowState.Deleted) continue;
+
+                            try
+                            {
+                                if (dtReservation_Items.Rows[i]["Reservation_ID"].ToString() == dtItems.Rows[j]["Reservation_ID"].ToString() &&
+                                    dtReservation_Items.Rows[i]["Accommodation_ID"].ToString() == dtItems.Rows[j]["Accommodation_ID"].ToString() &&
+                                    dtReservation_Items.Rows[i]["Amount"].ToString() == dtItems.Rows[j]["Amount"].ToString())
+                                {
+                                    // Matching rows found
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+
+                try
+                {
+                    if (!dtItems.Columns.Contains("StatusOnDate"))
+                    {
+                        dtItems.Columns.Add("StatusOnDate");
+                    }
+                }
+                catch { }
+
+                // Create list to store items to remove
+                List<DataRow> itemsToRemove = new List<DataRow>();
+
+                for (int j = 0; j < dtItems.Rows.Count; j++)
+                {
+                    if (dtItems.Rows[j].RowState == DataRowState.Deleted) continue;
+
+                    int checkloop = 0;
+                    int totalAmount = 0;
+
+                    for (int i = 0; i < dtReservation_Items.Rows.Count; i++)
+                    {
+                        if (dtReservation_Items.Rows[i]["Items_ID"].ToString() == dtItems.Rows[j]["ID"].ToString())
+                        {
+                            checkloop = 1;
+                            if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True" &&
+                                (!DBNull.Value.Equals(dtReservation_Items.Rows[i]["Amount"])) &&
+                                dtReservation_Items.Rows[i]["Items_ID"].ToString() == dtItems.Rows[j]["ID"].ToString())
+                            {
+                                totalAmount += Convert.ToInt32(dtReservation_Items.Rows[i]["Amount"].ToString());
+                            }
+
+                            try
+                            {
+                                if (command == "edit" || command == "checkin")
+                                {
+                                    if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True" &&
+                                        dtReservation_Items.Rows[i]["Reservation_ID"].ToString() == id)
+                                    {
+                                        totalAmount -= Convert.ToInt32(dtReservation_Items.Rows[i]["Amount"].ToString());
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                    if (checkloop == 1 && dtItems.Rows[j]["LimitWithAmount"].ToString() == "False")
+                    {
+                        dtItems.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+                        dtItems.Rows[j]["Amount"] = 0;
+                        itemsToRemove.Add(dtItems.Rows[j]);
+                    }
+                    else
+                    {
+                        dtItems.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+                        if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True")
+                        {
+                            if (totalAmount >= Convert.ToInt32(dtItems.Rows[j]["Amount"].ToString()))
+                            {
+                                dtItems.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+                                dtItems.Rows[j]["Amount"] = 0;
+                                itemsToRemove.Add(dtItems.Rows[j]);
+                            }
+                            else
+                            {
+                                dtItems.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+                                dtItems.Rows[j]["Amount"] = Convert.ToInt32(dtItems.Rows[j]["Amount"].ToString()) - totalAmount;
+                            }
+                        }
+                    }
+                }
+
+                // Remove marked items
+                foreach (DataRow row in itemsToRemove)
+                {
+                    dtItems.Rows.Remove(row);
+                }
+            }
+
+            GridView2.DataSource = dtItems;
+            GridView2.DataBind();
+            Session["dtItems"] = dtItems;
+        }
+        //protected void TextBox12_TextChanged(object sender, EventArgs e)
+        //{
+        //    DateTime? datereserve = code2.ParseDate(DateTime.Now.ToString("yyyy-MM-dd"));
+        //    try
+        //    {
+        //        datereserve = code2.ParseDate(TextBox12.Text);
+        //    }
+        //    catch
+        //    {
+        //        TextBox12.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        //    }
+        //    if (DateTime.Now > datereserve.Value.AddDays(1) && Session["permission"] == "No")
+        //    {
+        //        GridView1.Visible = false;
+        //    }
+        //    else
+        //    {
+        //        GridView1.Visible = true;
+        //        try
+        //        {
+        //            if (Session["permission"].ToString() == "True")
+        //            {
+
+        //            }
+        //            else
+        //            {
+        //                if (code2.ParseDate(TextBox12.Text) > DateTime.Now.AddMonths(3))
+        //                {
+        //                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ระบบไม่อนุญาติให้จองเกิน 3 เดือน กรุณาติดต่อ Admin');", true);
+        //                    TextBox12.Text = "";
+
+        //                }
+        //            }
+        //        }
+        //        catch
+        //        {
+        //            if (code2.ParseDate(TextBox12.Text) > DateTime.Now.AddMonths(3))
+        //            {
+        //                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ระบบไม่อนุญาติให้จองเกิน 3 เดือน กรุณาติดต่อ Admin');", true);
+        //                TextBox12.Text = "";
+        //            }
+        //        }
+
+
+
+        //        string command = Request.QueryString["command"];
+        //        string id = Request.QueryString["id"];
+        //        string check = Request.QueryString["check"];
+        //        try
+        //        {
+        //            if (check[0] == ' ')
+        //            {
+        //                check = "+" + check.Replace(" ", "");
+        //            }
+        //        }
+        //        catch { }
+        //        try
+        //        {
+        //            Label1.Text = "Check-Out: " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy");
+        //        }
+        //        catch
+        //        {
+        //            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาติดต่อ Admin กรณีต้องการจองเกิน 3 เดือน');", true);
+        //        }
+        //        DataTable dtAccommodation = code.DatabaseQuery(conn, "Select * From Accommodation Where Status = 1 order by OrderID asc");
+        //        for (int x = 0; x < Convert.ToInt32(DropDownList1.SelectedValue); x++)
+        //        {
+        //            DataTable dtReservation = code.DatabaseQuery(conn, "Select * From Reservation right join Reservation_Accommodation on Reservation.ID = Reservation_Accommodation.Reservation_ID Where '" + code2.ParseDate(TextBox12.Text).Value.AddDays((double)x).ToString("yyyy-MM-dd") + "' >= CheckinDate AND '" + code2.ParseDate(TextBox12.Text).Value.AddDays((double)x).ToString("yyyy-MM-dd") + "' < CheckoutDate");
+
+        //            if (command == "edit" || command == "checkin" || command == "rentmore")
+        //            {
+        //                DataTable dtAccom = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Accommodation on Reservation_Accommodation.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+        //                for (int i = 0; i < dtReservation.Rows.Count; i++)
+        //                {
+        //                    for (int j = 0; j < dtAccom.Rows.Count; j++)
+        //                    {
+        //                        try
+        //                        {
+        //                            if (dtReservation.Rows[i]["Reservation_ID"].ToString() == dtAccom.Rows[j]["Reservation_ID"].ToString() && dtReservation.Rows[i]["Accommodation_ID"].ToString() == dtAccom.Rows[j]["Accommodation_ID"].ToString() && dtReservation.Rows[i]["Amount"].ToString() == dtAccom.Rows[j]["Amount"].ToString())
+        //                            {
+        //                                dtReservation.Rows[i].Delete();
+        //                            }
+        //                        }
+        //                        catch { }
+        //                    }
+        //                }
+        //                dtReservation.AcceptChanges();
+        //            }
+
+
+        //            try
+        //            {
+        //                dtAccommodation.Columns.Add("StatusOnDate");
+        //            }
+        //            catch
+        //            {
+        //            }
+
+        //            List<int> rowDelete = new List<int>();
+        //            for (int j = 0; j < dtAccommodation.Rows.Count; j++)
+        //            {
+        //                int checkloop = 0;
+        //                int totalAmount = 0;
+        //                int ReserveAmount = 0;
+
+
+        //                for (int i = 0; i < dtReservation.Rows.Count; i++)
+        //                {
+        //                    if (dtReservation.Rows[i]["Accommodation_ID"].ToString() == dtAccommodation.Rows[j]["ID"].ToString())
+        //                    {
+        //                        checkloop = 1;
+        //                        if (dtAccommodation.Rows[j]["LimitWithPeople"].ToString() == "True" && (!DBNull.Value.Equals(dtReservation.Rows[i]["Amount"])) && dtReservation.Rows[i]["Accommodation_ID"].ToString() == dtAccommodation.Rows[j]["ID"].ToString())
+        //                        {
+        //                            totalAmount += Convert.ToInt32(dtReservation.Rows[i]["Amount"].ToString());
+        //                        }
+        //                    }
+
+        //                }
+        //                if (checkloop == 1 && dtAccommodation.Rows[j]["LimitWithPeople"].ToString() == "False")
+        //                {
+        //                    dtAccommodation.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+        //                    dtAccommodation.Rows[j].Delete();
+        //                }
+        //                else
+        //                {
+        //                    dtAccommodation.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+
+        //                    if ("True" == "True")
+        //                    {
+        //                        if (totalAmount >= Convert.ToInt32(dtAccommodation.Rows[j]["People"].ToString()))
+        //                        {
+        //                            dtAccommodation.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+        //                            try
+        //                            {
+        //                                dtAccommodation.Rows[j]["People"] = Convert.ToInt32(dtAccommodation.Rows[j]["People"].ToString()) - totalAmount;
+        //                            }
+        //                            catch
+        //                            {
+        //                                int checkk = 0;
+        //                                DataTable dtReserveAmount = code.DatabaseQuery(conn, "SELECT * FROM [Reservation_Accommodation] Where Reservation_ID = " + id);
+        //                                for (int l = 0; l < dtReserveAmount.Rows.Count; l++)
+        //                                {
+        //                                    if (dtReserveAmount.Rows[l]["Accommodation_ID"].ToString() == dtAccommodation.Rows[j]["ID"].ToString())
+        //                                    {
+        //                                        dtAccommodation.Rows[j]["People"] = dtReserveAmount.Rows[l]["Amount"].ToString();
+        //                                        checkk = 1;
+        //                                    }
+        //                                }
+        //                                if (checkk == 0)
+        //                                { dtAccommodation.Rows[j].Delete(); }
+
+        //                            }
+
+
+        //                        }
+        //                        else
+        //                        {
+        //                            dtAccommodation.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+        //                            dtAccommodation.Rows[j]["People"] = Convert.ToInt32(dtAccommodation.Rows[j]["People"].ToString()) - totalAmount;
+        //                        }
+        //                    }
+
+        //                }
+
+        //            }
+        //            dtAccommodation.AcceptChanges();
+        //        }
+
+
+        //        for (int i = 0; i < dtAccommodation.Rows.Count; i++)
+        //        {
+        //            dtAccommodation.Rows[i]["Price"] = AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(TextBox12.Text).Value);
+        //        }
+
+        //        GridView1.DataSource = dtAccommodation;
+        //        GridView1.DataBind();
+        //        Session["dtAccommodation"] = dtAccommodation;
+
+        //        DataTable dtItems = code.DatabaseQuery(conn, "Select * From Items Where Status = 1 order by OrderID asc");
+        //        for (int x = 0; x < Convert.ToInt32(DropDownList1.SelectedValue); x++)
+        //        {
+        //            DataTable dtReservation_Items = code.DatabaseQuery(conn, "Select * From Reservation right join Reservation_Items on Reservation.ID = Reservation_Items.Reservation_ID Where '" + code2.ParseDate(TextBox12.Text).Value.AddDays((double)x).ToString("yyyy-MM-dd") + "' >= CheckinDate AND '" + code2.ParseDate(TextBox12.Text).Value.AddDays((double)x).ToString("yyyy-MM-dd") + "' < CheckoutDate");
+
+        //            if (command == "edit" || command == "checkin")
+        //            {
+        //                DataTable dtItem = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Items on Reservation_Items.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+        //                for (int i = 0; i < dtReservation_Items.Rows.Count; i++)
+        //                {
+        //                    for (int j = 0; j < dtItems.Rows.Count; j++)
+        //                    {
+        //                        try
+        //                        {
+        //                            if (dtReservation_Items.Rows[i]["Reservation_ID"].ToString() == dtItems.Rows[j]["Reservation_ID"].ToString() && dtReservation_Items.Rows[i]["Accommodation_ID"].ToString() == dtItems.Rows[j]["Accommodation_ID"].ToString() && dtReservation_Items.Rows[i]["Amount"].ToString() == dtItems.Rows[j]["Amount"].ToString())
+        //                            {
+
+
+        //                            }
+        //                        }
+        //                        catch { }
+        //                    }
+        //                }
+        //                dtReservation_Items.AcceptChanges();
+        //            }
+
+        //            try
+        //            {
+        //                dtItems.Columns.Add("StatusOnDate");
+        //            }
+        //            catch
+        //            {
+        //            }
+
+
+        //            for (int j = 0; j < dtItems.Rows.Count; j++)
+        //            {
+        //                int checkloop = 0;
+        //                int totalAmount = 0;
+        //                for (int i = 0; i < dtReservation_Items.Rows.Count; i++)
+        //                {
+        //                    if (dtReservation_Items.Rows[i]["Items_ID"].ToString() == dtItems.Rows[j]["ID"].ToString())
+        //                    {
+        //                        checkloop = 1;
+        //                        if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True" && (!DBNull.Value.Equals(dtReservation_Items.Rows[i]["Amount"])) && dtReservation_Items.Rows[i]["Items_ID"].ToString() == dtItems.Rows[j]["ID"].ToString())
+        //                        {
+        //                            totalAmount += Convert.ToInt32(dtReservation_Items.Rows[i]["Amount"].ToString());
+        //                        }
+        //                        try
+        //                        {
+        //                            if (command == "edit" || command == "checkin")
+        //                            {
+        //                                if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True" && dtReservation_Items.Rows[i]["Reservation_ID"].ToString() == id)
+        //                                {
+        //                                    totalAmount -= Convert.ToInt32(dtReservation_Items.Rows[i]["Amount"].ToString());
+        //                                }
+        //                            }
+
+        //                        }
+        //                        catch
+        //                        {
+
+        //                        }
+        //                    }
+
+        //                }
+        //                if (checkloop == 1 && dtItems.Rows[j]["LimitWithAmount"].ToString() == "False")
+        //                {
+        //                    dtItems.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+        //                    dtItems.Rows[j]["Amount"] = 0;
+        //                    //dtItems.Rows[j].Delete();
+        //                }
+        //                else
+        //                {
+        //                    dtItems.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+        //                    if (dtItems.Rows[j]["LimitWithAmount"].ToString() == "True")
+        //                    {
+        //                        if (totalAmount >= Convert.ToInt32(dtItems.Rows[j]["Amount"].ToString()))
+        //                        {
+        //                            dtItems.Rows[j]["StatusOnDate"] = "ไม่ว่าง (Not available)";
+        //                            dtItems.Rows[j]["Amount"] = 0;
+        //                            //dtItems.Rows[j].Delete();
+        //                        }
+        //                        else
+        //                        {
+        //                            dtItems.Rows[j]["StatusOnDate"] = "ว่าง (Available)";
+        //                            dtItems.Rows[j]["Amount"] = Convert.ToInt32(dtItems.Rows[j]["Amount"].ToString()) - totalAmount;
+        //                        }
+        //                    }
+        //                }
+
+        //            }
+        //            dtItems.AcceptChanges();
+        //        }
+        //        GridView2.DataSource = dtItems;
+        //        GridView2.DataBind();
+        //        Session["dtItems"] = dtItems;
+        //    }
+        //}
+
+        protected void CheckBox5_CheckedChanged(object sender, EventArgs e)
+        {
+            if(TextBox13.Text.Contains('@'))
+            {
+
+            }
+            else
+            {
+                CheckBox5.Checked = false;
+                CheckBox5.DataBind();
+            }
+        }
+
+        protected void Button6_Click(object sender, EventArgs e)
+        {
+            TextBox16.Enabled = false;
+            getAddress("SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' order by SubDistrict ASC");
+
+        }
+
+        protected void Button7_Click(object sender, EventArgs e)
+        {
+            TextBox16.Enabled = true;
+            TextBox16.Text = string.Empty;
+            DropDownList5.Items.Clear();
+            DropDownList6.Items.Clear();
+            DropDownList7.Items.Clear();
+            getAddress("SELECT DISTINCT [Province] FROM [Address] order by Province ASC", "SELECT DISTINCT [District] FROM [Address] order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] order by SubDistrict ASC");
+
+        }
+
+        public void getAddress(string commp, string commd, string commsd)
+        {
+            string Command = Request.QueryString["Command"];
+            string ID = Request.QueryString["ID"];
+            DataTable dtProvince = code.DatabaseQuery(conn, commp);
+            DataTable dtDistrict = code.DatabaseQuery(conn, commd);
+            DataTable dtSubDistrict = code.DatabaseQuery(conn, commsd);
+            try
+            {
+                if (dtProvince.Rows.Count <= 0)
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ไม่พบหมายเลขไปรษณีย์ที่คุณระบุ');", true);
+                    TextBox16.Enabled = true;
+                }
+                else
+                {
+                    if (Button2.Enabled == true || Command == "View" || Command == "Edit")
+                    {
+                        List<string> ddl = new List<string>();
+
+                        for (int i = 0; i < dtProvince.Rows.Count; i++)
+                        {
+                            ddl.Add(dtProvince.Rows[i][0].ToString());
+                        }
+                        DropDownList5.DataSource = ddl;
+                        DropDownList5.DataBind();
+                        //DropDownList5.SelectedIndex = 0;
+
+                        ddl.Clear();
+
+                        for (int i = 0; i < dtDistrict.Rows.Count; i++)
+                        {
+                            ddl.Add(dtDistrict.Rows[i][0].ToString());
+                        }
+                        DropDownList6.DataSource = ddl;
+                        DropDownList6.DataBind();
+                        //DropDownList6.SelectedIndex = 0;
+
+                        ddl.Clear();
+
+                        for (int i = 0; i < dtSubDistrict.Rows.Count; i++)
+                        {
+                            ddl.Add(dtSubDistrict.Rows[i][0].ToString());
+                        }
+                        DropDownList7.DataSource = ddl;
+                        DropDownList7.DataBind();
+                        //DropDownList7.SelectedIndex = 0;
+                    }
+                    else { }
+                }
+            }
+            catch { }
+        }
+
+        protected void TextBox16_TextChanged(object sender, EventArgs e)
+        {
+            Button6_Click(null, null);
+        }
+
+
+        public string CheckAddressID(string ZipCode, string Province, string District, string SubDistrict)
+        {
+            string ID = "0";
+            try
+            {
+                DataTable dt = code.DatabaseQuery(conn, "Select ID from Address Where PostalCode = '" + ZipCode + "' AND Province = N'" + Province + "' AND District = N'" + District + "' AND SubDistrict = N'" + SubDistrict + "'");
+                ID = dt.Rows[0][0].ToString();
+            }
+            catch { }
+
+            return ID;
+        }
+
+
+
+        protected void DropDownList6_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (TextBox16.Enabled == false)
+            {
+                getAddress("SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND District = N'" + DropDownList6.SelectedValue + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND District = N'" + DropDownList6.SelectedValue + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND District = N'" + DropDownList6.SelectedValue + "' order by SubDistrict ASC");
+            }
+            else
+            {
+                getAddress("SELECT DISTINCT [Province] FROM [Address] Where District = N'" + DropDownList6.SelectedValue + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where District = N'" + DropDownList6.SelectedValue + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where District = N'" + DropDownList6.SelectedValue + "' order by SubDistrict ASC");
+            }
+        }
+
+        protected void DropDownList5_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+            if (TextBox16.Enabled == false)
+            {
+                getAddress("SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND Province = N'" + DropDownList5.SelectedValue + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND Province = N'" + DropDownList5.SelectedValue + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox16.Text + "' AND Province = N'" + DropDownList5.SelectedValue + "' order by SubDistrict ASC");
+            }
+            else
+            {
+                getAddress("SELECT DISTINCT [Province] FROM [Address] Where Province = N'" + DropDownList5.SelectedValue + "' order by Province ASC", "SELECT DISTINCT [District] FROM [Address] Where Province = N'" + DropDownList5.SelectedValue + "' order by District ASC", "SELECT DISTINCT [SubDistrict] FROM [Address] Where Province = N'" + DropDownList5.SelectedValue + "' order by SubDistrict ASC");
+            }
+        }
+
+        protected void DropDownList8_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(DropDownList8.SelectedValue == "1")
+            {
+                CheckBox3.Checked = false; 
+                CheckBox4.Checked = false;
+                CheckBox3_CheckedChanged(null, null);
+                TextBox18.Visible = true;
+            }
+            else
+            {
+                TextBox18.Visible = false;
+            }
+        }
+
+public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime checkOutDate, string accommodationId = null)
+{
+    DataTable dtAvailableAccommodations = new DataTable();
+    
+    try
+    {
+        // Get all active accommodations
+        string accomQuery = "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC";
+        if (!string.IsNullOrEmpty(accommodationId))
+        {
+            accomQuery = $"SELECT * FROM Accommodation WHERE Status = 1 AND ID = {accommodationId} ORDER BY OrderID ASC";
+        }
+        
+        DataTable dtAccommodation = code.DatabaseQuery(conn, accomQuery);
+
+        // Add status column
+        dtAccommodation.Columns.Add("StatusOnDate", typeof(string));
+        dtAccommodation.Columns.Add("AvailableAmount", typeof(int));
+
+        // Check availability for each day in the date range
+        for (DateTime date = checkInDate; date < checkOutDate; date = date.AddDays(1))
+        {
+            // Get reservations for this date
+            DataTable dtReservation = code.DatabaseQuery(conn, 
+                $"SELECT * FROM Reservation RIGHT JOIN Reservation_Accommodation " +
+                $"ON Reservation.ID = Reservation_Accommodation.Reservation_ID " +
+                $"WHERE '{date.ToString("yyyy-MM-dd")}' >= CheckinDate " +
+                $"AND '{date.ToString("yyyy-MM-dd")}' < CheckoutDate");
+
+            // Check each accommodation's availability
+            for (int j = 0; j < dtAccommodation.Rows.Count; j++)
+            {
+                int totalReserved = 0;
+                string accomId = dtAccommodation.Rows[j]["ID"].ToString();
+                bool isLimitWithPeople = dtAccommodation.Rows[j]["LimitWithPeople"].ToString() == "True";
+
+                // Calculate total reserved amount for this accommodation
+                foreach (DataRow resRow in dtReservation.Rows)
+                {
+                    if (resRow["Accommodation_ID"].ToString() == accomId)
+                    {
+                        if (isLimitWithPeople)
+                        {
+                            totalReserved += Convert.ToInt32(resRow["Amount"]);
+                        }
+                        else
+                        {
+                            // For non-people limited accommodations, any reservation means fully booked
+                            totalReserved = Convert.ToInt32(dtAccommodation.Rows[j]["People"]);
+                            break;
+                        }
+                    }
+                }
+
+                // Update status
+                if (isLimitWithPeople)
+                {
+                    int available = Convert.ToInt32(dtAccommodation.Rows[j]["People"]) - totalReserved;
+                    dtAccommodation.Rows[j]["AvailableAmount"] = available;
+                    dtAccommodation.Rows[j]["StatusOnDate"] = available > 0 ? 
+                        $"Available ({available} left)" : "Fully Booked";
+                }
+                else
+                {
+                    dtAccommodation.Rows[j]["AvailableAmount"] = totalReserved > 0 ? 0 : 1;
+                    dtAccommodation.Rows[j]["StatusOnDate"] = totalReserved > 0 ? 
+                        "Fully Booked" : "Available";
+                }
+            }
+        }
+
+        dtAvailableAccommodations = dtAccommodation;
+    }
+    catch (Exception ex)
+    {
+        // Log error
+        // You might want to add error logging here
+        throw;
+    }
+
+    return dtAvailableAccommodations;
+}
+
+        protected void Button8_Click(object sender, EventArgs e)
+        {
+            if (Button8.Text == "Submit")
+            {
+                if (TextBox19.Text.Length == 8)
+                {
+                    DataTable dtDiscount = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] Where Coupon_Code = N'" + TextBox19.Text + "'");
+                    if (dtDiscount.Rows.Count >= 1)
+                    {
+                        Session["UseCoupon"] = "Affiliate";
+                        TextBox19.Enabled = false;
+                        TextBox12_TextChanged(null, null);
+                        Button8.Text = "Clear";
+                        TextBox6.Text += "Affiliate Code: "+TextBox19.Text+ "\r\n";
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกห้องพักอีกครั้งระบบได้ทำการปรับราคาที่พักตามส่วนลดของท่านเรียบร้อยแล้ว');", true);
+                    }
+                    else
+                    {
+                        Button8.Text = "Submit";
+                        Session["UseCoupon"] = "false";
+                        TextBox19.Text = string.Empty;
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('รหัสไม่ถูกต้อง กรุณาใส่ตัวเล็ก ตัวใหญ่ให้ถูกต้อง');", true);
+                    }
+                }
+                else if(TextBox19.Text.Length == 13 && (TextBox19.Text[0] == 'v' || TextBox19.Text[0] == 'V'))
+                {
+                    DataTable dtVoucher = new DataTable();
+                    try
+                    {
+                        dtVoucher = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Voucher] inner join Voucher_RatePlan_Group on Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number inner join Accommodation_RatePlan_Group on Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID inner join Accommodation_RatePlan on Accommodation_RatePlan.ID = Rateplan_ID  Where Voucher.Voucher_Number = N'" + TextBox19.Text + "' AND Used_Status = 'False' AND Expired_Date >= '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") + "'");
+
+                    }
+                    catch {
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวันที่ต้องการจองก่อน');", true);
+                    }
+                    if (dtVoucher.Rows.Count >= 1)
+                    {
+                        Session["UseCoupon"] = "Voucher";
+                        TextBox19.Enabled = false;
+                        TextBox12_TextChanged(null, null);
+                        Button8.Text = "Clear";
+                        TextBox6.Text += "Voucher No."+TextBox19.Text+"\r\n";
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกห้องพักอีกครั้งระบบได้ทำการปรับราคาที่พักตามส่วนลดของท่านเรียบร้อยแล้ว');", true);
+                    }
+                    else
+                    {
+                        Button8.Text = "Submit";
+                        Session["UseCoupon"] = "false";
+                        TextBox19.Text = string.Empty;
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('รหัสไม่ถูกต้อง กรุณาใส่ตัวเล็ก ตัวใหญ่ให้ถูกต้อง');", true);
+                    }
+                }
+                else
+                {
+
+                }
+                    
+                
+            }
+            else if(Button8.Text == "Clear")
+            {
+                Button8.Text = "Submit";
+                Session["UseCoupon"] = "false";
+                TextBox19.Text = string.Empty;
+                TextBox12_TextChanged(null, null);
+            }
+        }
+
+        protected void CheckBox7_CheckedChanged(object sender, EventArgs e)
+        {
+            if(CheckBox7.Checked == true)
+            {
+                Panel2.Visible = true;
+            }
+            else
+            {
+                Panel2.Visible = false;
+            }
+        }
+
+
+    }
+}
