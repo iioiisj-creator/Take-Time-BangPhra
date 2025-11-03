@@ -3,12 +3,14 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Configuration;
 using Take_Time_BangPhra.Services;
 
 namespace Take_Time_BangPhra.Admin
 {
     public partial class CustomerManagement : System.Web.UI.Page
     {
+        private string connString;
         private SqlConnection conn;
         private CustomerService customerService;
         private code codeHelper;
@@ -16,8 +18,8 @@ namespace Take_Time_BangPhra.Admin
         protected void Page_Load(object sender, EventArgs e)
         {
             // Initialize connection
-            code code2 = new code();
-            conn = code2.ConnectDB();
+            connString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+            conn = new SqlConnection(connString);
             customerService = new CustomerService(conn);
             codeHelper = new code();
 
@@ -85,7 +87,7 @@ namespace Take_Time_BangPhra.Admin
             {
                 // Total customers
                 string queryTotal = "SELECT COUNT(*) FROM Customer WHERE Status = 1";
-                DataTable dtTotal = codeHelper.DatabaseQuery(conn, queryTotal);
+                DataTable dtTotal = codeHelper.DatabaseQuery(connString, queryTotal);
                 if (dtTotal.Rows.Count > 0)
                 {
                     lblTotalCustomers.Text = dtTotal.Rows[0][0].ToString();
@@ -93,7 +95,7 @@ namespace Take_Time_BangPhra.Admin
 
                 // Active customers
                 string queryActive = "SELECT COUNT(*) FROM Customer WHERE Status = 1 AND IsActive = 1";
-                DataTable dtActive = codeHelper.DatabaseQuery(conn, queryActive);
+                DataTable dtActive = codeHelper.DatabaseQuery(connString, queryActive);
                 if (dtActive.Rows.Count > 0)
                 {
                     lblActiveCustomers.Text = dtActive.Rows[0][0].ToString();
@@ -105,7 +107,7 @@ namespace Take_Time_BangPhra.Admin
                     FROM Customer
                     WHERE Status = 1
                       AND CreatedDate >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)";
-                DataTable dtNew = codeHelper.DatabaseQuery(conn, queryNew);
+                DataTable dtNew = codeHelper.DatabaseQuery(connString, queryNew);
                 if (dtNew.Rows.Count > 0)
                 {
                     lblNewCustomersThisMonth.Text = dtNew.Rows[0][0].ToString();
