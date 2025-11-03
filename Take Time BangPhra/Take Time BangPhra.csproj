@@ -356,6 +356,7 @@
     <Content Include="Admin\Login.aspx" />
     <Content Include="Admin\Report.aspx" />
     <Content Include="Admin\Vendor.aspx" />
+    <Content Include="Admin\CustomerManagement.aspx" />
     <Content Include="Affiliate\Default.aspx" />
     <Content Include="Affiliate\Login.aspx" />
     <Content Include="Admin\PaymentAffiliate.aspx" />
@@ -550,6 +551,13 @@
     <Compile Include="Admin\Vendor.aspx.designer.cs">
       <DependentUpon>Vendor.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Admin\CustomerManagement.aspx.cs">
+      <DependentUpon>CustomerManagement.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\CustomerManagement.aspx.designer.cs">
+      <DependentUpon>CustomerManagement.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Affiliate\Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -589,6 +597,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Class\CodeHelper.cs" />
     <Compile Include="Class\CustomerService.cs" />
+    <Compile Include="Class\AccountingService.cs" />
     <Compile Include="Class\DatabaseHelper.cs" />
     <Compile Include="Class\EmailService.cs" />
     <Compile Include="Class\ExcelCreator.cs" />
