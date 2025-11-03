@@ -76,14 +76,14 @@ END
 
 PRINT '✓ Customer table exists'
 
--- Check if Employees table exists (for audit trail)
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Employees]') AND type in (N'U'))
+-- Check if Admin table exists (for audit trail) - using Admin instead of Employees
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Admin]') AND type in (N'U'))
 BEGIN
-    RAISERROR('✗ Employees table does not exist. Cannot proceed.', 16, 1)
+    RAISERROR('✗ Admin table does not exist. Cannot proceed.', 16, 1)
     GOTO MigrationEnd
 END
 
-PRINT '✓ Employees table exists'
+PRINT '✓ Admin table exists'
 
 PRINT ''
 
@@ -154,21 +154,21 @@ BEGIN TRY
         PRINT '  ⚠ FK_Customer_Audit_Log_Customer already exists'
     END
 
-    -- FK to Employees
-    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Audit_Log_Employees')
+    -- FK to Admin (employee/user table)
+    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Audit_Log_Admin')
     BEGIN
         ALTER TABLE [dbo].[Customer_Audit_Log]
-        ADD CONSTRAINT [FK_Customer_Audit_Log_Employees]
+        ADD CONSTRAINT [FK_Customer_Audit_Log_Admin]
         FOREIGN KEY([ChangedBy_ID])
-        REFERENCES [dbo].[Employees] ([ID])
+        REFERENCES [dbo].[Admin] ([ID])
         ON UPDATE NO ACTION
         ON DELETE SET NULL
 
-        PRINT '  ✓ Added FK_Customer_Audit_Log_Employees'
+        PRINT '  ✓ Added FK_Customer_Audit_Log_Admin'
     END
     ELSE
     BEGIN
-        PRINT '  ⚠ FK_Customer_Audit_Log_Employees already exists'
+        PRINT '  ⚠ FK_Customer_Audit_Log_Admin already exists'
     END
 
     -- ===================================================================
@@ -258,30 +258,118 @@ BEGIN TRY
         PRINT '  ⚠ IsActive column already exists'
     END
 
-    -- Add FK for LastUpdatedBy_ID
-    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Employees_LastUpdated')
+    -- TaxID (for business customers)
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'TaxID')
     BEGIN
         ALTER TABLE [dbo].[Customer]
-        ADD CONSTRAINT [FK_Customer_Employees_LastUpdated]
+        ADD [TaxID] [nvarchar](20) NULL
+
+        PRINT '  ✓ Added TaxID column'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ TaxID column already exists'
+    END
+
+    -- District
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'District')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD [District] [nvarchar](100) NULL
+
+        PRINT '  ✓ Added District column'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ District column already exists'
+    END
+
+    -- Subdistrict
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'Subdistrict')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD [Subdistrict] [nvarchar](100) NULL
+
+        PRINT '  ✓ Added Subdistrict column'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ Subdistrict column already exists'
+    END
+
+    -- Province
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'Province')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD [Province] [nvarchar](100) NULL
+
+        PRINT '  ✓ Added Province column'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ Province column already exists'
+    END
+
+    -- Postcode
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'Postcode')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD [Postcode] [nvarchar](10) NULL
+
+        PRINT '  ✓ Added Postcode column'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ Postcode column already exists'
+    END
+
+    -- CustomerType_ID (if not exists, map from Customer_Type_ID)
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'CustomerType_ID')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD [CustomerType_ID] [tinyint] NULL
+
+        PRINT '  ✓ Added CustomerType_ID column'
+
+        -- Migrate data from Customer_Type_ID if it exists
+        IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'Customer_Type_ID')
+        BEGIN
+            UPDATE Customer
+            SET CustomerType_ID = Customer_Type_ID
+            WHERE Customer_Type_ID IS NOT NULL
+
+            PRINT '  ✓ Migrated data from Customer_Type_ID to CustomerType_ID'
+        END
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ CustomerType_ID column already exists'
+    END
+
+    -- Add FK for LastUpdatedBy_ID
+    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Admin_LastUpdated')
+    BEGIN
+        ALTER TABLE [dbo].[Customer]
+        ADD CONSTRAINT [FK_Customer_Admin_LastUpdated]
         FOREIGN KEY([LastUpdatedBy_ID])
-        REFERENCES [dbo].[Employees] ([ID])
+        REFERENCES [dbo].[Admin] ([ID])
         ON UPDATE NO ACTION
         ON DELETE SET NULL
 
-        PRINT '  ✓ Added FK_Customer_Employees_LastUpdated'
+        PRINT '  ✓ Added FK_Customer_Admin_LastUpdated'
     END
 
     -- Add FK for CreatedBy_ID
-    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Employees_Created')
+    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Admin_Created')
     BEGIN
         ALTER TABLE [dbo].[Customer]
-        ADD CONSTRAINT [FK_Customer_Employees_Created]
+        ADD CONSTRAINT [FK_Customer_Admin_Created]
         FOREIGN KEY([CreatedBy_ID])
-        REFERENCES [dbo].[Employees] ([ID])
+        REFERENCES [dbo].[Admin] ([ID])
         ON UPDATE NO ACTION
         ON DELETE SET NULL
 
-        PRINT '  ✓ Added FK_Customer_Employees_Created'
+        PRINT '  ✓ Added FK_Customer_Admin_Created'
     END
 
     -- ===================================================================
@@ -555,19 +643,19 @@ BEGIN TRY
             C.Province,
             C.Postcode,
             C.CustomerType_ID,
-            CT.CustomerTypeName,
+            CT.Customer_Type AS CustomerTypeName,
             C.Status,
             C.CreatedDate,
             C.LastUpdated,
             C.IsActive,
-            E1.Name AS CreatedByName,
-            E2.Name AS LastUpdatedByName,
+            E1.FirstName + '' '' + E1.LastName AS CreatedByName,
+            E2.FirstName + '' '' + E2.LastName AS LastUpdatedByName,
             (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalReservations,
             (SELECT MAX(CheckinDate) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS LastReservationDate
         FROM Customer C
         LEFT JOIN Customer_Type CT ON C.CustomerType_ID = CT.ID
-        LEFT JOIN Employees E1 ON C.CreatedBy_ID = E1.ID
-        LEFT JOIN Employees E2 ON C.LastUpdatedBy_ID = E2.ID
+        LEFT JOIN Admin E1 ON C.CreatedBy_ID = E1.ID
+        LEFT JOIN Admin E2 ON C.LastUpdatedBy_ID = E2.ID
         WHERE C.MobilePhone = @MobilePhone
     END
     ')
@@ -641,9 +729,9 @@ BEGIN TRY
             CAL.ChangedBy_Source,
             CAL.IPAddress,
             CAL.Notes,
-            E.Name AS ChangedByName
+            E.FirstName + '' '' + E.LastName AS ChangedByName
         FROM Customer_Audit_Log CAL
-        LEFT JOIN Employees E ON CAL.ChangedBy_ID = E.ID
+        LEFT JOIN Admin E ON CAL.ChangedBy_ID = E.ID
         WHERE CAL.Customer_MobilePhone = @MobilePhone
         ORDER BY CAL.ChangeDate DESC
     END
@@ -744,16 +832,16 @@ BEGIN TRY
         C.IsActive,
         C.CreatedDate,
         C.LastUpdated,
-        E1.Name AS CreatedByName,
-        E2.Name AS LastUpdatedByName,
+        E1.FirstName + '' '' + E1.LastName AS CreatedByName,
+        E2.FirstName + '' '' + E2.LastName AS LastUpdatedByName,
         (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalReservations,
-        (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone AND StatusReserve = ''CONFIRMED'') AS ConfirmedReservations,
+        (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone AND Status = N''ยืนยันแล้ว'') AS ConfirmedReservations,
         (SELECT MAX(CheckinDate) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS LastReservationDate,
         (SELECT SUM(TotalPrice) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalRevenue
     FROM Customer C
     LEFT JOIN Customer_Type CT ON C.CustomerType_ID = CT.ID
-    LEFT JOIN Employees E1 ON C.CreatedBy_ID = E1.ID
-    LEFT JOIN Employees E2 ON C.LastUpdatedBy_ID = E2.ID
+    LEFT JOIN Admin E1 ON C.CreatedBy_ID = E1.ID
+    LEFT JOIN Admin E2 ON C.LastUpdatedBy_ID = E2.ID
     WHERE C.Status = 1 AND C.IsActive = 1
     ')
 
