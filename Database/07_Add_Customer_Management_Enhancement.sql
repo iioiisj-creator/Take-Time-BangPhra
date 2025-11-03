@@ -323,28 +323,10 @@ BEGIN TRY
         PRINT '  ⚠ Postcode column already exists'
     END
 
-    -- CustomerType_ID (if not exists, map from Customer_Type_ID)
-    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'CustomerType_ID')
-    BEGIN
-        ALTER TABLE [dbo].[Customer]
-        ADD [CustomerType_ID] [tinyint] NULL
+    -- Note: Using existing Customer_Type_ID column (no need to create CustomerType_ID)
+    -- The database already has Customer_Type_ID, so we'll use that throughout
 
-        PRINT '  ✓ Added CustomerType_ID column'
-
-        -- Migrate data from Customer_Type_ID if it exists
-        IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'Customer_Type_ID')
-        BEGIN
-            UPDATE Customer
-            SET CustomerType_ID = Customer_Type_ID
-            WHERE Customer_Type_ID IS NOT NULL
-
-            PRINT '  ✓ Migrated data from Customer_Type_ID to CustomerType_ID'
-        END
-    END
-    ELSE
-    BEGIN
-        PRINT '  ⚠ CustomerType_ID column already exists'
-    END
+    PRINT '  ✓ Using existing Customer_Type_ID column'
 
     -- Add FK for LastUpdatedBy_ID
     IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Admin_LastUpdated')
@@ -449,7 +431,7 @@ BEGIN TRY
         @Subdistrict NVARCHAR(100) = NULL,
         @Province NVARCHAR(100) = NULL,
         @Postcode NVARCHAR(10) = NULL,
-        @CustomerType_ID TINYINT = NULL,
+        @Customer_Type_ID TINYINT = NULL,
         @ChangedBy_ID SMALLINT = NULL,
         @ChangeSource NVARCHAR(100) = NULL,
         @IPAddress NVARCHAR(50) = NULL,
@@ -539,7 +521,7 @@ BEGIN TRY
                     Subdistrict = @Subdistrict,
                     Province = @Province,
                     Postcode = @Postcode,
-                    CustomerType_ID = COALESCE(@CustomerType_ID, CustomerType_ID),
+                    Customer_Type_ID = COALESCE(@Customer_Type_ID, Customer_Type_ID),
                     LastUpdated = GETDATE(),
                     LastUpdatedBy_ID = @ChangedBy_ID
                 WHERE MobilePhone = @MobilePhone
@@ -574,7 +556,7 @@ BEGIN TRY
                     Subdistrict,
                     Province,
                     Postcode,
-                    CustomerType_ID,
+                    Customer_Type_ID,
                     CreatedDate,
                     CreatedBy_ID,
                     LastUpdated,
@@ -591,7 +573,7 @@ BEGIN TRY
                     @Subdistrict,
                     @Province,
                     @Postcode,
-                    @CustomerType_ID,
+                    @Customer_Type_ID,
                     GETDATE(),
                     @ChangedBy_ID,
                     GETDATE(),
@@ -642,7 +624,7 @@ BEGIN TRY
             C.Subdistrict,
             C.Province,
             C.Postcode,
-            C.CustomerType_ID,
+            C.Customer_Type_ID,
             CT.Customer_Type AS CustomerTypeName,
             C.Status,
             C.CreatedDate,
@@ -653,7 +635,7 @@ BEGIN TRY
             (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalReservations,
             (SELECT MAX(CheckinDate) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS LastReservationDate
         FROM Customer C
-        LEFT JOIN Customer_Type CT ON C.CustomerType_ID = CT.ID
+        LEFT JOIN Customer_Type CT ON C.Customer_Type_ID = CT.ID
         LEFT JOIN Admin E1 ON C.CreatedBy_ID = E1.ID
         LEFT JOIN Admin E2 ON C.LastUpdatedBy_ID = E2.ID
         WHERE C.MobilePhone = @MobilePhone
@@ -682,8 +664,8 @@ BEGIN TRY
             C.TaxID,
             C.Address,
             C.Province,
-            C.CustomerType_ID,
-            CT.CustomerTypeName,
+            C.Customer_Type_ID,
+            CT.Customer_Type AS CustomerTypeName,
             C.Status,
             C.CreatedDate,
             C.LastUpdated,
@@ -691,7 +673,7 @@ BEGIN TRY
             (SELECT COUNT(*) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalReservations,
             (SELECT MAX(CheckinDate) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS LastReservationDate
         FROM Customer C
-        LEFT JOIN Customer_Type CT ON C.CustomerType_ID = CT.ID
+        LEFT JOIN Customer_Type CT ON C.Customer_Type_ID = CT.ID
         WHERE
             (@SearchTerm IS NULL OR
              C.Name LIKE ''%'' + @SearchTerm + ''%'' OR
@@ -826,8 +808,8 @@ BEGIN TRY
         C.Subdistrict,
         C.Province,
         C.Postcode,
-        C.CustomerType_ID,
-        CT.CustomerTypeName,
+        C.Customer_Type_ID,
+        CT.Customer_Type AS CustomerTypeName,
         C.Status,
         C.IsActive,
         C.CreatedDate,
@@ -839,7 +821,7 @@ BEGIN TRY
         (SELECT MAX(CheckinDate) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS LastReservationDate,
         (SELECT SUM(TotalPrice) FROM Reservation WHERE Customer_MobilePhone = C.MobilePhone) AS TotalRevenue
     FROM Customer C
-    LEFT JOIN Customer_Type CT ON C.CustomerType_ID = CT.ID
+    LEFT JOIN Customer_Type CT ON C.Customer_Type_ID = CT.ID
     LEFT JOIN Admin E1 ON C.CreatedBy_ID = E1.ID
     LEFT JOIN Admin E2 ON C.LastUpdatedBy_ID = E2.ID
     WHERE C.Status = 1 AND C.IsActive = 1
