@@ -353,9 +353,7 @@ namespace Take_Time_BangPhra.Account
             DateTime startDate = DateTime.Parse(txtStartDate.Text);
             DateTime endDate = DateTime.Parse(txtEndDate.Text);
 
-            // Set EPPlus license context
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
+            // EPPlus 4.5.3.3 doesn't require license context
             using (ExcelPackage package = new ExcelPackage())
             {
                 // Sheet 1: Summary
