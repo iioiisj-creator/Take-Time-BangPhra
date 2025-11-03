@@ -11,15 +11,15 @@ namespace Take_Time_BangPhra.Admin
     {
         private SqlConnection conn;
         private CustomerService customerService;
-        private Code code;
+        private code codeHelper;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             // Initialize connection
-            Code code2 = new Code();
+            code code2 = new code();
             conn = code2.ConnectDB();
             customerService = new CustomerService(conn);
-            code = new Code();
+            codeHelper = new code();
 
             if (!IsPostBack)
             {
@@ -85,7 +85,7 @@ namespace Take_Time_BangPhra.Admin
             {
                 // Total customers
                 string queryTotal = "SELECT COUNT(*) FROM Customer WHERE Status = 1";
-                DataTable dtTotal = code.DatabaseQuery(conn, queryTotal);
+                DataTable dtTotal = codeHelper.DatabaseQuery(conn, queryTotal);
                 if (dtTotal.Rows.Count > 0)
                 {
                     lblTotalCustomers.Text = dtTotal.Rows[0][0].ToString();
@@ -93,7 +93,7 @@ namespace Take_Time_BangPhra.Admin
 
                 // Active customers
                 string queryActive = "SELECT COUNT(*) FROM Customer WHERE Status = 1 AND IsActive = 1";
-                DataTable dtActive = code.DatabaseQuery(conn, queryActive);
+                DataTable dtActive = codeHelper.DatabaseQuery(conn, queryActive);
                 if (dtActive.Rows.Count > 0)
                 {
                     lblActiveCustomers.Text = dtActive.Rows[0][0].ToString();
@@ -105,7 +105,7 @@ namespace Take_Time_BangPhra.Admin
                     FROM Customer
                     WHERE Status = 1
                       AND CreatedDate >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)";
-                DataTable dtNew = code.DatabaseQuery(conn, queryNew);
+                DataTable dtNew = codeHelper.DatabaseQuery(conn, queryNew);
                 if (dtNew.Rows.Count > 0)
                 {
                     lblNewCustomersThisMonth.Text = dtNew.Rows[0][0].ToString();
