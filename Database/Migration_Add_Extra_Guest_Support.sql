@@ -13,6 +13,22 @@ USE [Taketime]
 GO
 
 -- ===================================================================
+-- Check if migration was already applied
+-- ===================================================================
+DECLARE @MigrationName NVARCHAR(255) = 'Migration_Add_Extra_Guest_Support'
+DECLARE @IsApplied TABLE (IsApplied INT)
+
+INSERT INTO @IsApplied
+EXEC sp_IsMigrationApplied @MigrationName
+
+IF EXISTS (SELECT 1 FROM @IsApplied WHERE IsApplied = 1)
+BEGIN
+    PRINT 'Migration already applied: ' + @MigrationName
+    RETURN
+END
+GO
+
+-- ===================================================================
 -- STEP 1: Backup current Accommodation data (for safety)
 -- ===================================================================
 PRINT 'Creating backup of Accommodation table...'
@@ -239,6 +255,19 @@ PRINT '  - Price per night: 1,000 + (1 x 200) = 1,200 baht'
 PRINT '  - Total: 1,200 x 2 = 2,400 baht'
 PRINT ''
 GO
+
+-- ===================================================================
+-- Record this migration
+-- ===================================================================
+EXEC sp_RecordMigration
+    @MigrationName = 'Migration_Add_Extra_Guest_Support',
+    @AppliedBy = SYSTEM_USER,
+    @Success = 1
+GO
+
+PRINT ''
+PRINT '✓ Migration recorded successfully'
+PRINT ''
 
 -- ===================================================================
 -- Optional: Rollback script (commented out for safety)
