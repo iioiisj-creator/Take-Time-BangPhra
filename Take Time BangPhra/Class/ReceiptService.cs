@@ -178,6 +178,67 @@ namespace Take_Time_BangPhra.Services
             return CalculateTwoDecimalPoints(total);
         }
 
+        /// <summary>
+        /// ปรับสัดส่วนรายละเอียดใน dtReserve ให้ตรงกับยอดรวมที่กำหนด
+        /// ใช้สำหรับกรณีที่มีการแก้ไขราคาห้องพัก แต่รายละเอียดยังเป็นราคาเดิม
+        /// </summary>
+        private void AdjustReserveDataToMatch(DataTable dtReserve, double expectedTotal, string reservationId)
+        {
+            if (dtReserve == null || dtReserve.Rows.Count == 0)
+                return;
+
+            // คำนวณยอดรวมปัจจุบันจาก dtReserve
+            double currentTotal = CalculateTotalFromReserve(dtReserve);
+
+            // ถ้ายอดตรงกันอยู่แล้ว (ผิดพลาดไม่เกิน 0.5 บาท) ไม่ต้องปรับ
+            if (Math.Abs(currentTotal - expectedTotal) <= 0.5)
+                return;
+
+            // คำนวณอัตราส่วนการปรับ
+            double adjustmentRatio = expectedTotal / currentTotal;
+
+            // Log การปรับสัดส่วน
+            _codeHelper.Log(_dbHelper.ConnectionString, "Receipt Amount Adjustment",
+                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotal:F2} (ratio: {adjustmentRatio:F4})",
+                "SYSTEM");
+
+            double adjustedTotal = 0;
+            int lastIndex = dtReserve.Rows.Count - 1;
+
+            // ปรับทุกแถวตามอัตราส่วน
+            for (int i = 0; i < dtReserve.Rows.Count; i++)
+            {
+                DataRow row = dtReserve.Rows[i];
+                double originalPricePerPiece = Convert.ToDouble(row["Price_PerPeice"]);
+                double originalPriceAmount = Convert.ToDouble(row["Price_Amount"]);
+
+                // ปรับราคาต่อหน่วยและราคารวมตามอัตราส่วน
+                double adjustedPricePerPiece = CalculateTwoDecimalPoints(originalPricePerPiece * adjustmentRatio);
+                double adjustedPriceAmount = CalculateTwoDecimalPoints(originalPriceAmount * adjustmentRatio);
+
+                row["Price_PerPeice"] = adjustedPricePerPiece;
+                row["Price_Amount"] = adjustedPriceAmount;
+
+                adjustedTotal += adjustedPriceAmount;
+            }
+
+            // ปรับส่วนต่างจากการปัดเศษให้กับรายการสุดท้าย
+            double difference = CalculateTwoDecimalPoints(expectedTotal - adjustedTotal);
+            if (Math.Abs(difference) > 0.01)
+            {
+                DataRow lastRow = dtReserve.Rows[lastIndex];
+                double lastPriceAmount = Convert.ToDouble(lastRow["Price_Amount"]);
+                lastRow["Price_Amount"] = CalculateTwoDecimalPoints(lastPriceAmount + difference);
+
+                // ปรับ Price_PerPeice ของรายการสุดท้ายด้วย
+                double productAmount = Convert.ToDouble(lastRow["Product_Amount"]);
+                if (productAmount > 0)
+                {
+                    lastRow["Price_PerPeice"] = CalculateTwoDecimalPoints((lastPriceAmount + difference) / productAmount);
+                }
+            }
+        }
+
         public double CalculateTwoDecimalPoints(double num)
         {
             return Math.Round(num, 2);
@@ -204,12 +265,10 @@ namespace Take_Time_BangPhra.Services
                         vat = CalculateTwoDecimalPoints(vat);
                     }
 
-                    // Validate reserve data
-                    if (!ValidateReceiptData(dtReserve, totalAmount))
+                    // ปรับสัดส่วนรายละเอียดให้ตรงกับยอดรวมก่อนบันทึก
+                    if (!isDeposit)
                     {
-                        _codeHelper.Log(_dbHelper.ConnectionString, "Receipt Validation",
-                            $"Reserve data validation failed for Reservation {reservationId}. Expected: {totalAmount}, Calculated: {CalculateTotalFromReserve(dtReserve)}",
-                            "SYSTEM");
+                        AdjustReserveDataToMatch(dtReserve, totalAmount, reservationId);
                     }
 
                     if (isDeposit)

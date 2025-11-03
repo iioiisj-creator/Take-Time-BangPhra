@@ -2148,12 +2148,10 @@ namespace Take_Time_BangPhra
 
                 }
 
-                if (!ValidateReserveData(dtReserve, Total_Amount))
+                // ปรับสัดส่วนรายละเอียดให้ตรงกับยอดรวมก่อนบันทึก
+                if (!IsDeposit)
                 {
-                    // Log warning หรือจัดการกับความไม่ตรงกัน
-                    code2.Logs(conn, "Receipt Validation",
-                        $"Reserve data validation failed for Reservation {Reservation_ID}. Expected: {Total_Amount}, Calculated: {CalculateTotalFromReserve(dtReserve)}",
-                        "SYSTEM");
+                    AdjustReserveDataToMatch(dtReserve, Total_Amount, Reservation_ID);
                 }
 
                 if (IsDeposit == true)
@@ -2321,6 +2319,68 @@ namespace Take_Time_BangPhra
             }
             return TwoDecimalPoints(total);
         }
+
+        /// <summary>
+        /// ปรับสัดส่วนรายละเอียดใน dtReserve ให้ตรงกับยอดรวมที่กำหนด
+        /// ใช้สำหรับกรณีที่มีการแก้ไขราคาห้องพัก แต่รายละเอียดยังเป็นราคาเดิม
+        /// </summary>
+        private void AdjustReserveDataToMatch(DataTable dtReserve, double expectedTotal, string reservationId)
+        {
+            if (dtReserve == null || dtReserve.Rows.Count == 0)
+                return;
+
+            // คำนวณยอดรวมปัจจุบันจาก dtReserve
+            double currentTotal = CalculateTotalFromReserve(dtReserve);
+
+            // ถ้ายอดตรงกันอยู่แล้ว (ผิดพลาดไม่เกิน 0.5 บาท) ไม่ต้องปรับ
+            if (Math.Abs(currentTotal - expectedTotal) <= 0.5)
+                return;
+
+            // คำนวณอัตราส่วนการปรับ
+            double adjustmentRatio = expectedTotal / currentTotal;
+
+            // Log การปรับสัดส่วน
+            code2.Logs(conn, "Receipt Amount Adjustment",
+                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotal:F2} (ratio: {adjustmentRatio:F4})",
+                "SYSTEM");
+
+            double adjustedTotal = 0;
+            int lastIndex = dtReserve.Rows.Count - 1;
+
+            // ปรับทุกแถวตามอัตราส่วน
+            for (int i = 0; i < dtReserve.Rows.Count; i++)
+            {
+                DataRow row = dtReserve.Rows[i];
+                double originalPricePerPiece = Convert.ToDouble(row["Price_PerPeice"]);
+                double originalPriceAmount = Convert.ToDouble(row["Price_Amount"]);
+
+                // ปรับราคาต่อหน่วยและราคารวมตามอัตราส่วน
+                double adjustedPricePerPiece = TwoDecimalPoints(originalPricePerPiece * adjustmentRatio);
+                double adjustedPriceAmount = TwoDecimalPoints(originalPriceAmount * adjustmentRatio);
+
+                row["Price_PerPeice"] = adjustedPricePerPiece;
+                row["Price_Amount"] = adjustedPriceAmount;
+
+                adjustedTotal += adjustedPriceAmount;
+            }
+
+            // ปรับส่วนต่างจากการปัดเศษให้กับรายการสุดท้าย
+            double difference = TwoDecimalPoints(expectedTotal - adjustedTotal);
+            if (Math.Abs(difference) > 0.01)
+            {
+                DataRow lastRow = dtReserve.Rows[lastIndex];
+                double lastPriceAmount = Convert.ToDouble(lastRow["Price_Amount"]);
+                lastRow["Price_Amount"] = TwoDecimalPoints(lastPriceAmount + difference);
+
+                // ปรับ Price_PerPeice ของรายการสุดท้ายด้วย
+                double productAmount = Convert.ToDouble(lastRow["Product_Amount"]);
+                if (productAmount > 0)
+                {
+                    lastRow["Price_PerPeice"] = TwoDecimalPoints((lastPriceAmount + difference) / productAmount);
+                }
+            }
+        }
+
         private bool ValidateReserveData(DataTable dtReserve, double expectedTotal)
         {
             double calculatedTotal = 0;
