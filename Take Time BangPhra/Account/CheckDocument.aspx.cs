@@ -1,53 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System;
+using System.Data;
+using System.Data.SqlClient;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Data;
+using System.Collections.Generic;
+using System.Linq;
 using System.Configuration;
+using OfficeOpenXml;
 using System.IO;
-using System.Text;
+using Take_Time_BangPhra.Services;
 
 namespace Take_Time_BangPhra.Account
 {
     public partial class CheckDocument : System.Web.UI.Page
     {
-        _Default code = new _Default();
-        string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+        private SqlConnection conn;
+        private AccountingService accountingService;
+        private Code code;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            this.MaintainScrollPositionOnPostBack = true;
+            code = new Code();
+            string connString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+            conn = new SqlConnection(connString);
+            accountingService = new AccountingService(conn);
+
+            if (!IsPostBack)
+            {
+                CheckAdminLogin();
+                InitializePage();
+                LoadTodayData(); // Load today's Front team transactions by default
+            }
+        }
+
+        private void CheckAdminLogin()
+        {
             try
             {
-                if (Session["permission"].ToString() == "True" && (Session["User"].ToString() == "Owner" || Session["User"].ToString() == "Admin"))
+                if (Session["permission"] == null || Session["permission"].ToString() != "True")
                 {
-                    if(!IsPostBack)
-                    {
-                        TextBox1.Text = DateTime.Now.ToString("yyyy-MM-dd");
-                        TextBox2.Text = DateTime.Now.ToString("yyyy-MM-dd");
-
-                        string thisyear = "";
-                        string lastyear = "";
-
-                        if(Convert.ToInt32(DateTime.Now.Year.ToString()) > 2500)
-                        {
-                            thisyear = (Convert.ToInt32(DateTime.Now.Year.ToString()) - 543).ToString();
-                            lastyear = (Convert.ToInt32(DateTime.Now.AddYears(-1).Year.ToString()) - 543).ToString();
-                        }
-                        else
-                        {
-                            thisyear = (Convert.ToInt32(DateTime.Now.Year.ToString())).ToString();
-                            lastyear = (Convert.ToInt32(DateTime.Now.AddYears(-1).Year.ToString())).ToString();
-                        }
-
-                        DropDownList4.Items.Insert(0, new ListItem(thisyear, thisyear));
-                        DropDownList4.Items.Insert(1, new ListItem(lastyear, lastyear));
-                        DropDownList4.DataBind();
-                    }
+                    Response.Redirect("/Default");
                 }
-                else
+
+                string userRole = Session["User"]?.ToString() ?? "";
+                if (userRole != "Owner" && userRole != "Admin")
                 {
                     Response.Redirect("/Default");
                 }
@@ -56,424 +52,500 @@ namespace Take_Time_BangPhra.Account
             {
                 Response.Redirect("/Default");
             }
-
         }
 
-        protected void Button2_Click(object sender, EventArgs e)
+        private void InitializePage()
         {
-            Label10.Text = "";
-            Label11.Text = "";
-            Label12.Text = "";
-            Label13.Text = "";
-            Label14.Text = "";
-            Label15.Text = "";
-            Label16.Text = "";
-            Label17.Text = "";
+            // Set default date range to today
+            txtStartDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtEndDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        }
 
-            if (DropDownList1.SelectedValue == "P&L")
+        private void LoadTodayData()
+        {
+            DateTime today = DateTime.Now.Date;
+            LoadData(today, today);
+        }
+
+        private void LoadData(DateTime startDate, DateTime endDate)
+        {
+            try
             {
-                string cmd = "";
-                if (DropDownList3.SelectedIndex > 0)
-                {
-                    cmd = "Select * From Account_Receipt Where Month(Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Created_Date) = " + DropDownList4.SelectedValue + " AND Status like '" + DropDownList2.SelectedValue + "'";
+                // Load summary cards
+                LoadSummaryCards(startDate, endDate);
 
-                }
-                else
-                {
-                    cmd = "Select * From Account_Receipt Where Created_Date >= '" + TextBox1.Text + "' AND Created_Date <= '" + TextBox2.Text + "' AND Status like '" + DropDownList2.SelectedValue + "'";
+                // Load category breakdown
+                LoadCategoryBreakdown(startDate, endDate);
 
-                }
-                if (Session["User"].ToString() == "Admin")
-                {
-                    cmd += " AND Created_By_ID = " + Session["UserID"].ToString();
-                }
-                DataTable dtin = code.DatabaseQuery(conn, cmd);
+                // Load payment channel breakdown
+                LoadPaymentBreakdown(startDate, endDate);
 
-                if (DropDownList3.SelectedIndex > 0)
-                {
-                    cmd = "Select * From Account_Payment  Where Month(Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Created_Date) = " + DropDownList4.SelectedValue + " AND Status like '" + DropDownList2.SelectedValue + "'";
+                // Load transactions
+                LoadTransactions(startDate, endDate);
 
-                }
-                else
-                {
-                    cmd = "Select * From Account_Payment  Where Created_Date >= '" + TextBox1.Text + "' AND Created_Date <= '" + TextBox2.Text + "' AND Status like '" + DropDownList2.SelectedValue + "'";
+                // Load daily summary
+                LoadDailySummary(startDate, endDate);
+            }
+            catch (Exception ex)
+            {
+                ShowError("เกิดข้อผิดพลาดในการโหลดข้อมูล: " + ex.Message);
+            }
+        }
 
-                }
-                if (Session["User"].ToString() == "Admin")
-                {
-                    cmd += " AND Created_By_ID = " + Session["UserID"].ToString();
-                }
-                DataTable dtout = code.DatabaseQuery(conn, cmd);
+        private void LoadSummaryCards(DateTime startDate, DateTime endDate)
+        {
+            Dictionary<string, decimal> paymentSummary = accountingService.GetRevenueSummaryByPaymentChannel(startDate, endDate);
 
-                double totalCash = 0;
-                double total = 0;
-                double totalmd = 0;
-                double totalvat = 0;
-                string colname = "";
-               
-                for (int i = 0; i < dtin.Rows.Count; i++)
+            decimal cashTotal = 0;
+            decimal transferTotal = 0;
+            decimal creditTotal = 0;
+
+            // Map payment types to summary cards
+            foreach (var item in paymentSummary)
+            {
+                string paymentType = item.Key.ToLower();
+                decimal amount = item.Value;
+
+                if (paymentType.Contains("สด") || paymentType.Contains("cash"))
                 {
-                    if (dtin.Rows[i]["Paid_Type"].ToString().Contains("สด"))
+                    cashTotal += amount;
+                }
+                else if (paymentType.Contains("โอน") || paymentType.Contains("transfer"))
+                {
+                    transferTotal += amount;
+                }
+                else if (paymentType.Contains("บัตร") || paymentType.Contains("credit") || paymentType.Contains("card"))
+                {
+                    creditTotal += amount;
+                }
+            }
+
+            lblCashTotal.Text = cashTotal.ToString("N2");
+            lblTransferTotal.Text = transferTotal.ToString("N2");
+            lblCreditTotal.Text = creditTotal.ToString("N2");
+            lblGrandTotal.Text = (cashTotal + transferTotal + creditTotal).ToString("N2");
+        }
+
+        private void LoadCategoryBreakdown(DateTime startDate, DateTime endDate)
+        {
+            Dictionary<string, decimal> categorySummary = accountingService.GetRevenueSummaryByCategory(startDate, endDate);
+
+            // Convert to list for binding
+            var categoryList = categorySummary.Select(x => new
+            {
+                CategoryName = GetCategoryDisplayName(x.Key),
+                Amount = x.Value,
+                Percentage = categorySummary.Values.Sum() > 0 ? (x.Value / categorySummary.Values.Sum() * 100) : 0
+            }).OrderByDescending(x => x.Amount).ToList();
+
+            rptCategoryBreakdown.DataSource = categoryList;
+            rptCategoryBreakdown.DataBind();
+        }
+
+        private void LoadPaymentBreakdown(DateTime startDate, DateTime endDate)
+        {
+            Dictionary<string, decimal> paymentSummary = accountingService.GetRevenueSummaryByPaymentChannel(startDate, endDate);
+
+            // Convert to list for binding
+            var paymentList = paymentSummary.Select(x => new
+            {
+                PaymentName = x.Key,
+                Amount = x.Value,
+                Percentage = paymentSummary.Values.Sum() > 0 ? (x.Value / paymentSummary.Values.Sum() * 100) : 0
+            }).OrderByDescending(x => x.Amount).ToList();
+
+            rptPaymentBreakdown.DataSource = paymentList;
+            rptPaymentBreakdown.DataBind();
+        }
+
+        private void LoadTransactions(DateTime startDate, DateTime endDate)
+        {
+            // Critical logic: Loop through each date to get ONLY same-day transactions
+            // This ensures we only show transactions where TransactionDate = the specific date
+            // NOT advance bookings for future dates made on previous days
+            List<DataRow> allTransactions = new List<DataRow>();
+
+            for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                DataTable dt = accountingService.GetFrontTeamTransactions(date);
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    foreach (DataRow row in dt.Rows)
                     {
-                        totalCash += Convert.ToDouble(dtin.Rows[i]["Total_Amount"].ToString());
+                        allTransactions.Add(row);
                     }
-                    if (dtin.Rows[i]["Paid_Type"].ToString().Contains("โอน"))
-                    {
-                        total += Convert.ToDouble(dtin.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dtin.Rows[i]["Paid_Type"].ToString().Contains("กรรมการ"))
-                    {
-                        totalmd += Convert.ToDouble(dtin.Rows[i]["Total_Amount"].ToString());
-                    }
-                    totalvat += Convert.ToDouble(dtin.Rows[i]["Vat"].ToString());
                 }
-                Label10.Text = totalCash.ToString();
-                Label11.Text = total.ToString();
-                Label12.Text = totalvat.ToString();
-                
+            }
 
-                totalCash = 0;
-                total = 0;
-                double totalfrommd = 0;
-                double totaltomd = 0;
-                totalvat = 0;
-
-                for (int i = 0; i < dtout.Rows.Count; i++)
+            // Create consolidated DataTable
+            DataTable consolidatedTable = null;
+            if (allTransactions.Count > 0)
+            {
+                consolidatedTable = allTransactions[0].Table.Clone();
+                foreach (DataRow row in allTransactions)
                 {
-                    if (dtout.Rows[i]["Paid_How"].ToString().Contains("สด"))
-                    {
-                        totalCash += Convert.ToDouble(dtout.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dtout.Rows[i]["Paid_How"].ToString().Contains("โอน"))
-                    {
-                        total += Convert.ToDouble(dtout.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dtout.Rows[i]["Paid_How"].ToString().Contains("กรรมการ"))
-                    {
-                        totalfrommd += Convert.ToDouble(dtout.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dtout.Rows[i]["Vendor_ID"].ToString() == "1")
-                    {
-                        totaltomd += Convert.ToDouble(dtout.Rows[i]["Total_Amount"].ToString());
-                    }
-                    totalvat += Convert.ToDouble(dtout.Rows[i]["Vat"].ToString());
+                    consolidatedTable.ImportRow(row);
                 }
-                Label14.Text = totalCash.ToString();
-                Label15.Text = total.ToString();
-                Label17.Text = totalvat.ToString();
-                Label16.Text = totalfrommd.ToString();
-                Label13.Text = totaltomd.ToString();
-
             }
             else
             {
-                string cmd = "";
-                string payment_cmd = "SELECT Account_Payment.ID,[Name],Created_Date,Total_Amount,Vat_Type_ID,Vat,Total_Amount_Exclude_Vat,Paid_How,Paid_Type,Account_Payment.Status,Created_By_ID FROM [Account_Payment] inner join Vendor on Vendor.ID = Vendor_ID";
-                string receipt_cmd = "SELECT Account_Receipt.ID,Reservation_ID,Customer.FullName,Customer.Address,Customer.IDNumber,Customer_MobilePhone,Account_Receipt.Created_Date,Total_Amount,Vat,Total_Amount_Exclude_Vat,IsDeposit,UseDeposit,Paid_Type,Account_Receipt.[Status],Created_By_ID,Reservation.Remark,Reservation.NoNameinReceipt FROM [Account_Receipt] left join Reservation on Reservation.ID = Account_Receipt.Reservation_ID left join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone";
-                string detail_payment_cmd = "SELECT * FROM [Account_Payment_Detail] inner join Account_Payment on Account_Payment.ID = Payment_ID inner join Vendor on Vendor.ID = Vendor_ID";
-                string detail_receipt_cmd = "SELECT Account_Receipt.ID,Account_Receipt.Created_Date,FullName,Address,IDNumber,Product_Data,[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount],Paid_Type,Vat,Total_Amount FROM [Account_Receipt] inner join Account_Receipt_Detail on Account_Receipt_Detail.Receipt_ID = Account_Receipt.ID left join Reservation on Reservation.ID = Reservation_ID left join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone";
-
-                if (DropDownList3.SelectedIndex > 0)
-                {
-                    if (DropDownList1.SelectedItem.Text == "ใบสำคัญจ่าย")
-                    {
-                        cmd = payment_cmd + " Where Month(Account_Payment.Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Account_Payment.Created_Date) = " + DropDownList4.SelectedValue + " AND Account_Payment.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "ใบเสร็จรับเงิน")
-                    {
-                        cmd = receipt_cmd + " Where Month(Account_Receipt.Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Account_Receipt.Created_Date) = " + DropDownList4.SelectedValue + " AND Account_Receipt.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "รายละเอียดใบสำคัญจ่าย")
-                    {
-                        cmd = detail_payment_cmd + " Where Month(Account_Payment.Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Account_Payment.Created_Date) = " + DropDownList4.SelectedValue + " AND Account_Payment.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "รายละเอียดใบเสร็จรับเงิน")
-                    {
-                        cmd = detail_receipt_cmd + " Where Month(Account_Receipt.Created_Date) = " + DropDownList3.SelectedValue + " AND Year(Account_Receipt.Created_Date) = " + DropDownList4.SelectedValue + " AND Account_Receipt.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else { }
-                }
-                else
-                {
-                    if (DropDownList1.SelectedItem.Text == "ใบสำคัญจ่าย")
-                    {
-                        cmd = payment_cmd + " Where Account_Payment.Created_Date >= '" + TextBox1.Text + "' AND Account_Payment.Created_Date <= '" + TextBox2.Text + "' AND Account_Payment.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "ใบเสร็จรับเงิน")
-                    {
-                        cmd = receipt_cmd + " Where Account_Receipt.Created_Date >= '" + TextBox1.Text + "' AND Account_Receipt.Created_Date <= '" + TextBox2.Text + "' AND Account_Receipt.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "รายละเอียดใบสำคัญจ่าย")
-                    {
-                        cmd = detail_payment_cmd + " Where Account_Payment.Created_Date >= '" + TextBox1.Text + "' AND Account_Payment.Created_Date <= '" + TextBox2.Text + "' AND Account_Payment.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else if (DropDownList1.SelectedItem.Text == "รายละเอียดใบเสร็จรับเงิน")
-                    {
-                        cmd = detail_receipt_cmd + " Where Account_Receipt.Created_Date >= '" + TextBox1.Text + "' AND Account_Receipt.Created_Date <= '" + TextBox2.Text + "' AND Account_Receipt.Status like '" + DropDownList2.SelectedValue + "'";
-                    }
-                    else { }
-
-
-                }
-
-
-                if (Session["User"].ToString() == "Admin" && (DropDownList1.SelectedIndex == 0 || DropDownList1.SelectedIndex == 2))
-                {
-                    cmd += " AND Vendor.Vendor_Group != N'01-พนักงานประจำ'";
-                }
-                cmd += " order by ID asc";
-                DataTable dt = code.DatabaseQuery(conn, cmd);
-
-                GridView1.DataSource = dt;
-                GridView1.DataBind();
-
-                Session["dtGrid"] = dt;
-
-                double totalCash = 0;
-                double total = 0;
-                double totalmd = 0;
-                double totalvat = 0;
-
-                string colname = "";
-                if (DropDownList1.SelectedValue == "Account_Payment" || DropDownList1.SelectedValue == "Detail_Account_Payment")
-                {
-                    colname = "Paid_How";
-                }
-                else if (DropDownList1.SelectedValue == "Account_Receipt" || DropDownList1.SelectedValue == "Detail_Account_Receipt")
-                {
-                    colname = "Paid_Type";
-                }
-                for (int i = 0; i < dt.Rows.Count; i++)
-                {
-                    if (dt.Rows[i][colname].ToString().Contains("สด"))
-                    {
-                        totalCash += Convert.ToDouble(dt.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dt.Rows[i][colname].ToString().Contains("โอน"))
-                    {
-                        total += Convert.ToDouble(dt.Rows[i]["Total_Amount"].ToString());
-                    }
-                    if (dt.Rows[i][colname].ToString().Contains("กรรมการ"))
-                    {
-                        totalmd += Convert.ToDouble(dt.Rows[i]["Total_Amount"].ToString());
-                    }
-                    totalvat += Convert.ToDouble(dt.Rows[i]["Vat"].ToString());
-                }
-                Label10.Text = totalCash.ToString();
-                Label11.Text = total.ToString();
-                Label12.Text = totalvat.ToString();
-                Label13.Text = totalmd.ToString();
-                Label18.Text = dt.Rows.Count.ToString();
+                // Create empty table with structure
+                consolidatedTable = new DataTable();
+                consolidatedTable.Columns.Add("TransactionDate", typeof(DateTime));
+                consolidatedTable.Columns.Add("ReceiptNumber", typeof(string));
+                consolidatedTable.Columns.Add("CustomerName", typeof(string));
+                consolidatedTable.Columns.Add("RevenueCategory", typeof(string));
+                consolidatedTable.Columns.Add("PaymentChannel", typeof(string));
+                consolidatedTable.Columns.Add("Amount", typeof(decimal));
             }
 
+            gvTransactions.DataSource = consolidatedTable;
+            gvTransactions.DataBind();
 
+            // Store in session for export
+            Session["TransactionsData"] = consolidatedTable;
         }
 
-
-        protected void GridView1_RowDeleting1(object sender, GridViewDeleteEventArgs e)
+        private void LoadDailySummary(DateTime startDate, DateTime endDate)
         {
-            if (CheckBox1.Checked == true)
+            DataTable dt = accountingService.GetFrontTeamDailySummary(startDate, endDate);
+
+            gvDailySummary.DataSource = dt;
+            gvDailySummary.DataBind();
+
+            // Store in session for export
+            Session["DailySummaryData"] = dt;
+        }
+
+        private string GetCategoryDisplayName(string category)
+        {
+            switch (category?.ToUpper())
             {
-                string docNum = GridView1.Rows[e.RowIndex].Cells[3].Text;
-                string docType = docNum.Remove(3, 9);
-                string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
-                string docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 5)).ToString();
-                if (docType.Length > 3)
-                {
-                    docType = docNum.Remove(3, 12);
-                    docYear = "20" + docNum.Remove(0, 3).Remove(2, 10);
-                    docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 8)).ToString();
-                }
-                if (docType == "REC")
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString() + "\\" + docYear + "\\" + docMonth;
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + docNum + "'");
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + docNum + "'");
-                    string[] dirs = Directory.GetFiles(path, docNum + "*");
-                    for (int i = 0; i < dirs.Length; i++)
-                    {
-                        File.Delete(dirs[i].ToString());
-                    }
-
-                }
-                else if (docType == "PAY")
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["PaymentFolderPath"].ToString() + "\\" + docYear + "\\" + docMonth;
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Payment] WHERE ID = '" + docNum + "'");
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Payment_Detail] WHERE Payment_ID = '" + docNum + "'");
-                    string[] dirs = Directory.GetFiles(path, docNum + "*");
-                    for (int i = 0; i < dirs.Length; i++)
-                    {
-                        File.Delete(dirs[i].ToString());
-                    }
-                }
-
-                Response.Redirect("/Account/CheckDocument");
+                case "ACCOMMODATION":
+                    return "ห้องพัก";
+                case "FOOD_BEVERAGE":
+                    return "อาหารและเครื่องดื่ม";
+                case "RENTAL":
+                    return "เช่าอุปกรณ์";
+                case "OTHER":
+                    return "อื่นๆ";
+                default:
+                    return category ?? "ไม่ระบุ";
             }
         }
 
-        protected void GridView1_SelectedIndexChanging(object sender, GridViewSelectEventArgs e)
+        protected void btnSearch_Click(object sender, EventArgs e)
         {
-            string docStatus = "";
             try
             {
-                docStatus = GridView1.Rows[e.NewSelectedIndex].Cells[16].Text;
+                DateTime startDate = DateTime.Parse(txtStartDate.Text);
+                DateTime endDate = DateTime.Parse(txtEndDate.Text);
+
+                if (startDate > endDate)
+                {
+                    ShowError("วันที่เริ่มต้นต้องน้อยกว่าหรือเท่ากับวันที่สิ้นสุด");
+                    return;
+                }
+
+                LoadData(startDate, endDate);
             }
-            catch
+            catch (Exception ex)
             {
-                try
-                {
-                    docStatus = GridView1.Rows[e.NewSelectedIndex].Cells[12].Text;
-                }
-                catch
-                {
-
-                }
-            }
-            string docNum = GridView1.Rows[e.NewSelectedIndex].Cells[3].Text;
-            string docType = docNum.Remove(3, 9);
-            
-            string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
-            string docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 5)).ToString();
-
-
-            if (docType.Length > 3)
-            {
-                docType = docNum.Remove(3, 12);
-                docYear = "20" + docNum.Remove(0, 3).Remove(2, 10);
-                docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 8)).ToString();
-            }
-            if (docType == "REC")
-            {
-                if(docStatus == "Cancel")
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
-                    if (File.Exists(path+"\\"+ docYear + "\\" + docMonth + "" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString() + "_Cancel.pdf"))
-                    {
-                        Response.Redirect("/Documents/Receipt/" + docYear + "/" + docMonth + "/" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString() + "_Cancel.pdf");
-                    }
-                    else
-                    {
-                        Response.Redirect("/Documents/Receipt/" + docYear + "/" + docMonth + "/" + docNum + "_Cancel.pdf");
-                    }
-
-                }
-                else
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
-                    if (File.Exists(path +"\\"+ docYear + "\\" + docMonth + "\\" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString() + ".pdf"))
-                    {
-                        Response.Redirect("/Documents/Receipt/" + docYear + "/" + docMonth + "/" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString() + ".pdf");
-                    }
-                    else
-                    {
-                        Response.Redirect("/Documents/Receipt/" + docYear + "/" + docMonth + "/" + docNum +".pdf");
-                    }
-                        
-                }
-                
-
-            }
-            else if (docType == "PAY")
-            {
-                if (docStatus == "Cancel")
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["PaymentFolderPath"].ToString();
-                    if (File.Exists(path +"\\"+ docYear + "\\" + docMonth + "\\" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString() + "_Cancel.pdf"))
-                    {
-                        Response.Redirect("/Documents/Payment/" + docYear + "/" + docMonth + "/" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString() + "_Cancel.pdf");
-                    }
-                    else
-                    {
-                        Response.Redirect("/Documents/Payment/" + docYear + "/" + docMonth + "/" + docNum + "_Cancel.pdf");
-                    }
-                        
-                }
-                else
-                {
-                    string path = System.Configuration.ConfigurationSettings.AppSettings["PaymentFolderPath"].ToString();
-                    if (File.Exists(path +"\\"+ docYear + "\\" + docMonth + "\\" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString() + ".pdf"))
-                    {
-                        Response.Redirect("/Documents/Payment/" + docYear + "/" + docMonth + "/" + docNum + "_" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString() + ".pdf");
-                    }
-                    else
-                    {
-                        Response.Redirect("/Documents/Payment/" + docYear + "/" + docMonth + "/" + docNum + ".pdf");
-                    }
-                        
-                }
-                
-
+                ShowError("รูปแบบวันที่ไม่ถูกต้อง: " + ex.Message);
             }
         }
 
-        protected void GridView1_RowCommand(object sender, GridViewCommandEventArgs e)
+        protected void btnToday_Click(object sender, EventArgs e)
         {
-            string docNum = GridView1.Rows[Convert.ToInt32(e.CommandArgument)].Cells[3].Text;
-            string docType = docNum.Remove(3, 9);
-            if(docType.Length > 3)
-            {
-                docType = docNum.Remove(3,12);
-            }
-
-            if (e.CommandName == "edit")
-            {
-                if (docType == "REC")
-                {
-                    Response.Redirect("/Account/Receipt?command=edit&uid=" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '"+ docNum + "'").Rows[0][0].ToString());
-
-                }
-                else if (docType == "PAY")
-                {
-                    Response.Redirect("/Account/PaymentVoucher?command=edit&uid=" + code.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString());
-                }
-            }
+            txtStartDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtEndDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            LoadTodayData();
         }
 
-        protected void Button3_Click(object sender, EventArgs e)
+        protected void btnThisWeek_Click(object sender, EventArgs e)
         {
-            string ReportName = "Report";
+            DateTime today = DateTime.Now.Date;
+            DateTime startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+
+            txtStartDate.Text = startOfWeek.ToString("yyyy-MM-dd");
+            txtEndDate.Text = today.ToString("yyyy-MM-dd");
+            LoadData(startOfWeek, today);
+        }
+
+        protected void btnThisMonth_Click(object sender, EventArgs e)
+        {
+            DateTime today = DateTime.Now.Date;
+            DateTime startOfMonth = new DateTime(today.Year, today.Month, 1);
+
+            txtStartDate.Text = startOfMonth.ToString("yyyy-MM-dd");
+            txtEndDate.Text = today.ToString("yyyy-MM-dd");
+            LoadData(startOfMonth, today);
+        }
+
+        protected void btnExport_Click(object sender, EventArgs e)
+        {
             try
             {
-                if(DropDownList1.SelectedValue.Length > 3)
+                ExportToExcel();
+            }
+            catch (Exception ex)
+            {
+                ShowError("เกิดข้อผิดพลาดในการ Export: " + ex.Message);
+            }
+        }
+
+        private void ExportToExcel()
+        {
+            DateTime startDate = DateTime.Parse(txtStartDate.Text);
+            DateTime endDate = DateTime.Parse(txtEndDate.Text);
+
+            // Set EPPlus license context
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using (ExcelPackage package = new ExcelPackage())
+            {
+                // Sheet 1: Summary
+                CreateSummarySheet(package, startDate, endDate);
+
+                // Sheet 2: Transactions
+                CreateTransactionsSheet(package);
+
+                // Sheet 3: Daily Summary
+                CreateDailySummarySheet(package);
+
+                // Send file to browser
+                string fileName = $"AccountingReport_{startDate:yyyyMMdd}_{endDate:yyyyMMdd}.xlsx";
+
+                Response.Clear();
+                Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                Response.AddHeader("content-disposition", $"attachment; filename={fileName}");
+                Response.BinaryWrite(package.GetAsByteArray());
+                Response.End();
+            }
+        }
+
+        private void CreateSummarySheet(ExcelPackage package, DateTime startDate, DateTime endDate)
+        {
+            var worksheet = package.Workbook.Worksheets.Add("สรุปภาพรวม");
+
+            // Header
+            worksheet.Cells["A1"].Value = "รายงานสรุปรายรับ - ทีม Front";
+            worksheet.Cells["A1:F1"].Merge = true;
+            worksheet.Cells["A1"].Style.Font.Bold = true;
+            worksheet.Cells["A1"].Style.Font.Size = 16;
+            worksheet.Cells["A1"].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+            worksheet.Cells["A2"].Value = $"ช่วงวันที่: {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
+            worksheet.Cells["A2:F2"].Merge = true;
+            worksheet.Cells["A2"].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+            // Payment Channel Summary
+            worksheet.Cells["A4"].Value = "สรุปตามช่องทางชำระเงิน";
+            worksheet.Cells["A4"].Style.Font.Bold = true;
+            worksheet.Cells["A5"].Value = "ช่องทางชำระเงิน";
+            worksheet.Cells["B5"].Value = "ยอดรวม (บาท)";
+            worksheet.Cells["A5:B5"].Style.Font.Bold = true;
+
+            Dictionary<string, decimal> paymentSummary = accountingService.GetRevenueSummaryByPaymentChannel(startDate, endDate);
+            int row = 6;
+            foreach (var item in paymentSummary.OrderByDescending(x => x.Value))
+            {
+                worksheet.Cells[$"A{row}"].Value = item.Key;
+                worksheet.Cells[$"B{row}"].Value = item.Value;
+                worksheet.Cells[$"B{row}"].Style.Numberformat.Format = "#,##0.00";
+                row++;
+            }
+
+            // Total
+            worksheet.Cells[$"A{row}"].Value = "รวมทั้งหมด";
+            worksheet.Cells[$"A{row}"].Style.Font.Bold = true;
+            worksheet.Cells[$"B{row}"].Value = paymentSummary.Values.Sum();
+            worksheet.Cells[$"B{row}"].Style.Font.Bold = true;
+            worksheet.Cells[$"B{row}"].Style.Numberformat.Format = "#,##0.00";
+
+            // Category Summary
+            int categoryStartRow = row + 3;
+            worksheet.Cells[$"A{categoryStartRow}"].Value = "สรุปตามหมวดหมู่รายได้";
+            worksheet.Cells[$"A{categoryStartRow}"].Style.Font.Bold = true;
+            worksheet.Cells[$"A{categoryStartRow + 1}"].Value = "หมวดหมู่";
+            worksheet.Cells[$"B{categoryStartRow + 1}"].Value = "ยอดรวม (บาท)";
+            worksheet.Cells[$"A{categoryStartRow + 1}:B{categoryStartRow + 1}"].Style.Font.Bold = true;
+
+            Dictionary<string, decimal> categorySummary = accountingService.GetRevenueSummaryByCategory(startDate, endDate);
+            row = categoryStartRow + 2;
+            foreach (var item in categorySummary.OrderByDescending(x => x.Value))
+            {
+                worksheet.Cells[$"A{row}"].Value = GetCategoryDisplayName(item.Key);
+                worksheet.Cells[$"B{row}"].Value = item.Value;
+                worksheet.Cells[$"B{row}"].Style.Numberformat.Format = "#,##0.00";
+                row++;
+            }
+
+            // Total
+            worksheet.Cells[$"A{row}"].Value = "รวมทั้งหมด";
+            worksheet.Cells[$"A{row}"].Style.Font.Bold = true;
+            worksheet.Cells[$"B{row}"].Value = categorySummary.Values.Sum();
+            worksheet.Cells[$"B{row}"].Style.Font.Bold = true;
+            worksheet.Cells[$"B{row}"].Style.Numberformat.Format = "#,##0.00";
+
+            // Auto-fit columns
+            worksheet.Cells.AutoFitColumns();
+        }
+
+        private void CreateTransactionsSheet(ExcelPackage package)
+        {
+            var worksheet = package.Workbook.Worksheets.Add("รายการธุรกรรม");
+
+            DataTable dt = (DataTable)Session["TransactionsData"];
+            if (dt == null || dt.Rows.Count == 0)
+            {
+                worksheet.Cells["A1"].Value = "ไม่มีข้อมูล";
+                return;
+            }
+
+            // Headers
+            for (int i = 0; i < dt.Columns.Count; i++)
+            {
+                worksheet.Cells[1, i + 1].Value = GetColumnDisplayName(dt.Columns[i].ColumnName);
+                worksheet.Cells[1, i + 1].Style.Font.Bold = true;
+            }
+
+            // Data
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                for (int j = 0; j < dt.Columns.Count; j++)
                 {
-                    ReportName = DropDownList1.SelectedValue;
+                    object value = dt.Rows[i][j];
+
+                    if (value is DateTime)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = ((DateTime)value).ToString("dd/MM/yyyy HH:mm");
+                    }
+                    else if (value is decimal || value is double || value is float)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = value;
+                        worksheet.Cells[i + 2, j + 1].Style.Numberformat.Format = "#,##0.00";
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = value?.ToString() ?? "";
+                    }
                 }
             }
-            catch
-            {
 
+            // Auto-fit columns
+            worksheet.Cells.AutoFitColumns();
+        }
+
+        private void CreateDailySummarySheet(ExcelPackage package)
+        {
+            var worksheet = package.Workbook.Worksheets.Add("สรุปรายวัน");
+
+            DataTable dt = (DataTable)Session["DailySummaryData"];
+            if (dt == null || dt.Rows.Count == 0)
+            {
+                worksheet.Cells["A1"].Value = "ไม่มีข้อมูล";
+                return;
             }
-            DataTable dtGrid = (DataTable)Session["dtGrid"];
-            Response.Clear();
-            Response.Buffer = true;
-            Response.AddHeader("content-disposition", "attachment;filename="+ReportName+".csv");
-            Response.Charset = "utf-8";
-            Response.ContentType = "application/text";
-            StringBuilder sBuilder = new System.Text.StringBuilder();
 
-
-            for (int index = 0; index < dtGrid.Columns.Count; index++)
+            // Headers
+            for (int i = 0; i < dt.Columns.Count; i++)
             {
-                sBuilder.Append(dtGrid.Columns[index].ColumnName + '\t');
+                worksheet.Cells[1, i + 1].Value = GetColumnDisplayName(dt.Columns[i].ColumnName);
+                worksheet.Cells[1, i + 1].Style.Font.Bold = true;
             }
-            sBuilder.Append("\r\n");
-            for (int i = 0; i < dtGrid.Rows.Count; i++)
+
+            // Data
+            for (int i = 0; i < dt.Rows.Count; i++)
             {
-                for (int k = 0; k < dtGrid.Columns.Count; k++)
+                for (int j = 0; j < dt.Columns.Count; j++)
                 {
-                    sBuilder.Append(dtGrid.Rows[i][k].ToString().Replace(",", "").Replace("&nbsp;", "").Replace("&amp;", "") + "\t");
+                    object value = dt.Rows[i][j];
+
+                    if (value is DateTime)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = ((DateTime)value).ToString("dd/MM/yyyy");
+                    }
+                    else if (value is decimal || value is double || value is float)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = value;
+                        worksheet.Cells[i + 2, j + 1].Style.Numberformat.Format = "#,##0.00";
+                    }
+                    else if (value is int)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = value;
+                        worksheet.Cells[i + 2, j + 1].Style.Numberformat.Format = "#,##0";
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = value?.ToString() ?? "";
+                    }
                 }
-                sBuilder.Append("\r\n");
             }
 
+            // Auto-fit columns
+            worksheet.Cells.AutoFitColumns();
+        }
 
-            Response.ContentEncoding = Encoding.Unicode;
-            Response.BinaryWrite(Encoding.Unicode.GetPreamble());
-            Response.Output.Write(sBuilder.ToString());
-            Response.Flush();
-            Response.SuppressContent = true;
-            HttpContext.Current.ApplicationInstance.CompleteRequest();
+        private string GetColumnDisplayName(string columnName)
+        {
+            switch (columnName)
+            {
+                case "TransactionDate":
+                    return "วันที่ทำรายการ";
+                case "ReceiptNumber":
+                    return "เลขที่เอกสาร";
+                case "CustomerName":
+                    return "ชื่อลูกค้า";
+                case "RevenueCategory":
+                    return "หมวดหมู่";
+                case "PaymentChannel":
+                    return "ช่องทางชำระเงิน";
+                case "Amount":
+                    return "ยอดเงิน";
+                case "PaymentTypeName":
+                    return "ประเภทการชำระเงิน";
+                case "TransactionCount":
+                    return "จำนวนรายการ";
+                case "TotalRevenue":
+                    return "รายรับรวม";
+                case "CheckInRevenue":
+                    return "รายรับจากเช็คอิน";
+                case "AccommodationRevenue":
+                    return "รายรับห้องพัก";
+                default:
+                    return columnName;
+            }
+        }
+
+        private void ShowError(string message)
+        {
+            // You can implement this to show error messages to the user
+            // For example, using a Label or JavaScript alert
+            string script = $"alert('{message.Replace("'", "\\'")}');";
+            ScriptManager.RegisterStartupScript(this, GetType(), "ShowError", script, true);
+        }
+
+        protected void gvTransactions_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvTransactions.PageIndex = e.NewPageIndex;
+            DataTable dt = (DataTable)Session["TransactionsData"];
+            if (dt != null)
+            {
+                gvTransactions.DataSource = dt;
+                gvTransactions.DataBind();
+            }
+        }
+
+        protected void gvDailySummary_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvDailySummary.PageIndex = e.NewPageIndex;
+            DataTable dt = (DataTable)Session["DailySummaryData"];
+            if (dt != null)
+            {
+                gvDailySummary.DataSource = dt;
+                gvDailySummary.DataBind();
+            }
         }
     }
 }
