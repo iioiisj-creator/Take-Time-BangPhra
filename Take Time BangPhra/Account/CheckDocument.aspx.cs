@@ -16,11 +16,11 @@ namespace Take_Time_BangPhra.Account
     {
         private SqlConnection conn;
         private AccountingService accountingService;
-        private Code code;
+        private code codeHelper;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            code = new Code();
+            codeHelper = new code();
             string connString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
             conn = new SqlConnection(connString);
             accountingService = new AccountingService(conn);
@@ -217,7 +217,7 @@ namespace Take_Time_BangPhra.Account
             Session["DailySummaryData"] = dt;
         }
 
-        private string GetCategoryDisplayName(string category)
+        protected string GetCategoryDisplayName(string category)
         {
             switch (category?.ToUpper())
             {
@@ -232,6 +232,60 @@ namespace Take_Time_BangPhra.Account
                 default:
                     return category ?? "ไม่ระบุ";
             }
+        }
+
+        protected string GetCategoryIcon(string category)
+        {
+            switch (category?.ToUpper())
+            {
+                case "ACCOMMODATION":
+                case "ห้องพัก":
+                    return "fas fa-bed";
+                case "FOOD_BEVERAGE":
+                case "อาหารและเครื่องดื่ม":
+                    return "fas fa-utensils";
+                case "RENTAL":
+                case "เช่าอุปกรณ์":
+                    return "fas fa-bicycle";
+                case "OTHER":
+                case "อื่นๆ":
+                    return "fas fa-shopping-bag";
+                default:
+                    return "fas fa-tag";
+            }
+        }
+
+        protected string GetPaymentIcon(string paymentChannel)
+        {
+            string channel = paymentChannel?.ToLower() ?? "";
+            if (channel.Contains("สด") || channel.Contains("cash"))
+                return "fas fa-money-bill-wave";
+            else if (channel.Contains("โอน") || channel.Contains("transfer"))
+                return "fas fa-university";
+            else if (channel.Contains("บัตร") || channel.Contains("credit") || channel.Contains("card"))
+                return "fas fa-credit-card";
+            else
+                return "fas fa-wallet";
+        }
+
+        protected string GetTransactionBadge(object isCheckIn)
+        {
+            if (isCheckIn != null && isCheckIn != DBNull.Value)
+            {
+                bool checkIn = Convert.ToBoolean(isCheckIn);
+                return checkIn ? "badge-checkin" : "badge-sale";
+            }
+            return "badge-sale";
+        }
+
+        protected string GetTransactionStatus(object isCheckIn)
+        {
+            if (isCheckIn != null && isCheckIn != DBNull.Value)
+            {
+                bool checkIn = Convert.ToBoolean(isCheckIn);
+                return checkIn ? "เช็คอิน" : "ขายสินค้า";
+            }
+            return "ขายสินค้า";
         }
 
         protected void btnSearch_Click(object sender, EventArgs e)
