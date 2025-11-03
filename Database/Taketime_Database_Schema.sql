@@ -93,6 +93,9 @@ CREATE TABLE [dbo].[Accommodation](
 	[ProductType_ID] [tinyint] NOT NULL,
 	[Unit] [nvarchar](50) NULL,
 	[AccomGroupID] [tinyint] NULL,
+	[StandardOccupancy] [tinyint] NOT NULL,
+	[MaxOccupancy] [tinyint] NOT NULL,
+	[ExtraGuestPrice] [smallint] NOT NULL,
  CONSTRAINT [PK_Accommodation] PRIMARY KEY CLUSTERED
 (
 	[ID] ASC
@@ -718,6 +721,18 @@ GO
 ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [DF_Accommodation_Status]  DEFAULT ((1)) FOR [Status]
 GO
 ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [DF_Accommodation_ProductType_ID]  DEFAULT ((1)) FOR [ProductType_ID]
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [DF_Accommodation_StandardOccupancy]  DEFAULT ((2)) FOR [StandardOccupancy]
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [DF_Accommodation_MaxOccupancy]  DEFAULT ((2)) FOR [MaxOccupancy]
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [DF_Accommodation_ExtraGuestPrice]  DEFAULT ((0)) FOR [ExtraGuestPrice]
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [CK_Accommodation_MaxOccupancy]  CHECK ([MaxOccupancy] >= [StandardOccupancy])
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [CK_Accommodation_StandardOccupancy]  CHECK ([StandardOccupancy] > 0)
+GO
+ALTER TABLE [dbo].[Accommodation] ADD  CONSTRAINT [CK_Accommodation_ExtraGuestPrice]  CHECK ([ExtraGuestPrice] >= 0)
 GO
 ALTER TABLE [dbo].[Accommodation_DayType] ADD  CONSTRAINT [DF_Accommodation_DayType_Status]  DEFAULT ((1)) FOR [Status]
 GO

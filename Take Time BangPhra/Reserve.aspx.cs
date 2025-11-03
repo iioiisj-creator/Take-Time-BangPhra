@@ -244,15 +244,23 @@ namespace Take_Time_BangPhra
                         {
                             for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
                             {
-                                PriceAccom += Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(TextBox12.Text).Value.AddDays(k)));
+                                // คำนวณราคารวมผู้พักเสริมอัตโนมัติ
+                                PriceAccom += CalculateAccomPriceWithExtraGuests(
+                                    dtAccommodation.Rows[i]["ID"].ToString(),
+                                    code2.ParseDate(TextBox12.Text).Value.AddDays(k),
+                                    Convert.ToInt32(txtPeopleStay.Text));
                             }
                         }
                         else
                         {
                             if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
                             {
-                                // สำหรับห้องคิดตามคน
-                                PriceAccom += Convert.ToInt32(txtPeopleStay.Text) * Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
+                                // สำหรับห้องคิดตามคน - คำนวณรวมผู้พักเสริม
+                                int pricePerNight = CalculateAccomPriceWithExtraGuests(
+                                    dtAccommodation.Rows[i]["ID"].ToString(),
+                                    code2.ParseDate(TextBox12.Text).Value,
+                                    Convert.ToInt32(txtPeopleStay.Text));
+                                PriceAccom += pricePerNight * Convert.ToInt32(DropDownList1.SelectedValue);
                             }
                             else
                             {
@@ -3304,6 +3312,56 @@ namespace Take_Time_BangPhra
             }
 
             return check;
+        }
+
+        /// <summary>
+        /// คำนวณราคาห้องพักรวมผู้พักเสริม
+        /// </summary>
+        /// <param name="AccomID">รหัสห้องพัก</param>
+        /// <param name="datereserve">วันที่จอง</param>
+        /// <param name="numberOfGuests">จำนวนผู้เข้าพัก</param>
+        /// <returns>ราคารวมผู้พักเสริม</returns>
+        public int CalculateAccomPriceWithExtraGuests(string AccomID, DateTime datereserve, int numberOfGuests)
+        {
+            // ดึงราคาพื้นฐานจาก Rate Plan
+            int basePrice = Convert.ToInt32(AccomPrice(AccomID, datereserve));
+
+            // ดึงข้อมูลห้องพัก
+            DataTable dtAccom = code.DatabaseQuery(conn,
+                "SELECT StandardOccupancy, MaxOccupancy, ExtraGuestPrice, LimitWithPeople " +
+                "FROM Accommodation WHERE ID = " + AccomID);
+
+            if (dtAccom.Rows.Count == 0)
+                return basePrice;
+
+            // ถ้าห้องนี้ไม่คิดราคาตามคน ให้คืนราคาพื้นฐาน
+            if (dtAccom.Rows[0]["LimitWithPeople"].ToString() != "True")
+                return basePrice;
+
+            int standardOccupancy = Convert.ToInt32(dtAccom.Rows[0]["StandardOccupancy"]);
+            int maxOccupancy = Convert.ToInt32(dtAccom.Rows[0]["MaxOccupancy"]);
+            int extraGuestPrice = Convert.ToInt32(dtAccom.Rows[0]["ExtraGuestPrice"]);
+
+            // ตรวจสอบจำนวนผู้พัก
+            if (numberOfGuests <= standardOccupancy)
+            {
+                // จำนวนผู้พักไม่เกิน ใช้ราคาพื้นฐาน
+                return basePrice * numberOfGuests;
+            }
+            else if (numberOfGuests <= maxOccupancy)
+            {
+                // มีผู้พักเสริม
+                int extraGuests = numberOfGuests - standardOccupancy;
+                int totalPrice = (basePrice * standardOccupancy) + (extraGuests * extraGuestPrice);
+                return totalPrice;
+            }
+            else
+            {
+                // เกินจำนวนที่รองรับ - ใช้ราคาสูงสุด
+                int extraGuests = maxOccupancy - standardOccupancy;
+                int totalPrice = (basePrice * standardOccupancy) + (extraGuests * extraGuestPrice);
+                return totalPrice;
+            }
         }
 
         public string AccomPrice(string AccomID,DateTime datereserve)
