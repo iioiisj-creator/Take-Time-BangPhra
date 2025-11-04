@@ -265,6 +265,46 @@ namespace Take_Time_BangPhra
             return dt;
         }
 
+        /// <summary>
+        /// Upserts customer data - delegates to code class's UpsertCustomer method
+        /// This method exists in _Default class for compatibility with Reserve.aspx.cs
+        /// which uses: _Default code = new _Default();
+        /// </summary>
+        public long UpsertCustomer(
+            string connStr,
+            string mobilePhone,
+            string name,
+            string nickName,
+            string comeFrom,
+            string remark,
+            string fullName,
+            string address,
+            string idNumber,
+            string email,
+            int customerTypeID,
+            int addressID,
+            string address1,
+            string branchNumber)
+        {
+            // Delegate to the code class's UpsertCustomer method
+            return code.UpsertCustomer(
+                connStr,
+                mobilePhone,
+                name,
+                nickName,
+                comeFrom,
+                remark,
+                fullName,
+                address,
+                idNumber,
+                email,
+                customerTypeID,
+                addressID,
+                address1,
+                branchNumber
+            );
+        }
+
         public string createDocNumber(string conn, string tablename, string doctype,string Year,string Month,string Day)
         {
             string output = "";
