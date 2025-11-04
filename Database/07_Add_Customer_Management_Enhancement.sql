@@ -200,10 +200,36 @@ BEGIN TRY
     PRINT ''
 
     -- ===================================================================
-    -- Step 3: Add foreign key constraints
+    -- Step 3: Ensure Admin table has Primary Key
     -- ===================================================================
 
-    PRINT 'Step 3: Adding foreign key constraints...'
+    PRINT 'Step 3: Ensuring Admin table has Primary Key...'
+
+    -- Check if Admin.ID has a primary key
+    IF NOT EXISTS (
+        SELECT 1
+        FROM sys.key_constraints
+        WHERE type = 'PK'
+          AND parent_object_id = OBJECT_ID('dbo.Admin')
+    )
+    BEGIN
+        ALTER TABLE [dbo].[Admin]
+        ADD CONSTRAINT [PK_Admin] PRIMARY KEY CLUSTERED ([ID] ASC)
+
+        PRINT '  ✓ Added Primary Key to Admin.ID'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ Admin.ID already has a Primary Key'
+    END
+
+    PRINT ''
+
+    -- ===================================================================
+    -- Step 4: Add foreign key constraints
+    -- ===================================================================
+
+    PRINT 'Step 4: Adding foreign key constraints...'
 
     -- FK to Customer
     IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Audit_Log_Customer')
@@ -240,10 +266,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 4: Add check constraints
+    -- Step 5: Add check constraints
     -- ===================================================================
 
-    PRINT 'Step 4: Adding check constraints...'
+    PRINT 'Step 5: Adding check constraints...'
 
     -- Action must be valid
     IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_Customer_Audit_Log_Action')
@@ -256,10 +282,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 5: Add columns to Customer table
+    -- Step 6: Add columns to Customer table
     -- ===================================================================
 
-    PRINT 'Step 5: Adding columns to Customer table...'
+    PRINT 'Step 6: Adding columns to Customer table...'
 
     -- LastUpdated
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Customer]') AND name = 'LastUpdated')
@@ -397,10 +423,10 @@ BEGIN TRY
     PRINT '  ✓ Using existing Customer_Type_ID column'
 
     -- ===================================================================
-    -- Step 6: Add foreign key constraints
+    -- Step 7: Add foreign key constraints
     -- ===================================================================
 
-    PRINT 'Step 6: Adding foreign key constraints...'
+    PRINT 'Step 7: Adding foreign key constraints...'
 
     -- Add FK for LastUpdatedBy_ID
     IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Customer_Admin_LastUpdated')
@@ -429,10 +455,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 7: Add indexes for performance
+    -- Step 8: Add indexes for performance
     -- ===================================================================
 
-    PRINT 'Step 7: Creating performance indexes...'
+    PRINT 'Step 8: Creating performance indexes...'
 
     -- Index on Customer_Audit_Log
     IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Customer_Audit_Log_Customer')
@@ -485,10 +511,10 @@ BEGIN TRY
     END
 
     -- ===================================================================
-    -- Step 8: Create stored procedures
+    -- Step 9: Create stored procedures
     -- ===================================================================
 
-    PRINT 'Step 8: Creating stored procedures...'
+    PRINT 'Step 9: Creating stored procedures...'
 
     -- Procedure: Upsert customer (Insert or Update)
     IF OBJECT_ID('dbo.sp_UpsertCustomer', 'P') IS NOT NULL
@@ -861,10 +887,10 @@ BEGIN TRY
     PRINT '  ✓ Created sp_DeleteCustomer'
 
     -- ===================================================================
-    -- Step 9: Create views
+    -- Step 10: Create views
     -- ===================================================================
 
-    PRINT 'Step 9: Creating views...'
+    PRINT 'Step 10: Creating views...'
 
     IF OBJECT_ID('dbo.v_CustomerSummary', 'V') IS NOT NULL
         DROP VIEW dbo.v_CustomerSummary
@@ -904,10 +930,10 @@ BEGIN TRY
     PRINT '  ✓ Created v_CustomerSummary'
 
     -- ===================================================================
-    -- Step 10: Update existing customer records
+    -- Step 11: Update existing customer records
     -- ===================================================================
 
-    PRINT 'Step 10: Updating existing customer records...'
+    PRINT 'Step 11: Updating existing customer records...'
 
     -- Set CreatedDate for existing customers (if NULL)
     UPDATE Customer
