@@ -14,12 +14,41 @@
         .hidden { display: none; }
         
         @media print {
+            @page {
+                margin: 0.2cm;
+                size: landscape;
+            }
+            body {
+                margin: 0.2cm;
+                padding: 0;
+            }
             .no-print { display: none !important; }
             .print-only { display: table-cell !important; }
             .print-header { display: table-cell !important; }
             .jumbotron { padding: 10px !important; margin: 0 !important; }
-            .mydatagrid { border: 1px solid #000 !important; }
-            .mydatagrid th, .mydatagrid td { border: 1px solid #000 !important; padding: 3px !important; }
+            .mydatagrid {
+                border: 1px solid #000 !important;
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .mydatagrid th, .mydatagrid td {
+                border: 1px solid #000 !important;
+                padding: 3px !important;
+                vertical-align: top;
+            }
+            .mydatagrid td {
+                height: 350px !important;
+            }
+            /* ปรับความกว้างคอลัมน์สำหรับ print */
+            .mydatagrid th:nth-child(1), .mydatagrid td:nth-child(1) { width: 3%; }
+            .mydatagrid th:nth-child(2), .mydatagrid td:nth-child(2) { width: 14%; }
+            .mydatagrid th:nth-child(3), .mydatagrid td:nth-child(3) { width: 10%; } /* รายชื่อห้องพัก - แคบลง */
+            .mydatagrid th:nth-child(4), .mydatagrid td:nth-child(4) { width: 3%; }
+            .mydatagrid th:nth-child(5), .mydatagrid td:nth-child(5) { width: 24%; } /* รายการของเช่า - กว้างขึ้น */
+            .mydatagrid th:nth-child(6), .mydatagrid td:nth-child(6) { width: 4%; }
+            .mydatagrid th:nth-child(7), .mydatagrid td:nth-child(7) { width: 4%; }
+            .mydatagrid th:nth-child(8), .mydatagrid td:nth-child(8) { width: 4%; }
+            .mydatagrid th:nth-child(9), .mydatagrid td:nth-child(9) { width: 10%; } /* หมายเหตุ - แคบลง */
         }
         
         .action-buttons { margin: 10px 0; }
@@ -187,38 +216,74 @@
 
     <script type="text/javascript">
         function printTable() {
+            // Detect if device is mobile/Android
+            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            var isAndroid = /Android/i.test(navigator.userAgent);
+
+            // For Android/Mobile devices, use alternative print method
+            if (isMobile) {
+                // Hide non-print elements
+                var noPrintElements = document.querySelectorAll('.no-print');
+                noPrintElements.forEach(function(el) {
+                    el.style.display = 'none';
+                });
+
+                // Show print-only elements
+                var printElements = document.querySelectorAll('.print-only');
+                printElements.forEach(function(el) {
+                    el.style.display = 'table-cell';
+                });
+
+                // Use direct print
+                window.print();
+
+                // Restore display after print
+                setTimeout(function() {
+                    noPrintElements.forEach(function(el) {
+                        el.style.display = '';
+                    });
+                    printElements.forEach(function(el) {
+                        el.style.display = '';
+                    });
+                }, 100);
+
+                return;
+            }
+
+            // Desktop/iOS - use popup window method
             var originalContents = document.body.innerHTML;
-            
+
             var printWindow = window.open('', '_blank', 'width=1200,height=800');
-            
+
             var tableHTML = '<table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #000; margin: 0; padding: 0;">';
-            
+
             var headerRow = document.querySelector('.mydatagrid .header');
             if (headerRow) {
                 tableHTML += '<thead><tr style="background-color: #f2f2f2; height: 25px;">';
-                
-                // ปรับความกว้างคอลัมน์ใหม่ตามที่ต้องการ
+
+                // ปรับความกว้างคอลัมน์: ลด รายชื่อห้องพัก และ หมายเหตุ, เพิ่ม รายการของเช่า
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 3%;">เคยมาแล้ว</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 16%;">ชื่อผู้จอง</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 16%;">รายชื่อห้องพัก</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 14%;">ชื่อผู้จอง</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 10%;">รายชื่อห้องพัก</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 3%;">จำนวนคืน</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 12%;">รายการของเช่า</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 24%;">รายการของเช่า</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">ราคาทั้งหมด</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">เงินมัดจำ</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">ส่วนที่เหลือ</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 16%;">หมายเหตุ</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 11%;">&nbsp;</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 11%;">&nbsp;</th>';
-                
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 10%;">หมายเหตุ</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 12%;">&nbsp;</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 12%;">&nbsp;</th>';
+
                 tableHTML += '</tr></thead>';
             }
-            
+
             tableHTML += '<tbody>';
             var rows = document.querySelectorAll('.mydatagrid .rows');
-            
+
             for (var i = 0; i < rows.length; i++) {
-                tableHTML += '<tr style="height: 35px;">';
-                
+                // เพิ่มความสูงจาก 35px เป็น 350px (10 เท่า)
+                tableHTML += '<tr style="height: 350px;">';
+
                 var cells = rows[i].querySelectorAll('td');
                 var data = {
                     countReserved: '',
@@ -231,11 +296,11 @@
                     remain: '',
                     remark: ''
                 };
-                
+
                 // ดึงข้อมูลจากแต่ละเซลล์
                 for (var j = 0; j < cells.length; j++) {
                     if (!cells[j].classList.contains('hidden')) {
-                        
+
                         // ดึงข้อมูล "เคยมาแล้ว" จาก data attribute
                         if (j === 0) { // คอลัมน์แรกคือ "เคยมาแล้ว"
                             var spanElement = cells[j].querySelector('.print-only');
@@ -259,15 +324,15 @@
                                 }
                             }
                         }
-                        
+
                         // ดึงข้อมูลจาก header text สำหรับคอลัมน์อื่นๆ
                         var headerText = '';
                         if (headerRow && headerRow.querySelectorAll('th')[j]) {
                             headerText = headerRow.querySelectorAll('th')[j].innerText;
                         }
-                        
+
                         var cellContent = cells[j].textContent || cells[j].innerText;
-                        
+
                         if (headerText === 'ชื่อผู้จอง') data.name = cellContent;
                         else if (headerText === 'รายชื่อห้องพัก') data.accomName = cellContent;
                         else if (headerText === 'จำนวนคืน') data.stayDays = cellContent;
@@ -278,20 +343,20 @@
                         else if (headerText === 'หมายเหตุ') data.remark = cellContent;
                     }
                 }
-                
-                // สร้างแถวข้อมูลด้วยความกว้างใหม่
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%;">' + (data.countReserved || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 16%;">' + (data.name || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 16%;">' + (data.accomName || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%;">' + (data.stayDays || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 12%;">' + (data.items || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%;">' + (data.totalPrice || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%;">' + (data.deposit || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%;">' + (data.remain || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 16%;">' + (data.remark || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 11%; height: 35px; background-color: #f9f9f9;">&nbsp;</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 11%; height: 35px; background-color: #f9f9f9;">&nbsp;</td>';
-                
+
+                // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 350px
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 350px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 14%; height: 350px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 350px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 350px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 350px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 350px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 350px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 350px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+
                 tableHTML += '</tr>';
             }
             tableHTML += '</tbody></table>';
@@ -355,20 +420,20 @@
                                 padding: 0;
                                 table-layout: fixed;
                             }
-                            th, td { 
-                                border: 1px solid #000; 
-                                padding: 2px; 
+                            th, td {
+                                border: 1px solid #000;
+                                padding: 2px;
                                 text-align: center;
                                 word-wrap: break-word;
                                 overflow: hidden;
                             }
-                            th { 
-                                background-color: #f2f2f2; 
-                                font-weight: bold; 
+                            th {
+                                background-color: #f2f2f2;
+                                font-weight: bold;
                                 height: 25px;
                             }
                             td {
-                                height: 35px;
+                                height: 350px;
                                 vertical-align: top;
                             }
                             .summary-table {
