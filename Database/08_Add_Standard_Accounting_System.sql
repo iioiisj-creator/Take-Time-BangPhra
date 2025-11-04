@@ -577,10 +577,10 @@ BEGIN TRY
     -- Set revenue categories
     UPDATE AR
     SET RevenueCategory = CASE
-        WHEN APT.ID = 1 THEN ''ACCOMMODATION''
-        WHEN APT.ID = 2 THEN ''FOOD_BEVERAGE''
-        WHEN APT.ID = 3 THEN ''RENTAL''
-        ELSE ''OTHER''
+        WHEN APT.ID = 1 THEN 'ACCOMMODATION'
+        WHEN APT.ID = 2 THEN 'FOOD_BEVERAGE'
+        WHEN APT.ID = 3 THEN 'RENTAL'
+        ELSE 'OTHER'
     END
     FROM Account_Receipt AR
     LEFT JOIN Account_ProductType APT ON AR.ProductType_ID = APT.ID
