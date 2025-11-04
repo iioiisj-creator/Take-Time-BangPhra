@@ -37,7 +37,7 @@
                 vertical-align: top;
             }
             .mydatagrid td {
-                height: 350px !important;
+                height: 105px !important;
             }
             /* ปรับความกว้างคอลัมน์สำหรับ print */
             .mydatagrid th:nth-child(1), .mydatagrid td:nth-child(1) { width: 3%; }
@@ -281,8 +281,8 @@
             var rows = document.querySelectorAll('.mydatagrid .rows');
 
             for (var i = 0; i < rows.length; i++) {
-                // เพิ่มความสูงจาก 35px เป็น 350px (10 เท่า)
-                tableHTML += '<tr style="height: 350px;">';
+                // ลดความสูงลง 70% จาก 350px เหลือ 105px
+                tableHTML += '<tr style="height: 105px;">';
 
                 var cells = rows[i].querySelectorAll('td');
                 var data = {
@@ -344,18 +344,18 @@
                     }
                 }
 
-                // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 350px
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 350px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 14%; height: 350px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 350px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 350px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 350px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 350px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 350px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 350px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 350px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 105px (ลดลง 70% จาก 350px)
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 105px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 14%; height: 105px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 105px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 105px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 105px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 105px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 105px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 105px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 105px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 105px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 105px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
 
                 tableHTML += '</tr>';
             }
@@ -433,7 +433,7 @@
                                 height: 25px;
                             }
                             td {
-                                height: 350px;
+                                height: 105px;
                                 vertical-align: top;
                             }
                             .summary-table {
