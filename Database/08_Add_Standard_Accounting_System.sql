@@ -208,12 +208,12 @@ BEGIN TRY
         ALTER TABLE [dbo].[Account_Receipt]
         ADD [TransactionDate] [date] NULL
 
-        -- Set TransactionDate to created date for existing records
-        UPDATE Account_Receipt
-        SET TransactionDate = CAST(Created_Date AS DATE)
-        WHERE TransactionDate IS NULL AND Created_Date IS NOT NULL
-
         PRINT '  ✓ Added TransactionDate column'
+
+        -- Set TransactionDate to created date for existing records (using dynamic SQL)
+        EXEC sp_executesql N'UPDATE Account_Receipt SET TransactionDate = CAST(Created_Date AS DATE) WHERE TransactionDate IS NULL AND Created_Date IS NOT NULL'
+
+        PRINT '  ✓ Updated TransactionDate for existing records'
     END
 
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Account_Receipt]') AND name = 'IsCheckIn')
