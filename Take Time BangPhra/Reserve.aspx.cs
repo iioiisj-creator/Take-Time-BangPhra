@@ -2210,7 +2210,8 @@ namespace Take_Time_BangPhra
                         "[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],Status,Paid_Type," +
                         "Created_By_ID,Etax,Customer_ID) " +
                         "VALUES ('" + ReceiptID + "','" + Reservation_ID + "'," +
-                        "'" + docDate.ToString("yyyy-MM-dd") + "'," +
+                        // Use InvariantCulture to ensure Christian year (2025), NOT Buddhist year (2568)
+                        "'" + docDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "'," +
                         Total_Amount + "," + Vat + "," + PriceExcludeVat + "," +
                         "'True','False','Normal',N'" + DropDownList2.SelectedItem.Text + "'," +
                         "N'" + created_By_ID + "','" + CheckBox5.Checked + "','" + customerId + "');");
@@ -2232,7 +2233,8 @@ namespace Take_Time_BangPhra
                         "[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],Status,Paid_Type," +
                         "Created_By_ID,Etax,Customer_ID) " +
                         "VALUES ('" + ReceiptID + "','" + Reservation_ID + "'," +
-                        "'" + docDate.ToString("yyyy-MM-dd") + "'," +
+                        // Use InvariantCulture to ensure Christian year (2025), NOT Buddhist year (2568)
+                        "'" + docDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "'," +
                         Total_Amount + "," + Vat + "," + PriceExcludeVat + "," +
                         "'False','False','Normal',N'" + DropDownList2.SelectedItem.Text + "'," +
                         "N'" + created_By_ID + "','" + CheckBox5.Checked + "','" + customerId + "');");
@@ -2658,10 +2660,11 @@ namespace Take_Time_BangPhra
                     xmlString = xmlString.Replace("*invoice_id", DocNumber);
                     xmlString = xmlString.Replace("*invoice_name", "ใบเสร็จรับเงิน/ใบกำกับภาษี");
                     xmlString = xmlString.Replace("*invoice_typecode", "T03");
-                    xmlString = xmlString.Replace("*invoice_issue_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd") + "T00:00:00.000");
+                    // Use InvariantCulture to ensure Christian year (2025), NOT Buddhist year (2568)
+                    xmlString = xmlString.Replace("*invoice_issue_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "T00:00:00.000");
                     xmlString = xmlString.Replace("*invoice_purpose", "");
                     xmlString = xmlString.Replace("*invoice_Purpose_code", "");
-                    xmlString = xmlString.Replace("*invoice_create_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd") + "T00:00:00.000");
+                    xmlString = xmlString.Replace("*invoice_create_date", code2.ParseDate(dtReceipt.Rows[0]["Created_Date"].ToString()).Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "T00:00:00.000");
                     xmlString = xmlString.Replace("*invoice_remark", "");
 
                     try
