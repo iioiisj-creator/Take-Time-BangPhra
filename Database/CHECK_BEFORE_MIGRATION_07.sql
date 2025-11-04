@@ -1,14 +1,14 @@
 /*==============================================================
   CHECK BEFORE MIGRATION 07
 
-  Purpose: ตรวจสอบข้อมูลก่อนรัน Migration 07
+  Purpose: Check data before running Migration 07
 
-  จะตรวจสอบ:
-  1. ข้อมูล MobilePhone ที่ซ้ำกัน
-  2. ข้อมูล MobilePhone ที่ว่างเปล่า
-  3. จำนวนข้อมูลที่ต้องแก้ไข
+  Checks:
+  1. Duplicate MobilePhone values
+  2. Empty MobilePhone values
+  3. Number of records that need fixing
 
-  ใช้งาน: รันไฟล์นี้ก่อนรัน Migration 07
+  Usage: Run this file before Migration 07
 ==============================================================*/
 
 USE [Taketime]
@@ -86,8 +86,7 @@ BEGIN
     -- แสดงรายละเอียด
     SELECT TOP 10
         ID,
-        FirstName,
-        LastName,
+        Name,
         MobilePhone,
         Email,
         CASE
