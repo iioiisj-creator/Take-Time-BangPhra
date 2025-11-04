@@ -376,7 +376,7 @@ namespace Take_Time_BangPhra.Account.Report
                     TextBox12.Text,  // IDNumber
                     TextBox17.Text,  // Email
                     Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
-                    CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                    Convert.ToInt32(CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text)),  // Address_ID
                     TextBox18.Text,  // Address1
                     TextBox7.Text  // Branch_Number
                 );
