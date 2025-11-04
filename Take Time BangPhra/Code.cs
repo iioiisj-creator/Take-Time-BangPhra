@@ -36,8 +36,11 @@ namespace Take_Time_BangPhra
 
             DateTime result;
 
-            // Thai culture for consistent date parsing across all machines
-            CultureInfo thaiCulture = new CultureInfo("th-TH");
+            // Use Gregorian calendar for consistent date handling
+            // Database stores Christian year (2025), NOT Buddhist year (2568)
+            // Using th-TH with default calendar would cause year conversion issues
+            CultureInfo culture = new CultureInfo("th-TH");
+            culture.DateTimeFormat.Calendar = new System.Globalization.GregorianCalendar();
 
             // Define date formats - THAI FORMAT FIRST (dd-MM-yyyy, dd/MM/yyyy)
             // This ensures Thai date format (day-month-year) is prioritized over US format
@@ -53,16 +56,15 @@ namespace Take_Time_BangPhra
         "MM/dd/yyyy", "M/dd/yyyy", "MM/d/yyyy", "M/d/yyyy"
     };
 
-            // Try parsing with Thai culture and defined formats
+            // Try parsing with Gregorian calendar
             if (DateTime.TryParseExact(dateString, formats,
-                thaiCulture, DateTimeStyles.None, out result))
+                culture, DateTimeStyles.None, out result))
             {
                 return result;
             }
 
-            // Fallback: Try parsing with Thai culture (NOT InvariantCulture!)
-            // This ensures dates are interpreted as dd/MM/yyyy by default
-            if (DateTime.TryParse(dateString, thaiCulture, DateTimeStyles.None, out result))
+            // Fallback: Try parsing with Gregorian calendar
+            if (DateTime.TryParse(dateString, culture, DateTimeStyles.None, out result))
             {
                 return result;
             }
