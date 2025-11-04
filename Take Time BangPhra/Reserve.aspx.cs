@@ -920,14 +920,14 @@ namespace Take_Time_BangPhra
 
                                                     // ตรวจสอบว่าเป็นห้องเก่าหรือจองเพิ่ม
                                                     bool isNewRoom = true;
-                                                    for (int x = 0; x < dtoldAccom.Rows.Count; x++)
+                                                    for (int m = 0; m < dtoldAccom.Rows.Count; m++)
                                                     {
-                                                        if (dtoldAccom.Rows[x]["Accommodation_ID"].ToString() == dtAccommodation.Rows[row.RowIndex]["ID"].ToString())
+                                                        if (dtoldAccom.Rows[m]["Accommodation_ID"].ToString() == dtAccommodation.Rows[row.RowIndex]["ID"].ToString())
                                                         {
                                                             isNewRoom = false;
 
                                                             // ถ้าเป็นห้องเก่า ให้เอาแค่ส่วนที่เพิ่มมา
-                                                            int oldAmount = Convert.ToInt32(dtoldAccom.Rows[x]["Amount"].ToString());
+                                                            int oldAmount = Convert.ToInt32(dtoldAccom.Rows[m]["Amount"].ToString());
                                                             int newAmount = Convert.ToInt32(txtPeopleStay.Text);
 
                                                             if (newAmount > oldAmount)
