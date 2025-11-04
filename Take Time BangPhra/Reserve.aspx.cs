@@ -1178,7 +1178,7 @@ namespace Take_Time_BangPhra
                                             TextBox9.Text,  // IDNumber
                                             TextBox13.Text,  // Email
                                             Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
-                                            CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                                            Convert.ToInt32(CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text)),  // Address_ID
                                             TextBox17.Text,  // Address1
                                             TextBox18.Text  // Branch_Number
                                         );
@@ -1513,7 +1513,7 @@ namespace Take_Time_BangPhra
                                             TextBox9.Text,  // IDNumber
                                             TextBox13.Text,  // Email
                                             Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
-                                            CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                                            Convert.ToInt32(CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text)),  // Address_ID
                                             TextBox17.Text,  // Address1
                                             TextBox18.Text  // Branch_Number
                                         );
@@ -2463,7 +2463,7 @@ namespace Take_Time_BangPhra
                 TextBox9.Text,  // IDNumber
                 TextBox13.Text,  // Email
                 Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
-                CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                Convert.ToInt32(CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text)),  // Address_ID
                 TextBox17.Text,  // Address1
                 TextBox18.Text  // Branch_Number
             );
