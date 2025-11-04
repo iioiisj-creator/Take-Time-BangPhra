@@ -4447,67 +4447,171 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         {
             if (Button8.Text == "Submit")
             {
-                if (TextBox19.Text.Length == 8)
+                string couponCode = TextBox19.Text.Trim();
+
+                // Validate input
+                if (string.IsNullOrEmpty(couponCode))
                 {
-                    DataTable dtDiscount = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] Where Coupon_Code = N'" + TextBox19.Text + "'");
-                    if (dtDiscount.Rows.Count >= 1)
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ กรุณาใส่รหัสส่วนลด\\n\\nPlease enter a coupon code.');", true);
+                    LogCouponAttempt("EMPTY", "Validation", "Empty coupon code");
+                    return;
+                }
+
+                // Affiliate Code (8 characters)
+                if (couponCode.Length == 8)
+                {
+                    try
                     {
-                        Session["UseCoupon"] = "Affiliate";
-                        TextBox19.Enabled = false;
-                        TextBox12_TextChanged(null, null);
-                        Button8.Text = "Clear";
-                        TextBox6.Text += "Affiliate Code: "+TextBox19.Text+ "\r\n";
-                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกห้องพักอีกครั้งระบบได้ทำการปรับราคาที่พักตามส่วนลดของท่านเรียบร้อยแล้ว');", true);
+                        LogCouponAttempt(couponCode, "Affiliate", "Validating affiliate code");
+
+                        DataTable dtDiscount = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] Where Coupon_Code = N'" + couponCode + "'");
+
+                        if (dtDiscount.Rows.Count >= 1)
+                        {
+                            Session["UseCoupon"] = "Affiliate";
+                            TextBox19.Enabled = false;
+                            TextBox12_TextChanged(null, null);
+                            Button8.Text = "Clear";
+                            TextBox6.Text += "Affiliate Code: " + couponCode + "\r\n";
+
+                            LogCouponAttempt(couponCode, "Affiliate", "SUCCESS - Affiliate code applied");
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('✅ ใช้รหัส Affiliate สำเร็จ!\\n\\nกรุณาเลือกห้องพักอีกครั้ง ระบบได้ปรับราคาตามส่วนลดเรียบร้อยแล้ว');", true);
+                        }
+                        else
+                        {
+                            Button8.Text = "Submit";
+                            Session["UseCoupon"] = "false";
+                            TextBox19.Text = string.Empty;
+
+                            LogCouponAttempt(couponCode, "Affiliate", "FAILED - Code not found");
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ ไม่พบรหัส Affiliate นี้ในระบบ\\n\\nกรุณาตรวจสอบว่า:\\n- พิมพ์ถูกต้อง (ตัวพิมพ์เล็ก/ใหญ่)\\n- รหัสมี 8 ตัวอักษร\\n- รหัสยังใช้งานได้\\n\\nAffiliate code not found. Please check the code and try again.');", true);
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Button8.Text = "Submit";
-                        Session["UseCoupon"] = "false";
-                        TextBox19.Text = string.Empty;
-                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('รหัสไม่ถูกต้อง กรุณาใส่ตัวเล็ก ตัวใหญ่ให้ถูกต้อง');", true);
+                        LogCouponAttempt(couponCode, "Affiliate", "ERROR - " + ex.Message);
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ เกิดข้อผิดพลาดในการตรวจสอบรหัส Affiliate\\n\\nกรุณาลองใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่');", true);
                     }
                 }
-                else if(TextBox19.Text.Length == 13 && (TextBox19.Text[0] == 'v' || TextBox19.Text[0] == 'V'))
+                // Voucher Code (13 characters starting with v/V)
+                else if (couponCode.Length == 13 && (couponCode[0] == 'v' || couponCode[0] == 'V'))
                 {
+                    // Check if date is selected
+                    if (string.IsNullOrEmpty(TextBox12.Text))
+                    {
+                        LogCouponAttempt(couponCode, "Voucher", "FAILED - No check-in date selected");
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ กรุณาเลือกวันที่ Check-In ก่อน\\n\\nPlease select check-in date before applying voucher code.');", true);
+                        return;
+                    }
+
                     DataTable dtVoucher = new DataTable();
                     try
                     {
-                        dtVoucher = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Voucher] inner join Voucher_RatePlan_Group on Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number inner join Accommodation_RatePlan_Group on Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID inner join Accommodation_RatePlan on Accommodation_RatePlan.ID = Rateplan_ID  Where Voucher.Voucher_Number = N'" + TextBox19.Text + "' AND Used_Status = 'False' AND Expired_Date >= '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") + "'");
+                        LogCouponAttempt(couponCode, "Voucher", "Validating voucher code for date: " + TextBox12.Text);
 
+                        dtVoucher = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Voucher] inner join Voucher_RatePlan_Group on Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number inner join Accommodation_RatePlan_Group on Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID inner join Accommodation_RatePlan on Accommodation_RatePlan.ID = Rateplan_ID  Where Voucher.Voucher_Number = N'" + couponCode + "' AND Used_Status = 'False' AND Expired_Date >= '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") + "'");
+
+                        if (dtVoucher.Rows.Count >= 1)
+                        {
+                            Session["UseCoupon"] = "Voucher";
+                            TextBox19.Enabled = false;
+                            TextBox12_TextChanged(null, null);
+                            Button8.Text = "Clear";
+                            TextBox6.Text += "Voucher No." + couponCode + "\r\n";
+
+                            LogCouponAttempt(couponCode, "Voucher", "SUCCESS - Voucher applied");
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('✅ ใช้ Voucher สำเร็จ!\\n\\nกรุณาเลือกห้องพักอีกครั้ง ระบบได้ปรับราคาตามส่วนลดเรียบร้อยแล้ว');", true);
+                        }
+                        else
+                        {
+                            // Check if voucher exists but is used or expired
+                            DataTable dtVoucherCheck = code.DatabaseQuery(conn, "SELECT Used_Status, Expired_Date FROM [Taketime].[dbo].[Voucher] Where Voucher_Number = N'" + couponCode + "'");
+
+                            Button8.Text = "Submit";
+                            Session["UseCoupon"] = "false";
+                            TextBox19.Text = string.Empty;
+
+                            if (dtVoucherCheck.Rows.Count >= 1)
+                            {
+                                string usedStatus = dtVoucherCheck.Rows[0]["Used_Status"].ToString();
+                                DateTime expiredDate = Convert.ToDateTime(dtVoucherCheck.Rows[0]["Expired_Date"]);
+                                DateTime checkOutDate = code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1);
+
+                                if (usedStatus == "True")
+                                {
+                                    LogCouponAttempt(couponCode, "Voucher", "FAILED - Already used");
+                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ Voucher นี้ถูกใช้งานไปแล้ว\\n\\nVoucher has already been used.');", true);
+                                }
+                                else if (expiredDate < checkOutDate)
+                                {
+                                    LogCouponAttempt(couponCode, "Voucher", "FAILED - Expired on " + expiredDate.ToString("yyyy-MM-dd"));
+                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ Voucher นี้หมดอายุแล้ว\\n\\nวันหมดอายุ: " + expiredDate.ToString("dd/MM/yyyy") + "\\nวันที่เลือก Check-Out: " + checkOutDate.ToString("dd/MM/yyyy") + "\\n\\nVoucher has expired.');", true);
+                                }
+                                else
+                                {
+                                    LogCouponAttempt(couponCode, "Voucher", "FAILED - Not applicable for selected room type");
+                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ Voucher นี้ไม่สามารถใช้กับห้องพักประเภทที่เลือกได้\\n\\nVoucher is not valid for selected accommodation type.');", true);
+                                }
+                            }
+                            else
+                            {
+                                LogCouponAttempt(couponCode, "Voucher", "FAILED - Code not found");
+                                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ ไม่พบ Voucher นี้ในระบบ\\n\\nกรุณาตรวจสอบว่า:\\n- พิมพ์ถูกต้อง (ตัวพิมพ์เล็ก/ใหญ่)\\n- รหัสขึ้นต้นด้วย v หรือ V\\n- รหัสมี 13 ตัวอักษร\\n\\nVoucher not found. Please check the code and try again.');", true);
+                            }
+                        }
                     }
-                    catch {
-                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวันที่ต้องการจองก่อน');", true);
-                    }
-                    if (dtVoucher.Rows.Count >= 1)
+                    catch (Exception ex)
                     {
-                        Session["UseCoupon"] = "Voucher";
-                        TextBox19.Enabled = false;
-                        TextBox12_TextChanged(null, null);
-                        Button8.Text = "Clear";
-                        TextBox6.Text += "Voucher No."+TextBox19.Text+"\r\n";
-                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกห้องพักอีกครั้งระบบได้ทำการปรับราคาที่พักตามส่วนลดของท่านเรียบร้อยแล้ว');", true);
-                    }
-                    else
-                    {
-                        Button8.Text = "Submit";
-                        Session["UseCoupon"] = "false";
-                        TextBox19.Text = string.Empty;
-                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('รหัสไม่ถูกต้อง กรุณาใส่ตัวเล็ก ตัวใหญ่ให้ถูกต้อง');", true);
+                        LogCouponAttempt(couponCode, "Voucher", "ERROR - " + ex.Message);
+                        ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('❌ เกิดข้อผิดพลาดในการตรวจสอบ Voucher\\n\\nข้อผิดพลาด: " + ex.Message + "\\n\\nกรุณาลองใหม่อีกครั้ง');", true);
                     }
                 }
                 else
                 {
+                    // Invalid format
+                    string errorMsg = "❌ รูปแบบรหัสส่วนลดไม่ถูกต้อง\\n\\n";
+                    errorMsg += "รหัส Affiliate: ต้องมี 8 ตัวอักษร\\n";
+                    errorMsg += "รหัส Voucher: ต้องขึ้นต้นด้วย v หรือ V และมี 13 ตัวอักษร\\n\\n";
+                    errorMsg += "รหัสที่ใส่: " + couponCode + " (" + couponCode.Length + " ตัวอักษร)\\n\\n";
+                    errorMsg += "Invalid coupon format. Please check the code length and format.";
 
+                    LogCouponAttempt(couponCode, "Unknown", "FAILED - Invalid format (length: " + couponCode.Length + ")");
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('" + errorMsg + "');", true);
                 }
-                    
-                
             }
-            else if(Button8.Text == "Clear")
+            else if (Button8.Text == "Clear")
             {
                 Button8.Text = "Submit";
                 Session["UseCoupon"] = "false";
+                string clearedCode = TextBox19.Text;
                 TextBox19.Text = string.Empty;
+                TextBox19.Enabled = true;
                 TextBox12_TextChanged(null, null);
+
+                LogCouponAttempt(clearedCode, "Clear", "Coupon cleared by user");
+            }
+        }
+
+        /// <summary>
+        /// Logs coupon validation attempts for debugging and tracking
+        /// </summary>
+        private void LogCouponAttempt(string couponCode, string couponType, string result)
+        {
+            try
+            {
+                string phoneNumber = string.IsNullOrEmpty(TextBox1.Text) ? "N/A" : TextBox1.Text;
+                string checkInDate = string.IsNullOrEmpty(TextBox12.Text) ? "N/A" : TextBox12.Text;
+                string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Coupon: {couponCode} | Type: {couponType} | Phone: {phoneNumber} | Check-in: {checkInDate} | Result: {result}";
+
+                // Log to application log file
+                System.IO.File.AppendAllText(
+                    Server.MapPath("~/Logs/CouponValidation.log"),
+                    logMessage + Environment.NewLine
+                );
+            }
+            catch
+            {
+                // Fail silently - don't break the user experience if logging fails
             }
         }
 
