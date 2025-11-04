@@ -361,38 +361,27 @@ namespace Take_Time_BangPhra.Account.Report
                     string RecNumber = docNum;
                 int reservation_id = 0;
 
-                DataTable dtcustomer = new DataTable();
-                try
-                {
-                    dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox13.Text + "' AND IDNumber = '" + TextBox12.Text.Replace("'", "''") + "'");
-                    if (dtcustomer.Rows.Count > 0)
-                    {
+                // Upsert customer data (insert or update) - ensures no duplicates and always latest data
+                // Handles both corporate (Type=1, matches by IDNumber+Branch_Number) and individual customers (matches by MobilePhone)
+                long customerId = code.UpsertCustomer(
+                    conn,
+                    TextBox13.Text,  // MobilePhone
+                    TextBox10.Text,  // Name
+                    "",  // NickName
+                    "",  // ComeFrom
+                    "",  // Remark
+                    TextBox10.Text,  // FullName
+                    cleantext(TextBox11.Text),  // Address
+                    TextBox12.Text,  // IDNumber
+                    TextBox17.Text,  // Email
+                    Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
+                    CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                    TextBox18.Text,  // Address1
+                    TextBox7.Text  // Branch_Number
+                );
 
-                    }
-                    else
-                    {
-                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox13.Text + "',N'" + TextBox10.Text.Replace("'", "''") + "',N'','','',N'" + TextBox10.Text.Replace("'", "''") + "',N'" + cleantext(TextBox11.Text.Replace("'", "''")) + "',N'" + TextBox12.Text + "',N'" + TextBox17.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox18.Text + "',N'" + TextBox7.Text + "')");
-                        dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox13.Text + "'");
-                    }
-                }
-                catch
-                {
-                    dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox13.Text + "' AND IDNumber = '" + TextBox12.Text.Replace("'", "''") + "'");
-                    if (dtcustomer.Rows.Count > 0)
-                    {
-                        try
-                        {
-                            code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [MobilePhone] = '" + TextBox13.Text + "',[Status] = '1',[FullName] = N'" + TextBox10.Text + "',[Address] = N'" + TextBox11.Text + "',[Address1] = N'" + TextBox18.Text + "',[Address_ID] = '" + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + "',[IDNumber] = '" + TextBox12.Text + "',[Email] = '" + TextBox17.Text + "',[Customer_Type_ID] = '" + DropDownList8.SelectedValue + "',[Branch_Number] = '" + TextBox7.Text + "' WHERE MobilePhone = '" + TextBox13.Text + "' or IDNumber = '" + TextBox12.Text + "'");
-                        }
-                        catch { }
-                    }
-                    else
-                    {
-                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox13.Text + "',N'" + TextBox10.Text.Replace("'", "''") + "',N'','','',N'" + TextBox10.Text.Replace("'", "''") + "',N'" + cleantext(TextBox11.Text.Replace("'", "''")) + "',N'" + "',N'" + TextBox12.Text + "',N'" + TextBox17.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox18.Text + "',N'" + TextBox7.Text + "')");
-                        dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox13.Text + "'");
-                    }
-
-                }
+                // Query customer data after upsert
+                DataTable dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where ID = " + customerId);
 
 
                 

@@ -1165,7 +1165,23 @@ namespace Take_Time_BangPhra
                                             { }
                                         }
                                         msg += "\r\nหมายเหตุ: " + TextBox6.Text;
-                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+                                        // Upsert customer data (insert or update) - ensures no duplicates and always latest data
+                                        code.UpsertCustomer(
+                                            conn,
+                                            TextBox1.Text,  // MobilePhone
+                                            TextBox2.Text,  // Name
+                                            TextBox3.Text,  // NickName
+                                            "",  // ComeFrom
+                                            "",  // Remark
+                                            TextBox2.Text,  // FullName
+                                            cleantext(TextBox8.Text),  // Address
+                                            TextBox9.Text,  // IDNumber
+                                            TextBox13.Text,  // Email
+                                            Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
+                                            CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                                            TextBox17.Text,  // Address1
+                                            TextBox18.Text  // Branch_Number
+                                        );
 
                                         uploadSlip(id);
                                         if (command == "edit")
@@ -1484,7 +1500,23 @@ namespace Take_Time_BangPhra
                                     else if (command == "checkin" && Session["permission"].ToString() == "True" && TextBox1.Text != "02")
                                     {
                                         IsDeposit = false;
-                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
+                                        // Upsert customer data (insert or update) - ensures no duplicates and always latest data
+                                        code.UpsertCustomer(
+                                            conn,
+                                            TextBox1.Text,  // MobilePhone
+                                            TextBox2.Text,  // Name
+                                            TextBox3.Text,  // NickName
+                                            "",  // ComeFrom
+                                            "",  // Remark
+                                            TextBox2.Text,  // FullName
+                                            cleantext(TextBox8.Text),  // Address
+                                            TextBox9.Text,  // IDNumber
+                                            TextBox13.Text,  // Email
+                                            Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
+                                            CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                                            TextBox17.Text,  // Address1
+                                            TextBox18.Text  // Branch_Number
+                                        );
 
                                         if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
                                         {
@@ -2416,30 +2448,24 @@ namespace Take_Time_BangPhra
         }
         public void checkCreateCustomer()
         {
-            if (DropDownList8.SelectedValue == "1")
-            {
-                DataTable dtCustomer = code.DatabaseQuery(conn, "Select * From Customer Where IDNumber = '" + TextBox9.Text + "' AND Branch_Number = '" + TextBox18.Text + "'");
-                if (dtCustomer.Rows.Count == 1)
-                {
-                    code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' Where IDNumber = '" + TextBox9.Text + "' AND Branch_Number = '" + TextBox18.Text + "'");
-                }
-                else
-                {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox1.Text + "',N'" + TextBox2.Text.Replace("'", "''") + "',N'" + TextBox3.Text.Replace("'", "''") + "','','',N'" + TextBox2.Text + "',N'" + cleantext(TextBox8.Text) + "',N'" + TextBox9.Text + "',N'" + TextBox13.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox17.Text.Replace("'", "''") + "',N'" + TextBox18.Text.Replace("'", "''") + "')");
-                }
-            }
-            else
-            {
-                DataTable dtCustomer = code.DatabaseQuery(conn, "Select * From Customer Where MobilePhone = '" + TextBox1.Text + "'");
-                if (dtCustomer.Rows.Count == 1)
-                {
-                    code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
-                }
-                else
-                {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Customer]([MobilePhone],[Name],[NickName],[ComeFrom],[Remark],FullName,Address,IDNumber,Email,Customer_Type_ID,Address_ID,Address1,Branch_Number) VALUES ('" + TextBox1.Text + "',N'" + TextBox2.Text.Replace("'", "''") + "',N'" + TextBox3.Text.Replace("'", "''") + "','','',N'" + TextBox2.Text + "',N'" + cleantext(TextBox8.Text) + "',N'" + TextBox9.Text + "',N'" + TextBox13.Text + "'," + DropDownList8.SelectedValue + "," + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",N'" + TextBox17.Text.Replace("'", "''") + "',N'" + TextBox18.Text.Replace("'", "''") + "')");
-                }
-            }
+            // Upsert customer data (insert or update) - ensures no duplicates and always latest data
+            // Handles both corporate (Type=1, matches by IDNumber+Branch_Number) and individual customers (matches by MobilePhone)
+            code.UpsertCustomer(
+                conn,
+                TextBox1.Text,  // MobilePhone
+                TextBox2.Text,  // Name
+                TextBox3.Text,  // NickName
+                "",  // ComeFrom
+                "",  // Remark
+                TextBox2.Text,  // FullName
+                cleantext(TextBox8.Text),  // Address
+                TextBox9.Text,  // IDNumber
+                TextBox13.Text,  // Email
+                Convert.ToInt32(DropDownList8.SelectedValue),  // Customer_Type_ID
+                CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text),  // Address_ID
+                TextBox17.Text,  // Address1
+                TextBox18.Text  // Branch_Number
+            );
         }
         public void createReport(string DocNumber,string status,DateTime docDate)
         {
