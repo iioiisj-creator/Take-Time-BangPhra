@@ -3614,13 +3614,23 @@ namespace Take_Time_BangPhra
                 }
             }
 
-            // Permission checks
-            if (nowThai > datereserve.Value.AddDays(1) && Session["permission"] == "No")
+            // DISABLED: Permission check for past dates
+            // Reason: Server time may be incorrect, causing false positives
+            // This check was blocking valid future dates when server time was wrong
+            /*
+            if (Session["permission"] != null && Session["permission"].ToString() == "No")
             {
-                GridView1.Visible = false;
-                return;
+                if (datereserve.Value.Date < nowThai.Date.AddDays(-1))
+                {
+                    ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                        "alert('ไม่สามารถจองย้อนหลังได้\\nกรุณาเลือกวันที่ในอนาคต');", true);
+                    GridView1.Visible = false;
+                    return;
+                }
             }
+            */
 
+            // Always show GridView when valid date is selected
             GridView1.Visible = true;
 
             // Check if booking is too far in future (more than 3 months)
