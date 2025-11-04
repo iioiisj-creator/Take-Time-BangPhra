@@ -66,7 +66,7 @@
                 
                 <div class="action-buttons no-print text-right mb-3">
                     <asp:Button ID="btnPrint" runat="server" Text="พิมพ์ตารางรายวัน" 
-                        CssClass="btn btn-primary" OnClientClick="printTable(); return false;" />
+                        CssClass="btn btn-primary" OnClientClick="printTable(); return false;" OnClick="btnPrint_Click" />
                 </div>
 
                 <div class="calendar-container">
