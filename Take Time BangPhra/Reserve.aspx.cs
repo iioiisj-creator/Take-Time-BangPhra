@@ -754,8 +754,15 @@ namespace Take_Time_BangPhra
             if (submitcheck == false)
             {
                 Session["Submit"] = true;
+                // Tax invoice date should be payment received date (when button is pressed)
+                // NOT the check-in date
                 DateTime docCreatedDate = DateTime.Now;
 
+                // REMOVED: Code that overwrote docCreatedDate with check-in date
+                // Tax invoices must always use payment date (DateTime.Now), not check-in date
+                // Old logic incorrectly used check-in date from TextBox12 or TextBox11
+
+                /*
                 try
                 {
                     if (code2.ParseDate(TextBox12.Text) < docCreatedDate)
@@ -776,6 +783,7 @@ namespace Take_Time_BangPhra
                     }
                 }
                 catch { }
+                */
 
 
                 TextBox4.Text = Session["OldPrice"].ToString();
