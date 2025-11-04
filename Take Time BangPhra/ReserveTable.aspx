@@ -255,6 +255,11 @@
 
             var printWindow = window.open('', '_blank', 'width=1200,height=800');
 
+            if (!printWindow) {
+                alert('กรุณาอนุญาตให้เปิด popup window เพื่อพิมพ์ตาราง');
+                return;
+            }
+
             var tableHTML = '<table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #000; margin: 0; padding: 0;">';
 
             var headerRow = document.querySelector('.mydatagrid .header');
@@ -360,7 +365,7 @@
                 tableHTML += '</tr>';
             }
             tableHTML += '</tbody></table>';
-            
+
             // เพิ่มตารางแนวนอนสำหรับกรอกค่าก่อน Footer
             var summaryTableHTML = `
                 <div style="margin-top: 20px;">
@@ -382,11 +387,15 @@
                     </table>
                 </div>
             `;
-            
+
+            // Get date label text safely
+            var dateLabel = document.getElementById('<%= Label1.ClientID %>');
+            var dateLabelText = dateLabel ? dateLabel.innerText : '';
+
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>รายการผู้เข้าพักรายวัน - ${document.getElementById('<%= Label1.ClientID %>').innerText}</title>
+                        <title>รายการผู้เข้าพักรายวัน - ${dateLabelText}</title>
                         <style>
                             @page {
                                 margin: 0.2cm;
@@ -482,7 +491,7 @@
                     </head>
                     <body>
                         <h2>รายการผู้เข้าพักรายวัน</h2>
-                        <h3>${document.getElementById('<%= Label1.ClientID %>').innerText}</h3>
+                        <h3>${dateLabelText}</h3>
                         ${tableHTML}
                         ${summaryTableHTML}
                         <div class="print-footer">
