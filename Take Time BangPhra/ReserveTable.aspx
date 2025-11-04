@@ -37,7 +37,7 @@
                 vertical-align: top;
             }
             .mydatagrid td {
-                height: 105px !important;
+                height: 74px !important;
             }
             /* ปรับความกว้างคอลัมน์สำหรับ print */
             .mydatagrid th:nth-child(1), .mydatagrid td:nth-child(1) { width: 3%; }
@@ -66,7 +66,7 @@
                 
                 <div class="action-buttons no-print text-right mb-3">
                     <asp:Button ID="btnPrint" runat="server" Text="พิมพ์ตารางรายวัน" 
-                        CssClass="btn btn-primary" OnClientClick="printTable(); return false;" OnClick="btnPrint_Click" />
+                        CssClass="btn btn-primary" OnClientClick="printTable(); return false;" />
                 </div>
 
                 <div class="calendar-container">
@@ -255,6 +255,11 @@
 
             var printWindow = window.open('', '_blank', 'width=1200,height=800');
 
+            if (!printWindow) {
+                alert('กรุณาอนุญาตให้เปิด popup window เพื่อพิมพ์ตาราง');
+                return;
+            }
+
             var tableHTML = '<table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #000; margin: 0; padding: 0;">';
 
             var headerRow = document.querySelector('.mydatagrid .header');
@@ -281,8 +286,8 @@
             var rows = document.querySelectorAll('.mydatagrid .rows');
 
             for (var i = 0; i < rows.length; i++) {
-                // ลดความสูงลง 70% จาก 350px เหลือ 105px
-                tableHTML += '<tr style="height: 105px;">';
+                // ลดความสูงลงอีก 30% จาก 105px เหลือ 74px
+                tableHTML += '<tr style="height: 74px;">';
 
                 var cells = rows[i].querySelectorAll('td');
                 var data = {
@@ -344,49 +349,53 @@
                     }
                 }
 
-                // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 105px (ลดลง 70% จาก 350px)
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 60px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 60px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 60px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 60px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 60px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 60px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 60px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 60px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 60px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 14%; height: 60px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 14%; height: 60px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 74px (ลดลงอีก 30% จาก 105px)
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 74px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 14%; height: 74px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 74px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 74px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 74px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 74px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 74px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 74px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
 
                 tableHTML += '</tr>';
             }
             tableHTML += '</tbody></table>';
-            
+
             // เพิ่มตารางแนวนอนสำหรับกรอกค่าก่อน Footer
             var summaryTableHTML = `
-                <div style="margin-top: 3px;">
+                <div style="margin-top: 20px;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #000; margin-bottom: 10px;">
-                        <tr style="height: 3px;">
-                            <td style="border: 1px solid #000; padding: 5px; text-align: left; width: 33.33%; vertical-align: top;">
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
                                 <strong>ยอดเงินที่โอนเข้าบัญชีบริษัท:</strong><br>
-                                <div style="height: 1px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
+                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
                             </td>
-                            <td style="border: 1px solid #000; padding: 5px; text-align: left; width: 33.33%; vertical-align: top;">
+                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
                                 <strong>ยอดเงินที่โอนเข้าบัญชีเงินสด:</strong><br>
-                                <div style="height: 1px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
+                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
                             </td>
-                            <td style="border: 1px solid #000; padding: 5px; text-align: left; width: 33.33%; vertical-align: top;">
+                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
                                 <strong>เงินสด:</strong><br>
-                                <div style="height: 1px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
+                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
                             </td>
                         </tr>
                     </table>
                 </div>
             `;
-            
+
+            // Get date label text safely
+            var dateLabel = document.getElementById('<%= Label1.ClientID %>');
+            var dateLabelText = dateLabel ? dateLabel.innerText : '';
+
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>รายการผู้เข้าพักรายวัน - ${document.getElementById('<%= Label1.ClientID %>').innerText}</title>
+                        <title>รายการผู้เข้าพักรายวัน - ${dateLabelText}</title>
                         <style>
                             @page {
                                 margin: 0.2cm;
@@ -433,7 +442,7 @@
                                 height: 25px;
                             }
                             td {
-                                height: 105px;
+                                height: 74px;
                                 vertical-align: top;
                             }
                             .summary-table {
@@ -444,16 +453,15 @@
                                 margin-bottom: 10px;
                             }
                             .summary-table td {
-                                height: 50px;
                                 vertical-align: top;
                                 text-align: left;
-                                padding: 5px;
+                                padding: 1px;
                                 border: 1px solid #000;
                             }
                             .dashed-line {
-                                height: 25px;
+                                height: 10px;
                                 border-bottom: 1px dashed #666;
-                                margin-top: 5px;
+                                margin-top: 1px;
                             }
                             .print-footer { 
                                 margin-top: 10px; 
@@ -483,7 +491,7 @@
                     </head>
                     <body>
                         <h2>รายการผู้เข้าพักรายวัน</h2>
-                        <h3>${document.getElementById('<%= Label1.ClientID %>').innerText}</h3>
+                        <h3>${dateLabelText}</h3>
                         ${tableHTML}
                         ${summaryTableHTML}
                         <div class="print-footer">
