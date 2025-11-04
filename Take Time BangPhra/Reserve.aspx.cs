@@ -3563,21 +3563,56 @@ namespace Take_Time_BangPhra
 
         protected void TextBox12_TextChanged(object sender, EventArgs e)
         {
+            // Skip if called from code (not user interaction) to prevent AutoPostBack loop
+            if (sender == null && string.IsNullOrWhiteSpace(TextBox12.Text))
+            {
+                GridView1.Visible = false;
+                return;
+            }
+
+            // Allow empty TextBox from user interaction - just hide GridView
+            if (string.IsNullOrWhiteSpace(TextBox12.Text))
+            {
+                GridView1.Visible = false;
+                Label1.Text = "กรุณาเลือกวันที่เช็คอิน";
+                return;
+            }
+
             DateTime? datereserve = code2.ParseDate(TextBox12.Text);
 
             // Validate date parsing
             if (!datereserve.HasValue)
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert",
-                    "alert('รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกวันที่ในรูปแบบ: วัน-เดือน-ปี (เช่น 25-01-2025)');", true);
-                TextBox12.Text = DateTime.Now.ToString("yyyy-MM-dd");
-                datereserve = code2.ParseDate(TextBox12.Text);
+                    "alert('รูปแบบวันที่ไม่ถูกต้อง\\nวันที่ที่ได้รับ: " + TextBox12.Text + "\\nกรุณาเลือกวันที่ใหม่');", true);
+                TextBox12.Text = "";
+                GridView1.Visible = false;
+                Label1.Text = "";
                 return;
             }
 
-            // Get current date in Thai timezone
-            DateTime nowThai = TimeZoneInfo.ConvertTime(DateTime.Now,
-                TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+            // Get current date in Thai timezone (support both Windows and Linux)
+            DateTime nowThai;
+            try
+            {
+                // Try Windows timezone ID first
+                TimeZoneInfo thaiZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                nowThai = TimeZoneInfo.ConvertTime(DateTime.UtcNow, thaiZone);
+            }
+            catch
+            {
+                try
+                {
+                    // Try Linux/Mac timezone ID
+                    TimeZoneInfo thaiZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
+                    nowThai = TimeZoneInfo.ConvertTime(DateTime.UtcNow, thaiZone);
+                }
+                catch
+                {
+                    // Fallback: Add 7 hours to UTC (GMT+7)
+                    nowThai = DateTime.UtcNow.AddHours(7);
+                }
+            }
 
             // Permission checks
             if (nowThai > datereserve.Value.AddDays(1) && Session["permission"] == "No")
