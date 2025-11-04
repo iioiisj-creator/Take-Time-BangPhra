@@ -131,12 +131,12 @@ namespace Take_Time_BangPhra.Account
             Dictionary<string, decimal> categorySummary = accountingService.GetRevenueSummaryByCategory(startDate, endDate);
 
             // Convert to list for binding
-            var categoryList = categorySummary.Select(x => new
+            var categoryList = categorySummary.Select(cat => new
             {
-                CategoryName = GetCategoryDisplayName(x.Key),
-                Amount = x.Value,
-                Percentage = categorySummary.Values.Sum() > 0 ? (x.Value / categorySummary.Values.Sum() * 100) : 0
-            }).OrderByDescending(x => x.Amount).ToList();
+                CategoryName = GetCategoryDisplayName(cat.Key),
+                Amount = cat.Value,
+                Percentage = categorySummary.Values.Sum() > 0 ? (cat.Value / categorySummary.Values.Sum() * 100) : 0
+            }).OrderByDescending(item => item.Amount).ToList();
 
             rptCategoryBreakdown.DataSource = categoryList;
             rptCategoryBreakdown.DataBind();
@@ -147,12 +147,12 @@ namespace Take_Time_BangPhra.Account
             Dictionary<string, decimal> paymentSummary = accountingService.GetRevenueSummaryByPaymentChannel(startDate, endDate);
 
             // Convert to list for binding
-            var paymentList = paymentSummary.Select(x => new
+            var paymentList = paymentSummary.Select(pay => new
             {
-                PaymentName = x.Key,
-                Amount = x.Value,
-                Percentage = paymentSummary.Values.Sum() > 0 ? (x.Value / paymentSummary.Values.Sum() * 100) : 0
-            }).OrderByDescending(x => x.Amount).ToList();
+                PaymentName = pay.Key,
+                Amount = pay.Value,
+                Percentage = paymentSummary.Values.Sum() > 0 ? (pay.Value / paymentSummary.Values.Sum() * 100) : 0
+            }).OrderByDescending(item => item.Amount).ToList();
 
             rptPaymentBreakdown.DataSource = paymentList;
             rptPaymentBreakdown.DataBind();
