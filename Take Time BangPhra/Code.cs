@@ -36,24 +36,33 @@ namespace Take_Time_BangPhra
 
             DateTime result;
 
-            // Define the possible date formats
+            // Thai culture for consistent date parsing across all machines
+            CultureInfo thaiCulture = new CultureInfo("th-TH");
+
+            // Define date formats - THAI FORMAT FIRST (dd-MM-yyyy, dd/MM/yyyy)
+            // This ensures Thai date format (day-month-year) is prioritized over US format
+            // Prevents date/month confusion (e.g., "01-02-2025" = 1 Feb, not 2 Jan)
             string[] formats = {
+        // Thai/European format (Day-Month-Year) - PRIORITY
         "dd-MM-yyyy", "d-MM-yyyy", "dd-M-yyyy", "d-M-yyyy",
-        "MM-dd-yyyy", "M-dd-yyyy", "MM-d-yyyy", "M-d-yyyy",
-        "yyyy-MM-dd", "yyyy-M-d",  // ISO format
         "dd/MM/yyyy", "d/MM/yyyy", "dd/M/yyyy", "d/M/yyyy",
+        // ISO format (safe, unambiguous)
+        "yyyy-MM-dd", "yyyy-M-d",
+        // US format (Month-Day-Year) - LAST RESORT ONLY
+        "MM-dd-yyyy", "M-dd-yyyy", "MM-d-yyyy", "M-d-yyyy",
         "MM/dd/yyyy", "M/dd/yyyy", "MM/d/yyyy", "M/d/yyyy"
     };
 
-            // Try parsing with different formats
+            // Try parsing with Thai culture and defined formats
             if (DateTime.TryParseExact(dateString, formats,
-                CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+                thaiCulture, DateTimeStyles.None, out result))
             {
                 return result;
             }
 
-            // If exact parsing fails, try regular DateTime.Parse
-            if (DateTime.TryParse(dateString, out result))
+            // Fallback: Try parsing with Thai culture (NOT InvariantCulture!)
+            // This ensures dates are interpreted as dd/MM/yyyy by default
+            if (DateTime.TryParse(dateString, thaiCulture, DateTimeStyles.None, out result))
             {
                 return result;
             }

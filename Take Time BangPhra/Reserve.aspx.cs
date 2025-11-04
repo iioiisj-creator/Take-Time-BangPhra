@@ -3564,14 +3564,23 @@ namespace Take_Time_BangPhra
         protected void TextBox12_TextChanged(object sender, EventArgs e)
         {
             DateTime? datereserve = code2.ParseDate(TextBox12.Text);
+
+            // Validate date parsing
             if (!datereserve.HasValue)
             {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                    "alert('รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกวันที่ในรูปแบบ: วัน-เดือน-ปี (เช่น 25-01-2025)');", true);
                 TextBox12.Text = DateTime.Now.ToString("yyyy-MM-dd");
                 datereserve = code2.ParseDate(TextBox12.Text);
+                return;
             }
 
+            // Get current date in Thai timezone
+            DateTime nowThai = TimeZoneInfo.ConvertTime(DateTime.Now,
+                TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
             // Permission checks
-            if (DateTime.Now > datereserve.Value.AddDays(1) && Session["permission"] == "No")
+            if (nowThai > datereserve.Value.AddDays(1) && Session["permission"] == "No")
             {
                 GridView1.Visible = false;
                 return;
@@ -3579,13 +3588,23 @@ namespace Take_Time_BangPhra
 
             GridView1.Visible = true;
 
-            // Check if booking is too far in future
-            if (code2.ParseDate(TextBox12.Text) > DateTime.Now.AddMonths(3) &&
+            // Check if booking is too far in future (more than 3 months)
+            DateTime maxBookingDate = nowThai.AddMonths(3);
+            if (datereserve.Value > maxBookingDate &&
                 (Session["permission"] == null || Session["permission"].ToString() != "True"))
             {
+                string errorMsg = string.Format(
+                    "ระบบไม่อนุญาติให้จองเกิน 3 เดือน\\n" +
+                    "วันที่ที่คุณเลือก: {0}\\n" +
+                    "วันที่สูงสุดที่จองได้: {1}\\n" +
+                    "กรุณาติดต่อ Admin หากต้องการจองเกินกำหนด",
+                    datereserve.Value.ToString("dd MMMM yyyy", new CultureInfo("th-TH")),
+                    maxBookingDate.ToString("dd MMMM yyyy", new CultureInfo("th-TH")));
+
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert",
-                    "alert('ระบบไม่อนุญาติให้จองเกิน 3 เดือน กรุณาติดต่อ Admin');", true);
+                    "alert('" + errorMsg + "');", true);
                 TextBox12.Text = "";
+                GridView1.Visible = false;
                 return;
             }
 
