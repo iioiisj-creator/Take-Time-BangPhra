@@ -49,8 +49,11 @@ BEGIN
     FROM #Duplicates
     ORDER BY DuplicateCount DESC, MobilePhone
 
+    DECLARE @DupCount INT
+    SELECT @DupCount = COUNT(*) FROM #Duplicates
+
     PRINT ''
-    PRINT 'Total duplicate groups: ' + CAST((SELECT COUNT(*) FROM #Duplicates) AS VARCHAR)
+    PRINT 'Total duplicate groups: ' + CAST(@DupCount AS VARCHAR)
     PRINT ''
 END
 ELSE
