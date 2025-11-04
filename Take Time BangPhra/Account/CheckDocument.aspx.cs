@@ -400,7 +400,7 @@ namespace Take_Time_BangPhra.Account
 
             Dictionary<string, decimal> paymentSummary = accountingService.GetRevenueSummaryByPaymentChannel(startDate, endDate);
             int row = 6;
-            foreach (var item in paymentSummary.OrderByDescending(x => x.Value))
+            foreach (var item in paymentSummary.OrderByDescending(p => p.Value))
             {
                 worksheet.Cells[$"A{row}"].Value = item.Key;
                 worksheet.Cells[$"B{row}"].Value = item.Value;
@@ -425,7 +425,7 @@ namespace Take_Time_BangPhra.Account
 
             Dictionary<string, decimal> categorySummary = accountingService.GetRevenueSummaryByCategory(startDate, endDate);
             row = categoryStartRow + 2;
-            foreach (var item in categorySummary.OrderByDescending(x => x.Value))
+            foreach (var item in categorySummary.OrderByDescending(c => c.Value))
             {
                 worksheet.Cells[$"A{row}"].Value = GetCategoryDisplayName(item.Key);
                 worksheet.Cells[$"B{row}"].Value = item.Value;
@@ -598,6 +598,83 @@ namespace Take_Time_BangPhra.Account
                 gvDailySummary.DataSource = dt;
                 gvDailySummary.DataBind();
             }
+        }
+
+        // Helper methods for display
+        private string GetCategoryIcon(string category)
+        {
+            switch (category)
+            {
+                case "CHECKIN":
+                    return "🏠";
+                case "ACCOMMODATION":
+                    return "🛏️";
+                case "FRONTDESK":
+                    return "🎫";
+                case "OTHER":
+                    return "📦";
+                default:
+                    return "📊";
+            }
+        }
+
+        protected string GetCategoryDisplayName(string category)
+        {
+            switch (category)
+            {
+                case "CHECKIN":
+                    return "เช็คอิน";
+                case "ACCOMMODATION":
+                    return "ห้องพัก";
+                case "FRONTDESK":
+                    return "หน้าเคาน์เตอร์";
+                case "OTHER":
+                    return "อื่นๆ";
+                default:
+                    return category;
+            }
+        }
+
+        private string GetPaymentIcon(string paymentType)
+        {
+            if (string.IsNullOrEmpty(paymentType))
+                return "💳";
+
+            if (paymentType.Contains("เงินสด"))
+                return "💵";
+            else if (paymentType.Contains("โอน"))
+                return "🏦";
+            else if (paymentType.Contains("บัตร"))
+                return "💳";
+            else
+                return "💰";
+        }
+
+        protected string GetTransactionBadge(string category)
+        {
+            switch (category)
+            {
+                case "CHECKIN":
+                    return "badge-success";
+                case "ACCOMMODATION":
+                    return "badge-primary";
+                case "FRONTDESK":
+                    return "badge-info";
+                case "OTHER":
+                    return "badge-secondary";
+                default:
+                    return "badge-light";
+            }
+        }
+
+        protected string GetTransactionStatus(decimal amount)
+        {
+            if (amount >= 5000)
+                return "text-success font-weight-bold";
+            else if (amount >= 1000)
+                return "text-primary";
+            else
+                return "text-dark";
         }
     }
 }
