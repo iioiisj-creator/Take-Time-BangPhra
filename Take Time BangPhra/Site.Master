@@ -25,12 +25,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         
     <style type="text/css">
-        @font-face {
-            font-family: "The Example Font";
-            src: url(../fonts/chulabhorn_Likit/app/ChulabhornLikitText-Regular.ttf) format("truetype");
-        }
-        div.ExampleFont { 
-            font-family: "The Example Font", ChulabhornLikitText-Regular;
+        /* Use Prompt font for Thai language support - loaded from Google Fonts above */
+        div.ExampleFont, .ExampleFont {
+            font-family: 'Prompt', sans-serif;
         }
         
         /* Improved navbar styling - RESTORED ORIGINAL STYLE */

@@ -1,12 +1,9 @@
 ﻿<%@ Page Title="" Language="C#" MaintainScrollPositionOnPostback="true" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Take_Time_BangPhra.Affiliate.Default" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
          <style type="text/css">
-@font-face {
-    font-family: "The Example Font";
-    src: url(../fonts/chulabhorn_Likit/app/ChulabhornLikitText-Regular.ttf) format("truetype");
-}
-div.ExampleFont { 
-    font-family: "The Example Font", ChulabhornLikitText-Regular;
+/* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
+div.ExampleFont, .ExampleFont {
+    font-family: 'Prompt', sans-serif;
 }
 </style>
      <style>

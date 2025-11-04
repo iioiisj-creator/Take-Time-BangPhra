@@ -1,20 +1,17 @@
 ﻿<%@ Page Title="" Async="true" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Reservation_Confirmed.aspx.cs" Inherits="Take_Time_BangPhra.Reservation_Confirmed" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style type="text/css">
-        @font-face {
-            font-family: "Chulabhorn Likit Text";
-            src: url(/fonts/chulabhorn_Likit/app/ChulabhornLikitText-Regular.ttf) format("truetype");
-        }
-        
+        /* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
+
         body {
             background: linear-gradient(135deg, #6d4c41 0%, #8d6e63 100%);
             min-height: 100vh;
             padding: 10px;
             margin: 0;
         }
-        
+
         .confirmation-container {
-            font-family: "Chulabhorn Likit Text", Arial, sans-serif;
+            font-family: 'Prompt', Arial, sans-serif;
             max-width: 1000px;
             margin: 0 auto;
             background: white;

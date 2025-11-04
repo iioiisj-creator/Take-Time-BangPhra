@@ -125,7 +125,7 @@
         body {
             background-color: #F5F5F0; /* Cream background */
             color: #5D4037; /* Dark brown text */
-            font-family: 'Chulabhorn Likit Text', Arial, sans-serif;
+            font-family: 'Prompt', Arial, sans-serif;
         }
         
         /* Form container */
@@ -154,7 +154,7 @@
             border: 1px solid #BCAAA4; /* Light brown border */
             background-color: #FFF;
             color: #5D4037;
-            font-family: 'Chulabhorn Likit Text', Arial, sans-serif;
+            font-family: 'Prompt', Arial, sans-serif;
         }
         
         .rounded-textbox:focus {
@@ -248,14 +248,9 @@
             }
         }
         
-        /* Font face for Chulabhorn Likit */
-        @font-face {
-            font-family: "Chulabhorn Likit Text";
-            src: url(/fonts/chulabhorn_Likit/app/ChulabhornLikitText-Regular.ttf) format("truetype");
-        }
-        
+        /* Use Prompt font for Thai language support */
         .ExampleFont {
-            font-family: "Chulabhorn Likit Text", sans-serif;
+            font-family: 'Prompt', sans-serif;
         }
         
         /* Highlight important fields */
@@ -403,9 +398,9 @@
                                 <ItemStyle CssClass="header-center ExampleFont"></ItemStyle>
                             </asp:CommandField>
                         </Columns>
-                        <HeaderStyle CssClass="header ExampleFont" Font-Names="Chulabhorn Likit Text Medium"></HeaderStyle>
+                        <HeaderStyle CssClass="header ExampleFont"></HeaderStyle>
                         <PagerStyle CssClass="pager ExampleFont"></PagerStyle>
-                        <RowStyle CssClass="rows ExampleFont" Font-Names="Chulabhorn Likit Text"></RowStyle>
+                        <RowStyle CssClass="rows ExampleFont"></RowStyle>
                     </asp:GridView>
                 </div>
             </div>
