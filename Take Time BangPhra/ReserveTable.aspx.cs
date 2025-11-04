@@ -538,5 +538,10 @@ namespace Take_Time_BangPhra
 
             return Path.Combine(monthPath, fileName);
         }
+
+        protected void btnPrint_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
