@@ -25,11 +25,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         
     <style type="text/css">
-        /* Use Prompt font for Thai language support - loaded from Google Fonts above */
-        div.ExampleFont, .ExampleFont {
+        /* ============================================
+           CENTRALIZED FONT CONFIGURATION
+           Change font here to update entire website
+           ============================================ */
+        body,
+        div.ExampleFont,
+        .ExampleFont {
             font-family: 'Prompt', sans-serif;
         }
-        
+
         /* Improved navbar styling - RESTORED ORIGINAL STYLE */
         .navbar {
             background-color: #5D4037 !important;

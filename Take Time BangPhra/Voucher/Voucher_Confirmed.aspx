@@ -3,10 +3,6 @@
     <p>
         <br />
       <style type="text/css">
-/* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
-div.ExampleFont, .ExampleFont {
-    font-family: 'Prompt', sans-serif;
-}
           .auto-style1 {
               height: 47px;
           }

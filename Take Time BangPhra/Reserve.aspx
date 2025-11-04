@@ -248,11 +248,6 @@
             }
         }
         
-        /* Use Prompt font for Thai language support */
-        .ExampleFont {
-            font-family: 'Prompt', sans-serif;
-        }
-        
         /* Highlight important fields */
         .required-field {
             color: #D32F2F; /* Red for required fields */

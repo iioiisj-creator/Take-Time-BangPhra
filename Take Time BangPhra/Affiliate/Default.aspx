@@ -1,11 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MaintainScrollPositionOnPostback="true" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Take_Time_BangPhra.Affiliate.Default" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
-         <style type="text/css">
-/* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
-div.ExampleFont, .ExampleFont {
-    font-family: 'Prompt', sans-serif;
-}
-</style>
      <style>
 
                  .mycheckbox input[type="checkbox"] 

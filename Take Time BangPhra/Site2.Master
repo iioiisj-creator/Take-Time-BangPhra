@@ -15,6 +15,18 @@
 
     <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 
+    <style type="text/css">
+        /* ============================================
+           CENTRALIZED FONT CONFIGURATION
+           Change font here to update entire website
+           ============================================ */
+        body,
+        div.ExampleFont,
+        .ExampleFont {
+            font-family: 'Prompt', sans-serif;
+        }
+    </style>
+
 </head>
 <body>
     <script src="../Scripts/AutoComplete.js"></script>

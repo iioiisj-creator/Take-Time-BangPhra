@@ -1,8 +1,6 @@
 ﻿<%@ Page Title="" Async="true" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Reservation_Confirmed.aspx.cs" Inherits="Take_Time_BangPhra.Reservation_Confirmed" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style type="text/css">
-        /* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
-
         body {
             background: linear-gradient(135deg, #6d4c41 0%, #8d6e63 100%);
             min-height: 100vh;

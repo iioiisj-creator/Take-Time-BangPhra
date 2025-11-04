@@ -5,12 +5,6 @@
     <link rel="stylesheet" href="/Content/jquery-ui.css">
   <link rel="stylesheet" href="/Content/style.css">
     <link rel="stylesheet" type="text/css" href="/Content/GridView.css">
-     <style type="text/css">
-/* Use Prompt font for Thai language support - loaded from Google Fonts in Site.Master */
-div.ExampleFont, .ExampleFont {
-    font-family: 'Prompt', sans-serif;
-}
-</style>
      <style>
             th, td {
   padding: 5px;
