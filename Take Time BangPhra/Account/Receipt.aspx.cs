@@ -362,7 +362,8 @@ namespace Take_Time_BangPhra.Account.Report
                 int reservation_id = 0;
 
                 // Upsert customer data (insert or update) - ensures no duplicates and always latest data
-                // Handles both corporate (Type=1, matches by IDNumber+Branch_Number) and individual customers (matches by MobilePhone)
+                // ALWAYS matches by MobilePhone - ensures only 1 record per phone number
+                // If customer type changes from Individual to Corporate (or vice versa), it updates the existing record
                 long customerId = code.UpsertCustomer(
                     conn,
                     TextBox13.Text,  // MobilePhone

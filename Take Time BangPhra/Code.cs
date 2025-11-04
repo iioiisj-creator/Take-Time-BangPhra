@@ -203,8 +203,8 @@ namespace Take_Time_BangPhra
         /// <summary>
         /// Upserts customer data - inserts new customer or updates existing one
         /// Prevents duplicates and ensures latest data is always stored
-        /// For corporate customers (Type=1): matches by IDNumber + Branch_Number
-        /// For individual customers: matches by MobilePhone
+        /// ALWAYS matches by MobilePhone (unique identifier) - ensures only 1 record per phone number
+        /// If customer changes from Individual to Corporate (or vice versa), it updates the existing record
         /// </summary>
         /// <returns>Customer ID</returns>
         public long UpsertCustomer(
@@ -242,53 +242,26 @@ namespace Take_Time_BangPhra
             if (dbType.ToUpper() == "POSTGRESQL")
             {
                 // PostgreSQL version using INSERT ... ON CONFLICT
-                string mergeQuery;
-
-                if (customerTypeID == 1)
-                {
-                    // Corporate customer: match by IDNumber + Branch_Number
-                    mergeQuery = @"
-                        INSERT INTO Customer (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
-                        VALUES ('" + mobilePhone + "', N'" + name + "', N'" + nickName + "', N'" + comeFrom + "', N'" + remark + "', N'" + fullName + "', N'" + address + "', N'" + idNumber + "', N'" + email + "', " + customerTypeID + ", " + addressID + ", N'" + address1 + "', N'" + branchNumber + @"', 1)
-                        ON CONFLICT (IDNumber, Branch_Number)
-                        DO UPDATE SET
-                            MobilePhone = EXCLUDED.MobilePhone,
-                            Name = EXCLUDED.Name,
-                            NickName = EXCLUDED.NickName,
-                            ComeFrom = EXCLUDED.ComeFrom,
-                            Remark = EXCLUDED.Remark,
-                            FullName = EXCLUDED.FullName,
-                            Address = EXCLUDED.Address,
-                            Email = EXCLUDED.Email,
-                            Customer_Type_ID = EXCLUDED.Customer_Type_ID,
-                            Address_ID = EXCLUDED.Address_ID,
-                            Address1 = EXCLUDED.Address1,
-                            Status = 1
-                        RETURNING ID";
-                }
-                else
-                {
-                    // Individual customer: match by MobilePhone
-                    mergeQuery = @"
-                        INSERT INTO Customer (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
-                        VALUES ('" + mobilePhone + "', N'" + name + "', N'" + nickName + "', N'" + comeFrom + "', N'" + remark + "', N'" + fullName + "', N'" + address + "', N'" + idNumber + "', N'" + email + "', " + customerTypeID + ", " + addressID + ", N'" + address1 + "', N'" + branchNumber + @"', 1)
-                        ON CONFLICT (MobilePhone)
-                        DO UPDATE SET
-                            Name = EXCLUDED.Name,
-                            NickName = EXCLUDED.NickName,
-                            ComeFrom = EXCLUDED.ComeFrom,
-                            Remark = EXCLUDED.Remark,
-                            FullName = EXCLUDED.FullName,
-                            Address = EXCLUDED.Address,
-                            IDNumber = EXCLUDED.IDNumber,
-                            Email = EXCLUDED.Email,
-                            Customer_Type_ID = EXCLUDED.Customer_Type_ID,
-                            Address_ID = EXCLUDED.Address_ID,
-                            Address1 = EXCLUDED.Address1,
-                            Branch_Number = EXCLUDED.Branch_Number,
-                            Status = 1
-                        RETURNING ID";
-                }
+                // ALWAYS match by MobilePhone to ensure only 1 record per phone number
+                string mergeQuery = @"
+                    INSERT INTO Customer (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
+                    VALUES ('" + mobilePhone + "', N'" + name + "', N'" + nickName + "', N'" + comeFrom + "', N'" + remark + "', N'" + fullName + "', N'" + address + "', N'" + idNumber + "', N'" + email + "', " + customerTypeID + ", " + addressID + ", N'" + address1 + "', N'" + branchNumber + @"', 1)
+                    ON CONFLICT (MobilePhone)
+                    DO UPDATE SET
+                        Name = EXCLUDED.Name,
+                        NickName = EXCLUDED.NickName,
+                        ComeFrom = EXCLUDED.ComeFrom,
+                        Remark = EXCLUDED.Remark,
+                        FullName = EXCLUDED.FullName,
+                        Address = EXCLUDED.Address,
+                        IDNumber = EXCLUDED.IDNumber,
+                        Email = EXCLUDED.Email,
+                        Customer_Type_ID = EXCLUDED.Customer_Type_ID,
+                        Address_ID = EXCLUDED.Address_ID,
+                        Address1 = EXCLUDED.Address1,
+                        Branch_Number = EXCLUDED.Branch_Number,
+                        Status = 1
+                    RETURNING ID";
 
                 using (NpgsqlConnection connection = new NpgsqlConnection(connStr))
                 {
@@ -306,89 +279,44 @@ namespace Take_Time_BangPhra
             else // MSSQL
             {
                 // SQL Server version using MERGE statement
-                string mergeQuery;
-
-                if (customerTypeID == 1)
-                {
-                    // Corporate customer: match by IDNumber + Branch_Number
-                    mergeQuery = @"
-                        MERGE INTO Customer AS target
-                        USING (SELECT
-                            '" + mobilePhone + @"' AS MobilePhone,
-                            N'" + name + @"' AS Name,
-                            N'" + nickName + @"' AS NickName,
-                            N'" + comeFrom + @"' AS ComeFrom,
-                            N'" + remark + @"' AS Remark,
-                            N'" + fullName + @"' AS FullName,
-                            N'" + address + @"' AS Address,
-                            N'" + idNumber + @"' AS IDNumber,
-                            N'" + email + @"' AS Email,
-                            " + customerTypeID + @" AS Customer_Type_ID,
-                            " + addressID + @" AS Address_ID,
-                            N'" + address1 + @"' AS Address1,
-                            N'" + branchNumber + @"' AS Branch_Number
-                        ) AS source
-                        ON (target.IDNumber = source.IDNumber AND target.Branch_Number = source.Branch_Number)
-                        WHEN MATCHED THEN
-                            UPDATE SET
-                                MobilePhone = source.MobilePhone,
-                                Name = source.Name,
-                                NickName = source.NickName,
-                                ComeFrom = source.ComeFrom,
-                                Remark = source.Remark,
-                                FullName = source.FullName,
-                                Address = source.Address,
-                                Email = source.Email,
-                                Customer_Type_ID = source.Customer_Type_ID,
-                                Address_ID = source.Address_ID,
-                                Address1 = source.Address1,
-                                Status = 1
-                        WHEN NOT MATCHED THEN
-                            INSERT (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
-                            VALUES (source.MobilePhone, source.Name, source.NickName, source.ComeFrom, source.Remark, source.FullName, source.Address, source.IDNumber, source.Email, source.Customer_Type_ID, source.Address_ID, source.Address1, source.Branch_Number, 1)
-                        OUTPUT INSERTED.ID;";
-                }
-                else
-                {
-                    // Individual customer: match by MobilePhone
-                    mergeQuery = @"
-                        MERGE INTO Customer AS target
-                        USING (SELECT
-                            '" + mobilePhone + @"' AS MobilePhone,
-                            N'" + name + @"' AS Name,
-                            N'" + nickName + @"' AS NickName,
-                            N'" + comeFrom + @"' AS ComeFrom,
-                            N'" + remark + @"' AS Remark,
-                            N'" + fullName + @"' AS FullName,
-                            N'" + address + @"' AS Address,
-                            N'" + idNumber + @"' AS IDNumber,
-                            N'" + email + @"' AS Email,
-                            " + customerTypeID + @" AS Customer_Type_ID,
-                            " + addressID + @" AS Address_ID,
-                            N'" + address1 + @"' AS Address1,
-                            N'" + branchNumber + @"' AS Branch_Number
-                        ) AS source
-                        ON (target.MobilePhone = source.MobilePhone)
-                        WHEN MATCHED THEN
-                            UPDATE SET
-                                Name = source.Name,
-                                NickName = source.NickName,
-                                ComeFrom = source.ComeFrom,
-                                Remark = source.Remark,
-                                FullName = source.FullName,
-                                Address = source.Address,
-                                IDNumber = source.IDNumber,
-                                Email = source.Email,
-                                Customer_Type_ID = source.Customer_Type_ID,
-                                Address_ID = source.Address_ID,
-                                Address1 = source.Address1,
-                                Branch_Number = source.Branch_Number,
-                                Status = 1
-                        WHEN NOT MATCHED THEN
-                            INSERT (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
-                            VALUES (source.MobilePhone, source.Name, source.NickName, source.ComeFrom, source.Remark, source.FullName, source.Address, source.IDNumber, source.Email, source.Customer_Type_ID, source.Address_ID, source.Address1, source.Branch_Number, 1)
-                        OUTPUT INSERTED.ID;";
-                }
+                // ALWAYS match by MobilePhone to ensure only 1 record per phone number
+                string mergeQuery = @"
+                    MERGE INTO Customer AS target
+                    USING (SELECT
+                        '" + mobilePhone + @"' AS MobilePhone,
+                        N'" + name + @"' AS Name,
+                        N'" + nickName + @"' AS NickName,
+                        N'" + comeFrom + @"' AS ComeFrom,
+                        N'" + remark + @"' AS Remark,
+                        N'" + fullName + @"' AS FullName,
+                        N'" + address + @"' AS Address,
+                        N'" + idNumber + @"' AS IDNumber,
+                        N'" + email + @"' AS Email,
+                        " + customerTypeID + @" AS Customer_Type_ID,
+                        " + addressID + @" AS Address_ID,
+                        N'" + address1 + @"' AS Address1,
+                        N'" + branchNumber + @"' AS Branch_Number
+                    ) AS source
+                    ON (target.MobilePhone = source.MobilePhone)
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            Name = source.Name,
+                            NickName = source.NickName,
+                            ComeFrom = source.ComeFrom,
+                            Remark = source.Remark,
+                            FullName = source.FullName,
+                            Address = source.Address,
+                            IDNumber = source.IDNumber,
+                            Email = source.Email,
+                            Customer_Type_ID = source.Customer_Type_ID,
+                            Address_ID = source.Address_ID,
+                            Address1 = source.Address1,
+                            Branch_Number = source.Branch_Number,
+                            Status = 1
+                    WHEN NOT MATCHED THEN
+                        INSERT (MobilePhone, Name, NickName, ComeFrom, Remark, FullName, Address, IDNumber, Email, Customer_Type_ID, Address_ID, Address1, Branch_Number, Status)
+                        VALUES (source.MobilePhone, source.Name, source.NickName, source.ComeFrom, source.Remark, source.FullName, source.Address, source.IDNumber, source.Email, source.Customer_Type_ID, source.Address_ID, source.Address1, source.Branch_Number, 1)
+                    OUTPUT INSERTED.ID;";
 
                 using (SqlConnection connection = new SqlConnection(connStr))
                 {
