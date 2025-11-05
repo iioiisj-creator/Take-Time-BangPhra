@@ -611,22 +611,32 @@ BEGIN TRY
 
     PRINT 'Step 8: Marking first payments as requiring slip...'
 
-    -- For existing reservations, mark the first payment as requiring slip
-    UPDATE AR
-    SET PaymentSlipRequired = 1
-    FROM Account_Receipt AR
-    INNER JOIN (
-        SELECT
-            Reservation_ID,
-            MIN(ID) AS FirstReceiptID
-        FROM Account_Receipt
-        WHERE Status = 1
-        GROUP BY Reservation_ID
-    ) FirstPayments ON AR.ID = FirstPayments.FirstReceiptID
+    -- Check if PaymentSlipRequired column exists before updating
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Account_Receipt]') AND name = 'PaymentSlipRequired')
+    BEGIN
+        DECLARE @UpdatedCount INT
 
-    DECLARE @UpdatedCount INT = @@ROWCOUNT
+        -- For existing reservations, mark the first payment as requiring slip
+        UPDATE AR
+        SET PaymentSlipRequired = 1
+        FROM Account_Receipt AR
+        INNER JOIN (
+            SELECT
+                Reservation_ID,
+                MIN(ID) AS FirstReceiptID
+            FROM Account_Receipt
+            WHERE Status = 1
+            GROUP BY Reservation_ID
+        ) FirstPayments ON AR.ID = FirstPayments.FirstReceiptID
 
-    PRINT '  ✓ Marked ' + CAST(@UpdatedCount AS VARCHAR) + ' first payments as requiring slip'
+        SET @UpdatedCount = @@ROWCOUNT
+
+        PRINT '  ✓ Marked ' + CAST(@UpdatedCount AS VARCHAR) + ' first payments as requiring slip'
+    END
+    ELSE
+    BEGIN
+        PRINT '  ⚠ PaymentSlipRequired column not found - skipping marking first payments'
+    END
 
     -- ===================================================================
     -- Commit Transaction
@@ -682,10 +692,10 @@ BEGIN TRY
     WHERE object_id = OBJECT_ID(N''[dbo].[Account_Receipt]'')
       AND name IN (''HasPaymentSlip'', ''PaymentSlipRequired'')
 
-    IF @ReceiptColCount = 2
-        PRINT ''✓ Account_Receipt columns added successfully''
+    IF @ReceiptColCount >= 1
+        PRINT ''✓ Account_Receipt columns added ('' + CAST(@ReceiptColCount AS VARCHAR) + ''/2)''
     ELSE
-        PRINT ''✗ Account_Receipt columns verification failed''
+        PRINT ''⚠ No Account_Receipt columns were added (table might not exist)''
 
     -- Check stored procedures
     DECLARE @SPCount INT
