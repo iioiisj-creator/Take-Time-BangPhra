@@ -4,6 +4,7 @@ using System.Data;
 using System.Web;
 using System.IO;
 using System.Configuration;
+using Take_Time_BangPhra.Services;
 
 namespace Take_Time_BangPhra
 {
@@ -265,7 +266,7 @@ namespace Take_Time_BangPhra
             string fullPath = Path.Combine(uploadPath, uniqueFileName);
             slipFile.SaveAs(fullPath);
 
-            // 5. Insert to database
+            // 5. Insert to database (with OCR_Status = PENDING)
             var parameters = new Dictionary<string, object>
             {
                 { "@reservationId", reservationId },
@@ -275,22 +276,84 @@ namespace Take_Time_BangPhra
                 { "@fileSize", slipFile.ContentLength },
                 { "@uploadedByCustomer", customerPhone },
                 { "@uploadedByAdmin", adminId },
-                { "@verificationStatus", "PENDING" }
+                { "@verificationStatus", "PENDING" },
+                { "@ocrStatus", "PENDING" }
             };
 
-            return _code.DatabaseInsertReturnSafe(_connectionString,
+            long slipId = _code.DatabaseInsertReturnSafe(_connectionString,
                 @"INSERT INTO Payment_Slips (
                     Reservation_ID, SlipFileURL, FileName, FileType, FileSize,
                     UploadedDate, UploadedBy_CustomerPhone, UploadedBy_ID,
-                    VerificationStatus, IsVerified
+                    VerificationStatus, IsVerified, OCR_Status
                   )
                   VALUES (
                     @reservationId, @slipFileURL, @fileName, @fileType, @fileSize,
                     GETDATE(), @uploadedByCustomer, @uploadedByAdmin,
-                    @verificationStatus, 0
+                    @verificationStatus, 0, @ocrStatus
                   );
                   SELECT SCOPE_IDENTITY();",
                 parameters);
+
+            // 6. Process OCR asynchronously (best effort - don't fail if OCR fails)
+            try
+            {
+                ProcessSlipOCR(slipId, fullPath);
+            }
+            catch (Exception ocrEx)
+            {
+                // Log OCR error but don't fail the upload
+                _code.Logs(_connectionString, "OCR Processing Error",
+                    $"SlipID: {slipId}, Error: {ocrEx.Message}", "SYSTEM");
+            }
+
+            return slipId;
+        }
+
+        /// <summary>
+        /// Process OCR for uploaded slip
+        /// </summary>
+        private void ProcessSlipOCR(long slipId, string imageFilePath)
+        {
+            try
+            {
+                // Get tesseract data path from web.config
+                string tessDataPath = ConfigurationManager.AppSettings["TesseractDataPath"] ??
+                    HttpContext.Current.Server.MapPath("~/tessdata");
+
+                var ocrService = new SlipOCRService(tessDataPath, _connectionString);
+                var ocrResult = ocrService.ProcessSlip(imageFilePath);
+
+                // Save OCR result to database
+                ocrService.SaveOCRResult(slipId, ocrResult);
+
+                // Log result for monitoring
+                string logMessage = ocrResult.Success
+                    ? $"OCR Success - Amount: {ocrResult.Amount:N2}, Confidence: {ocrResult.Confidence:N2}%"
+                    : $"OCR Failed - {ocrResult.ErrorMessage}";
+
+                _code.Logs(_connectionString, "OCR Processing",
+                    $"SlipID: {slipId}, {logMessage}", "SYSTEM");
+            }
+            catch (Exception ex)
+            {
+                // Update slip with error status
+                var errorParams = new Dictionary<string, object>
+                {
+                    { "@slipId", slipId },
+                    { "@errorMessage", ex.Message },
+                    { "@status", "FAILED" }
+                };
+
+                _code.DatabaseExecuteSafe(_connectionString,
+                    @"UPDATE Payment_Slips
+                      SET OCR_Status = @status,
+                          OCR_ErrorMessage = @errorMessage,
+                          OCR_ProcessedDate = GETDATE()
+                      WHERE ID = @slipId",
+                    errorParams);
+
+                throw;
+            }
         }
 
         /// <summary>
