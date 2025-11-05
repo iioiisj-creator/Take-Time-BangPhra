@@ -161,7 +161,7 @@ FROM [dbo].[Reservation] r
 LEFT JOIN [dbo].[Checkout_History] ch ON r.ID = ch.Reservation_ID
 LEFT JOIN [dbo].[Customer] c ON r.Customer_MobilePhone = c.MobilePhone
 LEFT JOIN [dbo].[Admin] a ON ch.CheckedOutBy_AdminID = a.ID
-WHERE r.Status IN ('เช็คอินแล้ว', 'เข้าพักแล้ว', 'เสร็จสิ้น');
+WHERE r.Status IN (N'เช็คอินแล้ว', N'เข้าพักแล้ว', N'เสร็จสิ้น');
 GO
 
 PRINT '✅ View vw_CheckoutSummary created';
@@ -215,7 +215,7 @@ BEGIN
             RETURN -1;
         END
 
-        IF @Status NOT IN ('เช็คอินแล้ว', 'เข้าพักแล้ว')
+        IF @Status NOT IN (N'เช็คอินแล้ว', N'เข้าพักแล้ว')
         BEGIN
             SET @ErrorMessage = 'Reservation must be checked in to checkout. Current status: ' + @Status;
             ROLLBACK TRANSACTION;
@@ -263,7 +263,7 @@ BEGIN
             CheckoutBy_AdminID = @AdminID,
             CheckoutNotes = @Notes,
             FinalSettlementAmount = @FinalAmount,
-            Status = 'เสร็จสิ้น'
+            Status = N'เสร็จสิ้น'
         WHERE ID = @ReservationID;
 
         -- 5. Insert checkout history
@@ -358,7 +358,7 @@ BEGIN
     WHERE ID = @ReservationID;
 
     -- Must be checked in
-    IF @Status NOT IN ('เช็คอินแล้ว', 'เข้าพักแล้ว')
+    IF @Status NOT IN (N'เช็คอินแล้ว', N'เข้าพักแล้ว')
         RETURN 0;
 
     -- Check payment (optional - can allow checkout with outstanding balance)
