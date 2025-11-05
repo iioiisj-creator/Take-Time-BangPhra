@@ -78,10 +78,10 @@ namespace Take_Time_BangPhra.Account
 
                 lblDateRange.Text = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
 
-                // Calculate revenue by category
+                // Calculate revenue by category (always use Normal status, never include Cancel)
                 CalculateRevenue(startDate, endDate);
 
-                // Load details
+                // Load details (show all documents including Cancel)
                 LoadDetails(startDate, endDate);
 
                 // Show validation
@@ -95,7 +95,8 @@ namespace Take_Time_BangPhra.Account
 
         private void CalculateRevenue(DateTime startDate, DateTime endDate)
         {
-            string status = ddlStatus.SelectedValue;
+            // Always calculate revenue for Normal status only (exclude Cancel)
+            string status = "Normal";
 
             // Initialize all totals
             decimal cat1Cash = 0, cat1KBANK = 0, cat1KTB = 0, cat1Director = 0;
@@ -317,7 +318,8 @@ namespace Take_Time_BangPhra.Account
 
         private void LoadDetails(DateTime startDate, DateTime endDate)
         {
-            var dt = GetAllReceipts(startDate, endDate, ddlStatus.SelectedValue);
+            // Always show all documents (both Normal and Cancel) in GridView
+            var dt = GetAllReceipts(startDate, endDate, "%");
             gvDetails.DataSource = dt;
             gvDetails.DataBind();
         }
@@ -378,7 +380,8 @@ namespace Take_Time_BangPhra.Account
                 // Header
                 csv.AppendLine("สรุปรายได้ตามหมวด");
                 csv.AppendLine($"ช่วงวันที่:,{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}");
-                csv.AppendLine($"สถานะ:,{ddlStatus.SelectedItem.Text}");
+                csv.AppendLine($"การคำนวณยอด:,คำนวณเฉพาะเอกสารปกติ (ไม่รวมยกเลิก)");
+                csv.AppendLine($"รายละเอียดเอกสาร:,แสดงทั้งหมด (รวมยกเลิก)");
                 csv.AppendLine($"วันที่ออกรายงาน:,{DateTime.Now:dd/MM/yyyy HH:mm:ss}");
                 csv.AppendLine();
 
@@ -392,12 +395,12 @@ namespace Take_Time_BangPhra.Account
                 csv.AppendLine();
 
                 // Additional info
-                csv.AppendLine($"จำนวนเอกสาร:,{lblDocCount.Text}");
-                csv.AppendLine($"ยอดรวม VAT:,{lblTotalVAT.Text}");
+                csv.AppendLine($"จำนวนเอกสาร (เฉพาะปกติ):,{lblDocCount.Text}");
+                csv.AppendLine($"ยอดรวม VAT (เฉพาะปกติ):,{lblTotalVAT.Text}");
                 csv.AppendLine();
 
-                // Detail records
-                var dt = GetAllReceipts(startDate, endDate, ddlStatus.SelectedValue);
+                // Detail records (show all including Cancel)
+                var dt = GetAllReceipts(startDate, endDate, "%");
                 csv.AppendLine("รายละเอียดเอกสาร");
                 csv.AppendLine("เลขที่เอกสาร,วันที่,ลูกค้า,วิธีชำระ,จำนวนเงิน,VAT,สถานะ,หมวด");
 

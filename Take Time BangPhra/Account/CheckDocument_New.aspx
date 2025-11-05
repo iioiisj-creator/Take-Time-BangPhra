@@ -261,12 +261,10 @@
             </div>
 
             <div class="search-row">
-                <span class="search-label">สถานะเอกสาร:</span>
-                <asp:DropDownList ID="ddlStatus" runat="server" CssClass="search-input" Width="200px">
-                    <asp:ListItem Value="Normal" Selected="True">ปกติ</asp:ListItem>
-                    <asp:ListItem Value="%">ทั้งหมด (รวมยกเลิก)</asp:ListItem>
-                    <asp:ListItem Value="Cancel">ยกเลิกเท่านั้น</asp:ListItem>
-                </asp:DropDownList>
+                <span style="color: #7f8c8d; font-size: 14px;">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>หมายเหตุ:</strong> ยอดรวมคำนวณเฉพาะเอกสารปกติ (ไม่รวมที่ยกเลิก) / ตารางแสดงทั้งหมดรวมเอกสารที่ยกเลิก
+                </span>
             </div>
 
             <div class="search-row">
