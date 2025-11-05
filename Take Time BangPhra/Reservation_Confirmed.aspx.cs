@@ -31,9 +31,8 @@ namespace Take_Time_BangPhra
                     "inner join Accommodation on Accommodation.ID = Accommodation_ID " +
                     "where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "' order by Accommodation.OrderID asc");
 
-                // Set image
-                Image1.ImageUrl = "./Upload/Slip/" + id + "_" + check + ".jpg";
-                Image1.DataBind();
+                // Load payment slips from Payment_History
+                LoadPaymentSlips(id, check);
 
                 // Set basic information
                 Label1.Text = id;
@@ -115,6 +114,73 @@ namespace Take_Time_BangPhra
             {
                 Label10.Text = "ยืนยันการจองผิดพลาด";
                 // You might want to log the exception
+            }
+        }
+
+        private void LoadPaymentSlips(string reservationId, string customerPhone)
+        {
+            try
+            {
+                // Query payment slips from Payment_History + Payment_Slips
+                string query = @"
+                    SELECT
+                        ph.PaymentDate,
+                        ph.PaymentAmount,
+                        ph.PaymentType,
+                        ph.PaymentMethod,
+                        ps.SlipFileURL,
+                        ps.FileName
+                    FROM Payment_History ph
+                    LEFT JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    WHERE ph.Reservation_ID = @ReservationId
+                      AND ph.Status = 'COMPLETED'
+                    ORDER BY ph.PaymentDate DESC";
+
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@ReservationId", reservationId }
+                };
+
+                DataTable dtSlips = code.DatabaseQuerySafe(conn, query, parameters);
+
+                if (dtSlips.Rows.Count > 0)
+                {
+                    // Show slip count
+                    lblSlipCount.Text = $"💳 มีการโอนเงินทั้งหมด {dtSlips.Rows.Count} ครั้ง";
+                    lblSlipCount.Visible = true;
+
+                    // Bind to repeater
+                    rptPaymentSlips.DataSource = dtSlips;
+                    rptPaymentSlips.DataBind();
+                    rptPaymentSlips.Visible = true;
+
+                    // Hide old image control
+                    Image1.Visible = false;
+                }
+                else
+                {
+                    // Fallback to old slip image if no Payment_History records found
+                    lblSlipCount.Text = "💳 ใช้รูปสลิปจากระบบเดิม";
+                    lblSlipCount.Visible = true;
+                    rptPaymentSlips.Visible = false;
+
+                    Image1.ImageUrl = "./Upload/Slip/" + reservationId + "_" + customerPhone + ".jpg";
+                    Image1.Visible = true;
+                    Image1.DataBind();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error and fallback to old image
+                lblSlipCount.Text = "⚠️ ไม่สามารถโหลดสลิปได้ แสดงรูปจากระบบเดิม";
+                lblSlipCount.Visible = true;
+                rptPaymentSlips.Visible = false;
+
+                Image1.ImageUrl = "./Upload/Slip/" + reservationId + "_" + customerPhone + ".jpg";
+                Image1.Visible = true;
+                Image1.DataBind();
+
+                code2.Logs(conn, "LoadPaymentSlips Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
             }
         }
 
