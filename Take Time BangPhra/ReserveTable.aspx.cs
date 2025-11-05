@@ -306,10 +306,12 @@ namespace Take_Time_BangPhra
                 case "CancelNoRefund":
                 case "CancelRefund":
                 case "CountReserved":
+                case "PayMore":
+                case "Checkout":
                     // สำหรับคำสั่งเหล่านี้ใช้ ID การจอง
                     DataTable dtCustomer = DatabaseQuery(conn,
-                        @"SELECT Customer.MobilePhone FROM [Reservation] 
-                          INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone 
+                        @"SELECT Customer.MobilePhone FROM [Reservation]
+                          INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone
                           WHERE Reservation.ID = @ReservationId",
                         new SqlParameter("@ReservationId", commandArg));
 
@@ -328,6 +330,14 @@ namespace Take_Time_BangPhra
                     else if (e.CommandName == "RentMore")
                     {
                         Response.Redirect($"./Reserve?command=rentmore&date={Calendar1.SelectedDate:yyyy-MM-dd}&id={commandArg}&check={customerPhone}", false);
+                    }
+                    else if (e.CommandName == "PayMore")
+                    {
+                        Response.Redirect($"./Payment/MakePayment?id={commandArg}", false);
+                    }
+                    else if (e.CommandName == "Checkout")
+                    {
+                        Response.Redirect($"./Checkout?id={commandArg}", false);
                     }
                     else if (e.CommandName == "CancelNoRefund")
                     {
