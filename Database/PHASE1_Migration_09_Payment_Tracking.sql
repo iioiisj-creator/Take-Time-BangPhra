@@ -33,8 +33,6 @@ BEGIN
             REFERENCES [dbo].[Reservation]([ID]) ON DELETE CASCADE,
         CONSTRAINT [FK_Payment_History_Receipt] FOREIGN KEY ([Receipt_ID])
             REFERENCES [dbo].[Account_Receipt]([ID]),
-        CONSTRAINT [FK_Payment_History_PaymentSlip] FOREIGN KEY ([PaymentSlip_ID])
-            REFERENCES [dbo].[Payment_Slips]([ID]),
         CONSTRAINT [FK_Payment_History_Admin] FOREIGN KEY ([ProcessedBy_AdminID])
             REFERENCES [dbo].[Admin]([ID]),
         CONSTRAINT [CK_Payment_History_Amount] CHECK ([PaymentAmount] > 0 OR [PaymentType] = 'REFUND')
@@ -45,6 +43,24 @@ END
 ELSE
 BEGIN
     PRINT '⚠️ Payment_History table already exists';
+END
+GO
+
+-- Add FK to Payment_Slips if table exists
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Payment_Slips')
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Payment_History_PaymentSlip')
+    BEGIN
+        ALTER TABLE [dbo].[Payment_History]
+        ADD CONSTRAINT [FK_Payment_History_PaymentSlip] FOREIGN KEY ([PaymentSlip_ID])
+            REFERENCES [dbo].[Payment_Slips]([ID]);
+        PRINT '✅ FK_Payment_History_PaymentSlip created';
+    END
+END
+ELSE
+BEGIN
+    PRINT '⚠️ Payment_Slips table not found - skipping FK constraint';
+    PRINT '   Run Migration 05 first to create Payment_Slips table';
 END
 GO
 
