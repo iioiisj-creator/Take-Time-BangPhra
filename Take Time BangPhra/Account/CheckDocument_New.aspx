@@ -3,28 +3,28 @@
     <link rel="stylesheet" href="/Content/jquery-ui.css">
     <style>
         .accounting-dashboard {
-            max-width: 1400px;
-            margin: 20px auto;
-            padding: 20px;
+            max-width: 98%;
+            margin: 10px auto;
+            padding: 5px;
         }
 
         .dashboard-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 25px;
-            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
             margin-bottom: 0;
         }
 
         .dashboard-header h2 {
             margin: 0;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 600;
         }
 
         .search-section {
             background: white;
-            padding: 25px;
+            padding: 15px 20px;
             border-left: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
             margin-bottom: 0;
@@ -80,40 +80,40 @@
 
         .summary-section {
             background: white;
-            padding: 25px;
+            padding: 15px 20px;
             border-left: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
             border-bottom: 1px solid #e0e0e0;
-            border-radius: 0 0 10px 10px;
+            border-radius: 0 0 8px 8px;
         }
 
         .summary-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #3498db;
         }
 
         .revenue-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 14px;
+            margin-bottom: 15px;
+            font-size: 13px;
         }
 
         .revenue-table th {
             background: #34495e;
             color: white;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             font-weight: 600;
             border: 1px solid #2c3e50;
         }
 
         .revenue-table td {
-            padding: 10px;
+            padding: 8px 10px;
             border: 1px solid #ddd;
             text-align: right;
         }
@@ -132,7 +132,7 @@
             background: #3498db;
             color: white;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .revenue-table .total-row td {
@@ -163,10 +163,10 @@
         }
 
         .detail-section {
-            margin-top: 30px;
+            margin-top: 15px;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
+            padding: 15px 20px;
+            border-radius: 8px;
             border: 1px solid #e0e0e0;
         }
 
@@ -174,7 +174,7 @@
             font-size: 18px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .gridview-custom {
@@ -185,14 +185,16 @@
         .gridview-custom th {
             background: #34495e;
             color: white;
-            padding: 10px;
+            padding: 8px 10px;
             text-align: left;
             font-weight: 600;
+            font-size: 13px;
         }
 
         .gridview-custom td {
-            padding: 8px;
+            padding: 6px 10px;
             border-bottom: 1px solid #ddd;
+            font-size: 13px;
         }
 
         .gridview-custom tr:hover {
