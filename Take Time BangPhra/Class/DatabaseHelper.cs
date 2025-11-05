@@ -76,6 +76,12 @@ namespace Take_Time_BangPhra.Helpers
             }
             return dt;
         }
+        /// <summary>
+        /// Executes a query with parameterized values to prevent SQL Injection
+        /// </summary>
+        /// <param name="query">SQL query with @parameter placeholders</param>
+        /// <param name="parameters">Dictionary of parameter names and values</param>
+        /// <returns>DataTable with query results</returns>
         public DataTable ExecuteQueryWithParams(string query, Dictionary<string, object> parameters = null)
         {
             DataTable dt = new DataTable();
@@ -91,14 +97,135 @@ namespace Take_Time_BangPhra.Helpers
                         }
                     }
 
-                    conn.Open();
-                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    try
                     {
-                        da.Fill(dt);
+                        conn.Open();
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError($"Database query error: {ex.Message}\nQuery: {query}");
+                        throw; // Re-throw for proper error handling
                     }
                 }
             }
             return dt;
+        }
+
+        /// <summary>
+        /// Executes INSERT/UPDATE/DELETE with parameterized values and returns rows affected
+        /// </summary>
+        /// <param name="query">SQL command with @parameter placeholders</param>
+        /// <param name="parameters">Dictionary of parameter names and values</param>
+        /// <returns>Number of rows affected</returns>
+        public int ExecuteNonQueryWithParams(string query, Dictionary<string, object> parameters = null)
+        {
+            int rowsAffected = 0;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    if (parameters != null)
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                        }
+                    }
+
+                    try
+                    {
+                        conn.Open();
+                        rowsAffected = cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError($"Database command error: {ex.Message}\nQuery: {query}");
+                        throw;
+                    }
+                }
+            }
+            return rowsAffected;
+        }
+
+        /// <summary>
+        /// Executes INSERT and returns the new identity (ID)
+        /// </summary>
+        /// <param name="query">INSERT query with @parameter placeholders</param>
+        /// <param name="parameters">Dictionary of parameter names and values</param>
+        /// <returns>New record ID</returns>
+        public int ExecuteInsertWithParams(string query, Dictionary<string, object> parameters = null)
+        {
+            int newId = 0;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    if (parameters != null)
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                        }
+                    }
+
+                    try
+                    {
+                        conn.Open();
+                        // Execute and get identity
+                        object result = cmd.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            newId = Convert.ToInt32(result);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError($"Database insert error: {ex.Message}\nQuery: {query}");
+                        throw;
+                    }
+                }
+            }
+            return newId;
+        }
+
+        /// <summary>
+        /// Executes a scalar query with parameters (returns single value)
+        /// </summary>
+        /// <param name="query">SQL query with @parameter placeholders</param>
+        /// <param name="parameters">Dictionary of parameter names and values</param>
+        /// <returns>Scalar value or null</returns>
+        public object ExecuteScalarWithParams(string query, Dictionary<string, object> parameters = null)
+        {
+            object result = null;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    if (parameters != null)
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                        }
+                    }
+
+                    try
+                    {
+                        conn.Open();
+                        result = cmd.ExecuteScalar();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError($"Database scalar query error: {ex.Message}\nQuery: {query}");
+                        throw;
+                    }
+                }
+            }
+            return result;
         }
 
         private string CleanSqlCommand(string command)

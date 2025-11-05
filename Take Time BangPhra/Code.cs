@@ -86,6 +86,10 @@ namespace Take_Time_BangPhra
 
         }
 
+        /// <summary>
+        /// [DEPRECATED] Use DatabaseQuerySafe instead to prevent SQL Injection
+        /// Legacy method - kept for backward compatibility
+        /// </summary>
         public DataTable DatabaseQuery(string connStr, string cmd)
         {
             DataTable dt = new DataTable();
@@ -133,6 +137,84 @@ namespace Take_Time_BangPhra
             return dt;
         }
 
+        /// <summary>
+        /// SECURE: Execute SQL query with parameterized values to prevent SQL Injection
+        /// </summary>
+        /// <param name="connStr">Connection string</param>
+        /// <param name="query">SQL query with @param1, @param2 placeholders</param>
+        /// <param name="parameters">Dictionary of parameters: key = "@param1", value = actual value</param>
+        /// <returns>DataTable with results</returns>
+        /// <example>
+        /// var parameters = new Dictionary&lt;string, object&gt; {
+        ///     { "@phone", TextBox1.Text },
+        ///     { "@id", reservationId }
+        /// };
+        /// var dt = DatabaseQuerySafe(conn, "SELECT * FROM Reservation WHERE Customer_MobilePhone = @phone AND ID = @id", parameters);
+        /// </example>
+        public DataTable DatabaseQuerySafe(string connStr, string query, Dictionary<string, object> parameters = null)
+        {
+            DataTable dt = new DataTable();
+            string dbType = ConfigurationManager.AppSettings["DatabaseType"] ?? "MSSQL";
+
+            try
+            {
+                if (dbType.ToUpper() == "POSTGRESQL")
+                {
+                    using (NpgsqlConnection con = new NpgsqlConnection(connStr))
+                    {
+                        con.Open();
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(query, con))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            using (NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(cmd))
+                            {
+                                adapter.Fill(dt);
+                            }
+                        }
+                    }
+                }
+                else // MSSQL
+                {
+                    using (SqlConnection con = new SqlConnection(connStr))
+                    {
+                        con.Open();
+                        using (SqlCommand cmd = new SqlCommand(query, con))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                            {
+                                adapter.Fill(dt);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error for debugging
+                System.Diagnostics.Trace.TraceError($"DatabaseQuerySafe Error: {ex.Message}\nQuery: {query}");
+                throw; // Re-throw to allow proper error handling upstream
+            }
+
+            return dt;
+        }
+
+        /// <summary>
+        /// [DEPRECATED] Use DatabaseInsertSafe instead to prevent SQL Injection
+        /// Legacy method - kept for backward compatibility
+        /// </summary>
         public void DatabaseInsert(string connStr, string cmd)
         {
             string adaptedCmd = code.AdaptSql(cmd);
@@ -162,6 +244,78 @@ namespace Take_Time_BangPhra
             }
         }
 
+        /// <summary>
+        /// SECURE: Execute INSERT/UPDATE/DELETE with parameterized values to prevent SQL Injection
+        /// </summary>
+        /// <param name="connStr">Connection string</param>
+        /// <param name="query">SQL command with @param1, @param2 placeholders</param>
+        /// <param name="parameters">Dictionary of parameters</param>
+        /// <returns>Number of rows affected</returns>
+        /// <example>
+        /// var parameters = new Dictionary&lt;string, object&gt; {
+        ///     { "@phone", TextBox1.Text },
+        ///     { "@name", TextBox2.Text },
+        ///     { "@email", TextBox3.Text }
+        /// };
+        /// DatabaseInsertSafe(conn, "UPDATE Customer SET Name = @name, Email = @email WHERE MobilePhone = @phone", parameters);
+        /// </example>
+        public int DatabaseInsertSafe(string connStr, string query, Dictionary<string, object> parameters = null)
+        {
+            string dbType = ConfigurationManager.AppSettings["DatabaseType"] ?? "MSSQL";
+            int rowsAffected = 0;
+
+            try
+            {
+                if (dbType.ToUpper() == "POSTGRESQL")
+                {
+                    using (NpgsqlConnection connection = new NpgsqlConnection(connStr))
+                    {
+                        connection.Open();
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(query, connection))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            rowsAffected = cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+                else // MSSQL
+                {
+                    using (SqlConnection connection = new SqlConnection(connStr))
+                    {
+                        connection.Open();
+                        using (SqlCommand cmd = new SqlCommand(query, connection))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            rowsAffected = cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"DatabaseInsertSafe Error: {ex.Message}\nQuery: {query}");
+                throw;
+            }
+
+            return rowsAffected;
+        }
+
+        /// <summary>
+        /// [DEPRECATED] Use DatabaseInsertReturnSafe instead to prevent SQL Injection
+        /// Legacy method - kept for backward compatibility
+        /// </summary>
         public int DatabaseInsertReturn(string connStr, string cmd)
         {
             string adaptedCmd = code.AdaptSql(cmd);
@@ -197,6 +351,84 @@ namespace Take_Time_BangPhra
                         }
                     }
                 }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// SECURE: Execute INSERT and return the new ID with parameterized values to prevent SQL Injection
+        /// </summary>
+        /// <param name="connStr">Connection string</param>
+        /// <param name="query">INSERT query with @param placeholders. Must include SCOPE_IDENTITY() or RETURNING</param>
+        /// <param name="parameters">Dictionary of parameters</param>
+        /// <returns>New record ID</returns>
+        /// <example>
+        /// var parameters = new Dictionary&lt;string, object&gt; {
+        ///     { "@phone", "0812345678" },
+        ///     { "@name", "John Doe" },
+        ///     { "@email", "john@example.com" }
+        /// };
+        /// int newId = DatabaseInsertReturnSafe(conn,
+        ///     "INSERT INTO Customer (MobilePhone, Name, Email) VALUES (@phone, @name, @email); SELECT SCOPE_IDENTITY();",
+        ///     parameters);
+        /// </example>
+        public int DatabaseInsertReturnSafe(string connStr, string query, Dictionary<string, object> parameters = null)
+        {
+            string dbType = ConfigurationManager.AppSettings["DatabaseType"] ?? "MSSQL";
+            int result = 0;
+
+            try
+            {
+                if (dbType.ToUpper() == "POSTGRESQL")
+                {
+                    using (NpgsqlConnection connection = new NpgsqlConnection(connStr))
+                    {
+                        connection.Open();
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(query, connection))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            object scalarResult = cmd.ExecuteScalar();
+                            if (scalarResult != null && scalarResult != DBNull.Value)
+                            {
+                                result = Convert.ToInt32(scalarResult);
+                            }
+                        }
+                    }
+                }
+                else // MSSQL
+                {
+                    using (SqlConnection connection = new SqlConnection(connStr))
+                    {
+                        connection.Open();
+                        using (SqlCommand cmd = new SqlCommand(query, connection))
+                        {
+                            if (parameters != null)
+                            {
+                                foreach (var param in parameters)
+                                {
+                                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                                }
+                            }
+                            object scalarResult = cmd.ExecuteScalar();
+                            if (scalarResult != null && scalarResult != DBNull.Value)
+                            {
+                                result = Convert.ToInt32(scalarResult);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"DatabaseInsertReturnSafe Error: {ex.Message}\nQuery: {query}");
+                throw;
             }
 
             return result;
