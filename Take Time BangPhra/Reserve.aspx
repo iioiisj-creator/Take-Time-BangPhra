@@ -606,6 +606,46 @@
                     <div style="margin-top: 10px;">
                         <asp:Image ID="Image1" runat="server" Width="90%" style="max-width: 500px; border: 1px solid #D7CCC8; border-radius: 5px;"/>
                     </div>
+
+                    <!-- 🆕 Payment History GridView (shown in CheckIn/Edit/CheckOut modes) -->
+                    <div style="margin-top: 20px;" id="divPaymentHistory" runat="server" visible="false">
+                        <h4 style="color: #5D4037; margin-bottom: 10px;">📋 ประวัติการชำระเงิน</h4>
+                        <asp:GridView ID="gvPaymentHistory" runat="server" CssClass="payment-history-table"
+                            AutoGenerateColumns="False" EmptyDataText="ยังไม่มีประวัติการชำระเงิน"
+                            style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #D7CCC8;">
+                            <HeaderStyle BackColor="#5D4037" ForeColor="White" Font-Bold="True" Padding="10px" />
+                            <RowStyle Padding="8px" BorderColor="#D7CCC8" BorderWidth="1px" />
+                            <AlternatingRowStyle BackColor="#F5F5F5" />
+                            <Columns>
+                                <asp:BoundField DataField="PaymentDate" HeaderText="วันที่ชำระ" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
+                                <asp:BoundField DataField="PaymentAmount" HeaderText="จำนวนเงิน" DataFormatString="{0:N2}" ItemStyle-HorizontalAlign="Right" />
+                                <asp:TemplateField HeaderText="ประเภท">
+                                    <ItemTemplate>
+                                        <span style="padding: 4px 8px; border-radius: 4px; background-color: #2196F3; color: white; font-size: 12px;">
+                                            <%# Eval("PaymentType") %>
+                                        </span>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:BoundField DataField="PaymentMethod" HeaderText="วิธีชำระ" />
+                                <asp:BoundField DataField="ReceiptNumber" HeaderText="เลขที่ใบเสร็จ" />
+                                <asp:TemplateField HeaderText="สลิป">
+                                    <ItemTemplate>
+                                        <%# !string.IsNullOrEmpty(Eval("SlipFileURL")?.ToString()) ?
+                                            "<a href='" + ResolveUrl("~/") + Eval("SlipFileURL") + "' target='_blank' style='color: #3498db; text-decoration: none;'><i class='fa fa-file-image-o'></i> ดูสลิป</a>" :
+                                            "<span style='color: #95a5a6;'>-</span>" %>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="สถานะ">
+                                    <ItemTemplate>
+                                        <span style="padding: 4px 8px; border-radius: 4px; background-color: <%# Eval("Status").ToString() == "COMPLETED" ? "#4CAF50" : "#FF9800" %>; color: white; font-size: 12px;">
+                                            <%# Eval("Status").ToString() == "COMPLETED" ? "สำเร็จ" : "รอดำเนินการ" %>
+                                        </span>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:BoundField DataField="ProcessedBy" HeaderText="ผู้ทำรายการ" />
+                            </Columns>
+                        </asp:GridView>
+                    </div>
                 </div>
             </div>
             
