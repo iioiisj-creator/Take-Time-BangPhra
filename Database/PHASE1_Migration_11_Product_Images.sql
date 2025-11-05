@@ -110,9 +110,6 @@ SELECT
     a.AccomName,
     a.Price,
     a.People,
-    a.StandardOccupancy,
-    a.MaxOccupancy,
-    a.ExtraGuestPrice,
     a.Status,
     pi.ID AS MainImageID,
     pi.ImageURL AS MainImageURL,
@@ -343,13 +340,24 @@ BEGIN
         -- If this was main image, set next image as main
         IF @IsMainImage = 1
         BEGIN
-            UPDATE TOP (1) [dbo].[Product_Images]
-            SET IsMainImage = 1
+            DECLARE @NextImageID bigint;
+
+            -- Find the next image to promote
+            SELECT TOP 1 @NextImageID = ID
+            FROM [dbo].[Product_Images]
             WHERE ProductType = @ProductType
             AND Product_ID = @ProductID
             AND ID != @ImageID
             AND Status = 1
             ORDER BY ImageOrder;
+
+            -- Update it to main image
+            IF @NextImageID IS NOT NULL
+            BEGIN
+                UPDATE [dbo].[Product_Images]
+                SET IsMainImage = 1
+                WHERE ID = @NextImageID;
+            END
         END
 
         -- Log deletion
