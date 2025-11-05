@@ -2527,6 +2527,85 @@ namespace Take_Time_BangPhra
                             "SYSTEM");
                     }
                 }
+
+                // 🆕 Record payment to Payment_History when receipt is created
+                try
+                {
+                    string paymentType = IsDeposit ? "DEPOSIT" : "FULL";
+                    string paymentMethod = DropDownList2.SelectedItem?.Text ?? "CASH";
+                    string paymentNotes = IsDeposit ? "มัดจำ - ออกใบกำกับภาษี" : "ชำระเต็ม - ออกใบกำกับภาษี";
+
+                    int? adminId = null;
+                    if (!string.IsNullOrEmpty(created_By_ID) && created_By_ID != "0")
+                    {
+                        adminId = Convert.ToInt32(created_By_ID);
+                    }
+
+                    // Get customer phone from reservation
+                    string customerPhone = "";
+                    try
+                    {
+                        DataTable dtPhone = code.DatabaseQuery(conn,
+                            "SELECT Customer_MobilePhone FROM Reservation WHERE ID = '" + Reservation_ID + "'");
+                        if (dtPhone.Rows.Count > 0)
+                        {
+                            customerPhone = dtPhone.Rows[0]["Customer_MobilePhone"].ToString();
+                        }
+                    }
+                    catch { }
+
+                    string insertPaymentQuery = @"
+                        INSERT INTO [dbo].[Payment_History] (
+                            Reservation_ID,
+                            PaymentDate,
+                            PaymentAmount,
+                            PaymentType,
+                            PaymentMethod,
+                            Receipt_ID,
+                            ProcessedBy_AdminID,
+                            PaidBy_CustomerPhone,
+                            Status,
+                            Notes,
+                            CreatedDate,
+                            UpdatedDate
+                        ) VALUES (
+                            @ReservationId,
+                            @PaymentDate,
+                            @PaymentAmount,
+                            @PaymentType,
+                            @PaymentMethod,
+                            @ReceiptId,
+                            @AdminId,
+                            @CustomerPhone,
+                            'COMPLETED',
+                            @Notes,
+                            GETDATE(),
+                            GETDATE()
+                        )";
+
+                    var paymentParams = new Dictionary<string, object>
+                    {
+                        { "@ReservationId", Reservation_ID },
+                        { "@PaymentDate", docDate },
+                        { "@PaymentAmount", (decimal)Total_Amount },
+                        { "@PaymentType", paymentType },
+                        { "@PaymentMethod", paymentMethod },
+                        { "@ReceiptId", ReceiptID },
+                        { "@AdminId", adminId ?? (object)DBNull.Value },
+                        { "@CustomerPhone", customerPhone },
+                        { "@Notes", paymentNotes }
+                    };
+
+                    code2.DatabaseInsertSafe(conn, insertPaymentQuery, paymentParams);
+                    System.Diagnostics.Debug.WriteLine($"Created Payment_History for Receipt: {ReceiptID}");
+                }
+                catch (Exception ex)
+                {
+                    code2.Logs(conn, "Payment_History Insert Error (createReceipt)",
+                        ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                    // Don't fail receipt creation if payment history fails
+                }
+
                 if (CheckBox4.Checked == false)
                 {
                     createReport(ReceiptID, status, docDate);
