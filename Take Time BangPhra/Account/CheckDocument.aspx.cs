@@ -287,8 +287,17 @@ namespace Take_Time_BangPhra.Account
                 if (docType == "REC")
                 {
                     string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString() + "\\" + docYear + "\\" + docMonth;
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + docNum + "'");
+
+                    // Delete Payment_History records that reference this receipt first
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + docNum + "'");
+
+                    // Delete receipt details
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + docNum + "'");
+
+                    // Delete receipt record
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + docNum + "'");
+
+                    // Delete receipt files
                     string[] dirs = Directory.GetFiles(path, docNum + "*");
                     for (int i = 0; i < dirs.Length; i++)
                     {
