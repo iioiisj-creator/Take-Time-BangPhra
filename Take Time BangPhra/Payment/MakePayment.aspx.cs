@@ -3,7 +3,6 @@ using System.Configuration;
 using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Payment
 {
@@ -12,7 +11,7 @@ namespace Take_Time_BangPhra.Payment
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
         private PaymentService paymentService;
         private PaymentDataAccess paymentDataAccess;
-        private code2 code2Instance = new code2();
+        private code codeInstance = new code();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -57,7 +56,7 @@ namespace Take_Time_BangPhra.Payment
                     LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                     WHERE r.ID = @reservationId";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {

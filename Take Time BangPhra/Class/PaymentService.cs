@@ -16,15 +16,12 @@ namespace Take_Time_BangPhra
         private readonly PaymentDataAccess _paymentDA;
         private readonly ReservationDataAccess _reservationDA;
         private readonly code _code;
-        private readonly code2 _code2;
-
         public PaymentService(string connectionString)
         {
             _connectionString = connectionString;
             _paymentDA = new PaymentDataAccess(connectionString);
             _reservationDA = new ReservationDataAccess(connectionString);
             _code = new code();
-            _code2 = new code2();
         }
 
         #region Payment Processing
@@ -114,7 +111,7 @@ namespace Take_Time_BangPhra
                 catch (Exception emailEx)
                 {
                     // Log but don't fail the payment
-                    _code2.Logs(_connectionString, "Email Error", emailEx.Message, "SYSTEM");
+                    _code.Logs(_connectionString, "Email Error", emailEx.Message, "SYSTEM");
                 }
 
                 return new PaymentResult
@@ -128,7 +125,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                _code2.Logs(_connectionString, "Payment Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                _code.Logs(_connectionString, "Payment Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
                 return new PaymentResult
                 {
                     Success = false,
@@ -215,7 +212,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                _code2.Logs(_connectionString, "Deposit Payment Error", ex.Message, "SYSTEM");
+                _code.Logs(_connectionString, "Deposit Payment Error", ex.Message, "SYSTEM");
                 return new PaymentResult
                 {
                     Success = false,

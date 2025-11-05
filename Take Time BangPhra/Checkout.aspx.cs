@@ -2,7 +2,6 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Web.UI;
-using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra
 {
@@ -11,7 +10,7 @@ namespace Take_Time_BangPhra
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
         private CheckoutService checkoutService;
         private PaymentDataAccess paymentDataAccess;
-        private code2 code2Instance = new code2();
+        private code codeInstance = new code();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -60,7 +59,7 @@ namespace Take_Time_BangPhra
                     LEFT JOIN Accommodation a ON r.AccommodationID = a.AccommodationID
                     WHERE r.ID = @reservationId";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -165,7 +164,7 @@ namespace Take_Time_BangPhra
                 };
 
                 string query = "SELECT dbo.fn_CanCheckout(@reservationId) AS CanCheckout";
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
