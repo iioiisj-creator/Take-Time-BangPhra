@@ -316,7 +316,12 @@ BEGIN
         ar.Paid_Type AS PaymentMethod,
         ar.ID AS Receipt_ID,
         NULL AS RemainingBalance, -- Will be calculated
-        ar.Created_By_ID,
+        CASE
+            WHEN ar.Created_By_ID IS NOT NULL
+                 AND EXISTS (SELECT 1 FROM [dbo].[Admin] WHERE ID = ar.Created_By_ID)
+            THEN ar.Created_By_ID
+            ELSE NULL
+        END AS ProcessedBy_AdminID,
         CASE
             WHEN ar.Status = 'Normal' THEN 'COMPLETED'
             ELSE 'CANCELLED'
