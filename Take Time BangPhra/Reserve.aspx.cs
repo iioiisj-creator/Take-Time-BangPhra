@@ -198,6 +198,9 @@ namespace Take_Time_BangPhra
                 Button1.Text = "ยืนยันการเช็คอิน";
                 CheckBox1.Visible = false;
                 Button1.Enabled = true;
+
+                // 🆕 Show payment history
+                LoadPaymentHistory();
             }
             else if(command == "edit")
             {
@@ -207,6 +210,9 @@ namespace Take_Time_BangPhra
                 CheckBox1.Visible = false;
                 Button1.Enabled = true;
                 Label7.Visible = false;
+
+                // 🆕 Show payment history
+                LoadPaymentHistory();
             }
             else if(command == "rentmore")
             {
@@ -218,6 +224,14 @@ namespace Take_Time_BangPhra
                 Button1.Enabled = true;
                 DropDownList1.Enabled = false;
                 Label7.Visible = false;
+
+                // 🆕 Show payment history
+                LoadPaymentHistory();
+            }
+            else if(command == "reserve")
+            {
+                // Reserve mode: Don't show payment history (new reservation)
+                divPaymentHistory.Visible = false;
             }
 
             DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
@@ -5033,5 +5047,69 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         }
 
 
+        // 🆕 Load Payment History for CheckIn/Edit/RentMore modes
+        private void LoadPaymentHistory()
+        {
+            try
+            {
+                string reservationId = Request.QueryString["id"];
+                if (string.IsNullOrEmpty(reservationId))
+                {
+                    divPaymentHistory.Visible = false;
+                    return;
+                }
+
+                // Query payment history from Payment_History + Payment_Slips
+                string query = @"
+                    SELECT
+                        ph.PaymentDate,
+                        ph.PaymentAmount,
+                        ph.PaymentType,
+                        ph.PaymentMethod,
+                        ph.Status,
+                        ph.Receipt_ID as ReceiptNumber,
+                        ps.SlipFileURL,
+                        a.Username as ProcessedBy
+                    FROM Payment_History ph
+                    LEFT JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    LEFT JOIN Admin a ON ph.ProcessedBy_AdminID = a.ID
+                    WHERE ph.Reservation_ID = @ReservationId
+                      AND ph.Status = 'COMPLETED'
+                    ORDER BY ph.PaymentDate DESC";
+
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@ReservationId", reservationId }
+                };
+
+                DataTable dtHistory = code2.DatabaseQuerySafe(conn, query, parameters);
+
+                if (dtHistory.Rows.Count > 0)
+                {
+                    gvPaymentHistory.DataSource = dtHistory;
+                    gvPaymentHistory.DataBind();
+                    divPaymentHistory.Visible = true;
+
+                    // Hide old slip image when showing GridView
+                    Image1.Visible = false;
+                }
+                else
+                {
+                    // No payment history - keep showing old slip image
+                    divPaymentHistory.Visible = false;
+                    Image1.Visible = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't break the page
+                code2.Logs(conn, "LoadPaymentHistory Error",
+                    $"Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
+                    "SYSTEM");
+
+                divPaymentHistory.Visible = false;
+                Image1.Visible = true;
+            }
+        }
     }
 }
