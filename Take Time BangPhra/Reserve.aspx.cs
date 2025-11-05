@@ -1679,7 +1679,7 @@ namespace Take_Time_BangPhra
                                             if (dtfindDeposit.Rows.Count <= 0)
                                             {
                                                 // 🆕 Use manual payment amount from TextBox10 (like rentmore)
-                                                int Deposit = Convert.ToInt32(TextBox5.Text);
+                                                // Deposit already declared above at line 1636
                                                 dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", Deposit * -1, Deposit * -1);
                                                 id = Request.QueryString["id"];
                                                 if (CheckBox4.Checked == false)
