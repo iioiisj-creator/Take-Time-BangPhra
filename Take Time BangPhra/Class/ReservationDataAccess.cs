@@ -356,6 +356,52 @@ namespace Take_Time_BangPhra.DataAccess
                 parameters);
         }
 
+        /// <summary>
+        /// Insert a new reservation and return its ID
+        /// </summary>
+        public int InsertNewReservation(
+            string customerPhone,
+            DateTime checkinDate,
+            DateTime checkoutDate,
+            int stayDays,
+            string status,
+            decimal totalPrice,
+            decimal deposit,
+            string remark,
+            string reserveBy,
+            DateTime createdDate,
+            bool noCreateReceipt,
+            bool noNameInReceipt)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@customerPhone", customerPhone },
+                { "@checkinDate", checkinDate.ToString("yyyy-MM-dd") },
+                { "@checkoutDate", checkoutDate.ToString("yyyy-MM-dd") },
+                { "@stayDays", stayDays },
+                { "@status", status },
+                { "@totalPrice", totalPrice },
+                { "@deposit", deposit },
+                { "@remark", remark },
+                { "@reserveBy", reserveBy },
+                { "@createdDate", createdDate.ToString("yyyy-MM-dd HH:mm:ss.fff") },
+                { "@noCreateReceipt", noCreateReceipt ? "True" : "False" },
+                { "@noNameInReceipt", noNameInReceipt ? "True" : "False" }
+            };
+
+            return _code.DatabaseInsertReturnSafe(_connectionString,
+                @"INSERT INTO [dbo].[Reservation]
+                  ([Customer_MobilePhone], [CheckinDate], [CheckoutDate], [StayDays], [Status],
+                   [TotalPrice], [Deposit], [Remark], [Reserve_By], [Created_Date],
+                   [NoCreateReceipt], [NoNameinReceipt])
+                  VALUES
+                  (@customerPhone, @checkinDate, @checkoutDate, @stayDays, @status,
+                   @totalPrice, @deposit, @remark, @reserveBy, @createdDate,
+                   @noCreateReceipt, @noNameInReceipt);
+                  SELECT SCOPE_IDENTITY();",
+                parameters);
+        }
+
         #endregion
     }
 }

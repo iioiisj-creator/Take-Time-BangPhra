@@ -310,8 +310,20 @@ namespace Take_Time_BangPhra
                         catch { }
                         if ((ReserveDate == null || ReserveDate == "") && command == "edit")
                         {
-                            DataTable dtReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] Where ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
-                            ReserveDate = dtReservation.Rows[0]["CheckinDate"].ToString();
+                            // 🔒 SECURE: Using parameterized query
+                            var parameters = new Dictionary<string, object>
+                            {
+                                { "@id", id },
+                                { "@phone", check }
+                            };
+                            DataTable dtReservation = code.DatabaseQuerySafe(conn,
+                                "SELECT * FROM [Reservation] WHERE ID = @id AND Customer_MobilePhone = @phone",
+                                parameters);
+
+                            if (dtReservation.Rows.Count > 0)
+                            {
+                                ReserveDate = dtReservation.Rows[0]["CheckinDate"].ToString();
+                            }
                         }
                         if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
                         {
@@ -419,11 +431,14 @@ namespace Take_Time_BangPhra
                 if (!IsPostBack)
                 {
                     Button1.Enabled = true;
-                    DataTable dtReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] Where ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
-                    DataTable dtAccom = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Accommodation on Reservation_Accommodation.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
-                    DataTable dtItemsold = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] right join Reservation_Items on Reservation_Items.Reservation_ID = Reservation.ID Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
 
-                    DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT  * FROM [Account_Receipt] Where RESERVATION_ID = '" + id + "'");
+                    // 🔒 SECURE: Using parameterized queries via ReservationDataAccess
+                    var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+
+                    DataTable dtReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), check);
+                    DataTable dtAccom = reservationDA.GetReservationWithAccommodations(Convert.ToInt32(id), check);
+                    DataTable dtItemsold = reservationDA.GetReservationWithItems(Convert.ToInt32(id), check);
+                    DataTable dtReceipt = reservationDA.GetReceiptsByReservation(Convert.ToInt32(id));
                     try
                     {
                         if (dtReservation.Rows[0]["NoCreateReceipt"].ToString().ToLower() == "false")
@@ -548,7 +563,8 @@ namespace Take_Time_BangPhra
                             }
                         }
                     }
-                    DataTable dtCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] inner join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID left join Account_Receipt on Account_Receipt.Reservation_ID = Reservation.ID  Where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "'");
+                    // 🔒 SECURE: Using ReservationDataAccess
+                    DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
                     try //Address
                     {
                         try
@@ -701,11 +717,20 @@ namespace Take_Time_BangPhra
                 catch { id = "0"; }
                 int checkdup = 0;
                 DataTable dtAccom = (DataTable)Session["dtAccommodation"];
+                var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+
                 for (int i = 0;i<Convert.ToInt32(DropDownList1.SelectedValue);i++)
                 {
                     for(int j = 0;j<listcheck.Count;j++)
                     {
-                        DataTable dtReserveAccomDup = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID = Accommodation_ID Where CheckinDate = '"+code2.ParseDate(TextBox12.Text).Value.AddDays(i).ToString("yyyy-MM-dd")+"' AND AccomName = N'" + listcheck[j] + "' AND Reservation_ID != "+id);
+                        // 🔒 SECURE: Using parameterized query via ReservationDataAccess
+                        DateTime checkinDate = code2.ParseDate(TextBox12.Text).Value.AddDays(i);
+                        DataTable dtReserveAccomDup = reservationDA.CheckDuplicateAccommodation(
+                            checkinDate,
+                            listcheck[j],
+                            Convert.ToInt32(id)
+                        );
+
                         if(dtReserveAccomDup.Rows.Count > 0 && (dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "False" || dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "0"))
                         {
                             checkdup = 1;
@@ -910,8 +935,11 @@ namespace Take_Time_BangPhra
 
                                         dtReserve.Clear();
                                         dtReserve.AcceptChanges();
-                                        DataTable dtoldAccom = code.DatabaseQuery(conn, "SELECT * FROM [Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID=Accommodation_ID Where Reservation.ID = " + id);
-                                        DataTable dtoldItem = code.DatabaseQuery(conn, "SELECT * FROM [Reservation_Items] inner join Reservation on Reservation.ID = Reservation_ID Where Reservation.ID = " + id);
+
+                                        // 🔒 SECURE: Using ReservationDataAccess
+                                        var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+                                        DataTable dtoldAccom = reservationDA.GetOldAccommodations(Convert.ToInt32(id));
+                                        DataTable dtoldItem = reservationDA.GetOldItems(Convert.ToInt32(id));
                                         IsDeposit = false;
                                         string msg = "";
                                         int totalnew = 0;
@@ -1021,7 +1049,14 @@ namespace Take_Time_BangPhra
                                                 {
                                                     if (command == "edit")
                                                     {
-                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + txtPeopleStay.Text + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                        // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                        reservationDA.InsertReservationAccommodation(
+                                                            Convert.ToInt32(id),
+                                                            Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]),
+                                                            Convert.ToInt32(txtPeopleStay.Text),
+                                                            Convert.ToDecimal(row.Cells[4].Text),
+                                                            checkusecoupon.ToString()
+                                                        );
                                                     }
                                                     else
                                                     {
@@ -1048,7 +1083,14 @@ namespace Take_Time_BangPhra
                                                 {
                                                     if (command == "edit")
                                                     {
-                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Accommodation] ([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) VALUES (" + id + "," + dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," + DropDownList1.SelectedValue + "," + row.Cells[4].Text + ",'" + checkusecoupon + "') ");
+                                                        // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                        reservationDA.InsertReservationAccommodation(
+                                                            Convert.ToInt32(id),
+                                                            Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]),
+                                                            Convert.ToInt32(DropDownList1.SelectedValue),
+                                                            Convert.ToDecimal(row.Cells[4].Text),
+                                                            checkusecoupon.ToString()
+                                                        );
                                                     }
                                                     else
                                                     {
@@ -1082,8 +1124,13 @@ namespace Take_Time_BangPhra
                                                     {
                                                         if (command == "edit")
                                                         {
-                                                            code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation_Items] SET [Amount] = " + Convert.ToInt32(txtAmount.Text) + " ,[Price] = " + row.Cells[4].Text + " WHERE Items_ID = " + dtoldItem.Rows[x]["Items_ID"].ToString() + " AND Reservation_ID = " + id);
-
+                                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                            reservationDA.UpdateReservationItem(
+                                                                Convert.ToInt32(id),
+                                                                Convert.ToInt32(dtoldItem.Rows[x]["Items_ID"]),
+                                                                Convert.ToInt32(txtAmount.Text),
+                                                                Convert.ToDecimal(row.Cells[4].Text)
+                                                            );
                                                         }
                                                         else
                                                         {
@@ -1116,7 +1163,11 @@ namespace Take_Time_BangPhra
                                                     {
                                                         if (command == "edit")
                                                         {
-                                                            code.DatabaseInsert(conn, "DELETE FROM [dbo].[Reservation_Items] WHERE Items_ID = " + dtoldItem.Rows[x]["Items_ID"].ToString() + " AND Reservation_ID = " + id);
+                                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                            reservationDA.DeleteReservationItem(
+                                                                Convert.ToInt32(id),
+                                                                Convert.ToInt32(dtoldItem.Rows[x]["Items_ID"])
+                                                            );
                                                         }
                                                         checkoldItemRemoved++;
                                                     }
@@ -1146,7 +1197,13 @@ namespace Take_Time_BangPhra
                                                 {
                                                     if (command == "edit")
                                                     {
-                                                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Items] ([Reservation_ID],[Items_ID],[Amount],[Price]) VALUES (" + id + "," + dtItems.Rows[row.RowIndex]["ID"].ToString() + "," + txtAmount.Text + "," + row.Cells[4].Text + ") ");
+                                                        // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                        reservationDA.InsertReservationItem(
+                                                            Convert.ToInt32(id),
+                                                            Convert.ToInt32(dtItems.Rows[row.RowIndex]["ID"]),
+                                                            Convert.ToInt32(txtAmount.Text),
+                                                            Convert.ToDecimal(row.Cells[4].Text)
+                                                        );
                                                     }
                                                     else
                                                     {
@@ -1211,13 +1268,41 @@ namespace Take_Time_BangPhra
                                             }
                                             try
                                             {
-                                                code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '" + code2.ParseDate(TextBox12.Text).Value.ToString("yyyy-MM-dd") + "' ,[CheckoutDate] = '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd") + "' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                DateTime? checkinDate = code2.ParseDate(TextBox12.Text);
+                                                if (checkinDate.HasValue)
+                                                {
+                                                    reservationDA.UpdateReservation(
+                                                        Convert.ToInt32(id),
+                                                        TextBox1.Text,
+                                                        checkinDate.Value,
+                                                        checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)),
+                                                        Convert.ToInt32(DropDownList1.SelectedValue),
+                                                        Convert.ToDecimal(TextBox4.Text),
+                                                        Deposit,
+                                                        TextBox6.Text
+                                                    );
+                                                }
+                                                else
+                                                {
+                                                    throw new Exception("Invalid check-in date");
+                                                }
                                             }
                                             catch (Exception ex)
                                             {
                                                 if (TextBox12.Text == null || TextBox12.Text == "")
                                                 {
-                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '1990-01-01' ,[CheckoutDate] = '1990-01-01' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                                    // ✅ FIXED: Use parameterized query even in fallback case
+                                                    reservationDA.UpdateReservation(
+                                                        Convert.ToInt32(id),
+                                                        TextBox1.Text,
+                                                        DateTime.Parse("1990-01-01"),
+                                                        DateTime.Parse("1990-01-01"),
+                                                        Convert.ToInt32(DropDownList1.SelectedValue),
+                                                        Convert.ToDecimal(TextBox4.Text),
+                                                        Deposit,
+                                                        TextBox6.Text
+                                                    );
                                                 }
                                                 else
                                                 {
@@ -1259,7 +1344,8 @@ namespace Take_Time_BangPhra
                                                 StringBuilder changeDetails = new StringBuilder();
 
                                                 // 1. ตรวจสอบการเปลี่ยนแปลงข้อมูลลูกค้า
-                                                DataTable dtOldCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Customer] WHERE MobilePhone = '" + TextBox1.Text + "'");
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                DataTable dtOldCustomer = reservationDA.GetCustomerByPhone(TextBox1.Text);
                                                 if (dtOldCustomer.Rows.Count > 0)
                                                 {
                                                     if (dtOldCustomer.Rows[0]["Name"].ToString() != TextBox2.Text)
@@ -1276,7 +1362,8 @@ namespace Take_Time_BangPhra
                                                 }
 
                                                 // 2. ตรวจสอบการเปลี่ยนแปลงวันที่
-                                                DataTable dtOldReservation = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] WHERE ID = " + id);
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                DataTable dtOldReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), TextBox1.Text);
                                                 if (dtOldReservation.Rows.Count > 0)
                                                 {
                                                     DateTime oldCheckin = Convert.ToDateTime(dtOldReservation.Rows[0]["CheckinDate"]);
@@ -1488,7 +1575,17 @@ namespace Take_Time_BangPhra
                                                     {
                                                         createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
-                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Customer_MobilePhone] = '" + TextBox1.Text + "' ,[CheckinDate] = '" + code2.ParseDate(TextBox12.Text).Value.ToString("yyyy-MM-dd") + "' ,[CheckoutDate] = '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd") + "' ,[StayDays] = " + DropDownList1.SelectedValue + " , [TotalPrice] = " + TextBox4.Text + " ,[Deposit] = " + Deposit + ", [Remark] = N'" + TextBox6.Text + "' WHERE ID = " + id);
+                                                    // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                    reservationDA.UpdateReservation(
+                                                        Convert.ToInt32(id),
+                                                        TextBox1.Text,
+                                                        code2.ParseDate(TextBox12.Text).Value,
+                                                        code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)),
+                                                        Convert.ToInt32(DropDownList1.SelectedValue),
+                                                        Convert.ToDecimal(TextBox4.Text),
+                                                        Deposit,
+                                                        TextBox6.Text
+                                                    );
                                                     Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text);
                                                 }
                                             }
@@ -1528,12 +1625,14 @@ namespace Take_Time_BangPhra
 
                                         if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
                                         {
-                                            code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                            reservationDA.CheckInReservation(Convert.ToInt32(id));
                                         }
                                         else
                                         {
                                             TextBox5.Enabled = false;
-                                            DataTable dtfindDeposit = code.DatabaseQuery(conn, "Select * From Account_Receipt Where Reservation_ID = " + id + " AND IsDeposit = 'True' AND Status = 'Normal' AND UseDeposit = 'false'");
+                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                            DataTable dtfindDeposit = reservationDA.GetDepositReceipts(Convert.ToInt32(id));
 
                                             dtReserve.Clear();
                                             dtReserve.AcceptChanges();
@@ -1576,13 +1675,15 @@ namespace Take_Time_BangPhra
                                                 {
                                                     createReceipt(id, totalAmount - Deposit, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
-                                                code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                reservationDA.CheckInReservation(Convert.ToInt32(id));
                                             }
                                             else
                                             {
                                                 for (int j = 0; j < dtfindDeposit.Rows.Count; j++)
                                                 {
-                                                    DataTable dtDepositDetail = code.DatabaseQuery(conn, "Select * From Account_Receipt_Detail Where Receipt_ID = '" + dtfindDeposit.Rows[j]["ID"].ToString() + "'");
+                                                    // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                    DataTable dtDepositDetail = reservationDA.GetReceiptDetails(dtfindDeposit.Rows[j]["ID"].ToString());
                                                     for (int k = 0; k < dtDepositDetail.Rows.Count; k++)
                                                     {
                                                         DepositAmount += Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
@@ -1599,7 +1700,8 @@ namespace Take_Time_BangPhra
                                                     {
                                                         createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
-                                                    code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                                    // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                    reservationDA.CheckInReservation(Convert.ToInt32(id));
                                                 }
                                                 else
                                                 {
@@ -1613,7 +1715,8 @@ namespace Take_Time_BangPhra
                                                         {
                                                             createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                         }
-                                                        code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
+                                                        // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                        reservationDA.CheckInReservation(Convert.ToInt32(id));
                                                     }
                                                 }
                                             }
@@ -1626,61 +1729,46 @@ namespace Take_Time_BangPhra
                                     {
                                         try
                                         {
-                                            string insertQuery = "";
+                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                             DateTime? checkinDate = code2.ParseDate(TextBox12.Text);
                                             DateTime now = DateTime.Now;
-
-                                            // Use proper SQL datetime format
-                                            string sqlFormattedNow = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                                             string reserveBy = Session["permission"].ToString() == "True" ?
-                                                Session["UserName"].ToString().Replace("'", "''") : "User";
+                                                Session["UserName"]?.ToString() ?? "User" : "User";
 
                                             if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
                                             {
-                                                insertQuery = $@"INSERT INTO [dbo].[Reservation] 
-            ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],
-            [TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],
-            NoCreateReceipt,NoNameinReceipt) 
-            VALUES 
-            ('{TextBox1.Text}',
-            '{checkinDate.Value.ToString("yyyy-MM-dd")}',
-            '{checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("yyyy-MM-dd")}',
-            {DropDownList1.SelectedValue},
-            N'มัดจำแล้ว',
-            {Session["totalPrice"]?.ToString() ?? "0"},
-            {TextBox5.Text ?? "0"},
-            N'{TextBox6.Text.Replace("'", "''")}',
-            N'{reserveBy}',
-            '{sqlFormattedNow}',
-            '{(CheckBox4.Checked ? "True" : "False")}',
-            '{(CheckBox3.Checked ? "True" : "False")}');
-            SELECT SCOPE_IDENTITY();";
+                                                Reservation_ID = reservationDA.InsertNewReservation(
+                                                    TextBox1.Text,
+                                                    checkinDate.Value,
+                                                    checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)),
+                                                    Convert.ToInt32(DropDownList1.SelectedValue),
+                                                    "มัดจำแล้ว",
+                                                    Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? "0"),
+                                                    Convert.ToDecimal(TextBox5.Text ?? "0"),
+                                                    TextBox6.Text,
+                                                    reserveBy,
+                                                    now,
+                                                    CheckBox4.Checked,
+                                                    CheckBox3.Checked
+                                                );
                                             }
                                             else
                                             {
-                                                insertQuery = $@"INSERT INTO [dbo].[Reservation] 
-            ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],
-            [TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],
-            NoCreateReceipt,NoNameinReceipt) 
-            VALUES 
-            ('{TextBox1.Text}',
-            '1990-01-01',
-            '1990-01-01',
-            {DropDownList1.SelectedValue},
-            N'มัดจำแล้ว',
-            {Session["totalPrice"]?.ToString() ?? "0"},
-            {TextBox5.Text ?? "0"},
-            N'{TextBox6.Text.Replace("'", "''")}',
-            N'{reserveBy}',
-            '{sqlFormattedNow}',
-            '{(CheckBox4.Checked ? "True" : "False")}',
-            '{(CheckBox3.Checked ? "True" : "False")}');
-            SELECT SCOPE_IDENTITY();";
+                                                Reservation_ID = reservationDA.InsertNewReservation(
+                                                    TextBox1.Text,
+                                                    DateTime.Parse("1990-01-01"),
+                                                    DateTime.Parse("1990-01-01"),
+                                                    Convert.ToInt32(DropDownList1.SelectedValue),
+                                                    "มัดจำแล้ว",
+                                                    Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? "0"),
+                                                    Convert.ToDecimal(TextBox5.Text ?? "0"),
+                                                    TextBox6.Text,
+                                                    reserveBy,
+                                                    now,
+                                                    CheckBox4.Checked,
+                                                    CheckBox3.Checked
+                                                );
                                             }
-
-                                            System.Diagnostics.Debug.WriteLine("Reservation Insert Query: " + insertQuery);
-
-                                            Reservation_ID = code.DatabaseInsert(conn, insertQuery);
 
                                             System.Diagnostics.Debug.WriteLine("Returned Reservation ID: " + Reservation_ID);
 
@@ -1785,16 +1873,16 @@ namespace Take_Time_BangPhra
                                                 }
 
                                                 // บันทึกราคาลงฐานข้อมูล (ใช้ราคาที่แก้ไขแล้ว)
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                 int checkusecoupon = checkAccomUseCoupon(dtAccommodation.Rows[row.RowIndex]["ID"].ToString(),
                                                                                           code2.ParseDate(TextBox12.Text).Value);
-                                                code.DatabaseInsert(conn,
-                                                    "INSERT INTO [dbo].[Reservation_Accommodation] " +
-                                                    "([Reservation_ID],[Accommodation_ID],[Amount],[Price],Use_Coupon) " +
-                                                    "VALUES (" + Reservation_ID + "," +
-                                                    dtAccommodation.Rows[row.RowIndex]["ID"].ToString() + "," +
-                                                    txtPeopleStay.Text + "," +
-                                                    pricePerNight + "," + // ใช้ราคาต่อคืนที่แก้ไขแล้ว
-                                                    "'" + checkusecoupon + "')");
+                                                reservationDA.InsertReservationAccommodation(
+                                                    Reservation_ID,
+                                                    Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]),
+                                                    Convert.ToInt32(txtPeopleStay.Text),
+                                                    Convert.ToDecimal(pricePerNight),
+                                                    checkusecoupon.ToString()
+                                                );
                                             }
                                             i++;
                                         }
@@ -1832,7 +1920,13 @@ namespace Take_Time_BangPhra
                                                         totalAmount);
 
                                                 }
-                                                code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation_Items] ([Reservation_ID],[Items_ID],[Amount],[Price]) VALUES (" + Reservation_ID + "," + dtItems.Rows[i]["ID"].ToString() + "," + txtAmount.Text + "," + Price + ") ");
+                                                // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                reservationDA.InsertReservationItem(
+                                                    Reservation_ID,
+                                                    Convert.ToInt32(dtItems.Rows[i]["ID"]),
+                                                    Convert.ToInt32(txtAmount.Text),
+                                                    Convert.ToDecimal(Price)
+                                                );
                                                 try { msg += "- " + dtItems.Rows[i]["ItemName"].ToString() + " " + txtAmount.Text + " ชิ้น"; } catch { }
                                             }
                                             i++;
