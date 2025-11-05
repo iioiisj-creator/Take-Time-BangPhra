@@ -1631,9 +1631,19 @@ namespace Take_Time_BangPhra
                                         // 🆕 Check if payment checkbox is checked
                                         if (CheckBox2.Checked && !string.IsNullOrEmpty(TextBox10.Text))
                                         {
-                                            // User must enter payment amount manually (like rentmore)
+                                            // CheckIn mode: Must pay exact remaining amount (locked)
                                             int paymentAmount = Convert.ToInt32(TextBox10.Text);
                                             int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            int totalAmount = Convert.ToInt32(TextBox4.Text);
+                                            int remainingAmount = totalAmount - Deposit;
+
+                                            // 🔒 Validate: payment must equal remaining amount (prevent manual editing)
+                                            if (paymentAmount != remainingAmount && remainingAmount > 0)
+                                            {
+                                                ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                                                    "alert('ยอดชำระต้องเท่ากับยอดคงเหลือ " + remainingAmount.ToString("N0") + " บาทเท่านั้น\\nไม่สามารถแก้ไขยอดได้');", true);
+                                                return;
+                                            }
 
                                             if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
                                             {
@@ -3500,9 +3510,38 @@ namespace Take_Time_BangPhra
 
         protected void CheckBox2_CheckedChanged(object sender, EventArgs e)
         {
+            string command = Request.QueryString["command"];
+
             if(CheckBox2.Checked == true)
             {
                 TextBox10.Visible = true;
+
+                // 🆕 For CheckIn mode: Lock payment to remaining amount only
+                if (command == "checkin")
+                {
+                    try
+                    {
+                        int total = Convert.ToInt32(TextBox4.Text);
+                        int deposit = Convert.ToInt32(TextBox5.Text);
+                        int remaining = total - deposit;
+
+                        TextBox10.Text = remaining.ToString();
+                        TextBox10.ReadOnly = true;
+                        TextBox10.Enabled = false;  // Also disable to prevent any editing
+                    }
+                    catch
+                    {
+                        TextBox10.Text = "0";
+                        TextBox10.ReadOnly = true;
+                        TextBox10.Enabled = false;
+                    }
+                }
+                else
+                {
+                    // RentMore mode: Allow manual input
+                    TextBox10.ReadOnly = false;
+                    TextBox10.Enabled = true;
+                }
             }
             else
             {
