@@ -57,6 +57,7 @@ namespace Take_Time_BangPhra.Account
         protected global::System.Web.UI.WebControls.Label lblTotalVAT;
         protected global::System.Web.UI.WebControls.Label lblDateRange;
 
+        protected global::System.Web.UI.WebControls.CheckBox chkEnableDelete;
         protected global::System.Web.UI.WebControls.GridView gvDetails;
     }
 }

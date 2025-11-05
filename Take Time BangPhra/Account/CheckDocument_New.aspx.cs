@@ -189,15 +189,14 @@ namespace Take_Time_BangPhra.Account
         {
             // Reservations with check-in in date range
             string query = @"
-                SELECT ar.Paid_Type, ph.PaymentMethod, SUM(ph.PaymentAmount) as Total, aph.ID as PaymentMethodID
-                FROM Payment_History ph
-                INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
-                INNER JOIN Account_Receipt ar ON ar.Reservation_ID = r.ID
+                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                FROM Account_Receipt ar
+                INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
                 WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
-                  AND ph.Status = 'COMPLETED'
                   AND ar.Status LIKE @Status
-                GROUP BY ar.Paid_Type, ph.PaymentMethod, aph.ID";
+                  AND ar.Reservation_ID > 0
+                GROUP BY ar.Paid_Type, aph.ID";
 
             var parameters = new Dictionary<string, object>
             {
@@ -211,18 +210,17 @@ namespace Take_Time_BangPhra.Account
 
         private DataTable GetCategory2Revenue(DateTime startDate, DateTime endDate, string status)
         {
-            // Reservations with payment in date range but check-in outside
+            // Reservations with receipt created in date range but check-in outside
             string query = @"
-                SELECT ar.Paid_Type, ph.PaymentMethod, SUM(ph.PaymentAmount) as Total, aph.ID as PaymentMethodID
-                FROM Payment_History ph
-                INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
-                INNER JOIN Account_Receipt ar ON ar.Reservation_ID = r.ID
+                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                FROM Account_Receipt ar
+                INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
-                WHERE ph.PaymentDate >= @StartDate AND ph.PaymentDate <= @EndDate
+                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
                   AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate)
-                  AND ph.Status = 'COMPLETED'
                   AND ar.Status LIKE @Status
-                GROUP BY ar.Paid_Type, ph.PaymentMethod, aph.ID";
+                  AND ar.Reservation_ID > 0
+                GROUP BY ar.Paid_Type, aph.ID";
 
             var parameters = new Dictionary<string, object>
             {
@@ -443,6 +441,195 @@ namespace Take_Time_BangPhra.Account
             {
                 // Check product type if available
                 return "อื่นๆ";
+            }
+        }
+
+        // GridView Event Handlers
+        protected void gvDetails_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            if (!chkEnableDelete.Checked)
+            {
+                ShowError("กรุณาเปิดใช้งานปุ่มลบก่อน");
+                return;
+            }
+
+            try
+            {
+                string docNum = gvDetails.Rows[e.RowIndex].Cells[3].Text;
+                string docType = docNum.Remove(3, 9);
+                string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
+                string docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 5)).ToString();
+
+                if (docType.Length > 3)
+                {
+                    docType = docNum.Remove(3, 12);
+                    docYear = "20" + docNum.Remove(0, 3).Remove(2, 10);
+                    docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 8)).ToString();
+                }
+
+                if (docType == "REC")
+                {
+                    string path = ConfigurationManager.AppSettings["ReceiptFolderPath"] + "\\" + docYear + "\\" + docMonth;
+
+                    // Delete Payment_History records first
+                    codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + docNum + "'");
+
+                    // Delete receipt details
+                    codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + docNum + "'");
+
+                    // Delete receipt record
+                    codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + docNum + "'");
+
+                    // Delete receipt files
+                    if (Directory.Exists(path))
+                    {
+                        string[] files = Directory.GetFiles(path, docNum + "*");
+                        foreach (string file in files)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                }
+                else if (docType == "PAY")
+                {
+                    string path = ConfigurationManager.AppSettings["PaymentFolderPath"] + "\\" + docYear + "\\" + docMonth;
+
+                    // Delete payment details
+                    codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Payment_Detail] WHERE Payment_ID = '" + docNum + "'");
+
+                    // Delete payment record
+                    codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Payment] WHERE ID = '" + docNum + "'");
+
+                    // Delete payment files
+                    if (Directory.Exists(path))
+                    {
+                        string[] files = Directory.GetFiles(path, docNum + "*");
+                        foreach (string file in files)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                }
+
+                Response.Redirect("/Account/CheckDocument_New");
+            }
+            catch (Exception ex)
+            {
+                ShowError("ลบเอกสารไม่สำเร็จ: " + ex.Message);
+            }
+        }
+
+        protected void gvDetails_SelectedIndexChanging(object sender, GridViewSelectEventArgs e)
+        {
+            try
+            {
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[9].Text; // Status column
+                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
+                string docType = docNum.Remove(3, 9);
+
+                string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
+                string docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 5)).ToString();
+
+                if (docType.Length > 3)
+                {
+                    docType = docNum.Remove(3, 12);
+                    docYear = "20" + docNum.Remove(0, 3).Remove(2, 10);
+                    docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 8)).ToString();
+                }
+
+                if (docType == "REC")
+                {
+                    string path = ConfigurationManager.AppSettings["ReceiptFolderPath"];
+                    string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+
+                    if (docStatus == "Cancel")
+                    {
+                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf"))
+                        {
+                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_{uid}_Cancel.pdf");
+                        }
+                        else
+                        {
+                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_Cancel.pdf");
+                        }
+                    }
+                    else
+                    {
+                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf"))
+                        {
+                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_{uid}.pdf");
+                        }
+                        else
+                        {
+                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}.pdf");
+                        }
+                    }
+                }
+                else if (docType == "PAY")
+                {
+                    string path = ConfigurationManager.AppSettings["PaymentFolderPath"];
+                    string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+
+                    if (docStatus == "Cancel")
+                    {
+                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf"))
+                        {
+                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_{uid}_Cancel.pdf");
+                        }
+                        else
+                        {
+                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_Cancel.pdf");
+                        }
+                    }
+                    else
+                    {
+                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf"))
+                        {
+                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_{uid}.pdf");
+                        }
+                        else
+                        {
+                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}.pdf");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError("เปิดเอกสารไม่สำเร็จ: " + ex.Message);
+            }
+        }
+
+        protected void gvDetails_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (e.CommandName == "edit")
+            {
+                try
+                {
+                    int rowIndex = Convert.ToInt32(e.CommandArgument);
+                    string docNum = gvDetails.Rows[rowIndex].Cells[3].Text;
+                    string docType = docNum.Remove(3, 9);
+
+                    if (docType.Length > 3)
+                    {
+                        docType = docNum.Remove(3, 12);
+                    }
+
+                    if (docType == "REC")
+                    {
+                        string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+                        Response.Redirect("/Account/Receipt?command=edit&uid=" + uid);
+                    }
+                    else if (docType == "PAY")
+                    {
+                        string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+                        Response.Redirect("/Account/PaymentVoucher?command=edit&uid=" + uid);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowError("แก้ไขเอกสารไม่สำเร็จ: " + ex.Message);
+                }
             }
         }
 
