@@ -84,10 +84,26 @@ namespace Take_Time_BangPhra
                 }
                 Label9.Text = Items;
 
-                // Set payment information
-                Label11.Text = Convert.ToInt32(dtReservationAccommodation.Rows[0]["totalPrice"].ToString()).ToString("n0");
-                Label12.Text = Convert.ToInt32(dtReservationAccommodation.Rows[0]["Deposit"].ToString()).ToString("n0");
-                Label13.Text = (Convert.ToInt32(dtReservationAccommodation.Rows[0]["totalPrice"].ToString()) - Convert.ToInt32(dtReservationAccommodation.Rows[0]["Deposit"].ToString())).ToString("n0");
+                // Set payment information using Payment_History
+                int totalPrice = Convert.ToInt32(dtReservationAccommodation.Rows[0]["totalPrice"]);
+                Label11.Text = totalPrice.ToString("n0");
+
+                // Get total paid and remaining balance from Payment_History
+                DataTable dtPayment = code.DatabaseQuery(conn,
+                    $"SELECT dbo.fn_GetTotalPaid({id}) as TotalPaid, dbo.fn_GetRemainingBalance({id}) as RemainingBalance");
+
+                decimal totalPaid = 0;
+                decimal remainingBalance = totalPrice;
+                if (dtPayment.Rows.Count > 0)
+                {
+                    totalPaid = dtPayment.Rows[0]["TotalPaid"] != DBNull.Value
+                        ? Convert.ToDecimal(dtPayment.Rows[0]["TotalPaid"]) : 0;
+                    remainingBalance = dtPayment.Rows[0]["RemainingBalance"] != DBNull.Value
+                        ? Convert.ToDecimal(dtPayment.Rows[0]["RemainingBalance"]) : totalPrice;
+                }
+
+                Label12.Text = totalPaid.ToString("n0");
+                Label13.Text = remainingBalance.ToString("n0");
                 Label14.Text = dtReservationAccommodation.Rows[0]["Remark"].ToString();
 
                 Label10.Text = "ยืนยันการจองสำเร็จ ✓";
