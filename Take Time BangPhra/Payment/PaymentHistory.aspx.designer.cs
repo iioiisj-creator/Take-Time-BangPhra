@@ -69,22 +69,22 @@ namespace Take_Time_BangPhra.Payment
         protected global::System.Web.UI.WebControls.Label lblTotalRecords;
 
         /// <summary>
-        /// lblPendingCount control.
+        /// lblPendingRecords control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblPendingCount;
+        protected global::System.Web.UI.WebControls.Label lblPendingRecords;
 
         /// <summary>
-        /// lblCompletedCount control.
+        /// lblCompletedRecords control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblCompletedCount;
+        protected global::System.Web.UI.WebControls.Label lblCompletedRecords;
 
         /// <summary>
         /// txtReservationID control.
