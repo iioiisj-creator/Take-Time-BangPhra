@@ -141,7 +141,7 @@ namespace Take_Time_BangPhra
                     { "@ReservationId", reservationId }
                 };
 
-                DataTable dtSlips = code.DatabaseQuerySafe(conn, query, parameters);
+                DataTable dtSlips = code2.DatabaseQuerySafe(conn, query, parameters);
 
                 if (dtSlips.Rows.Count > 0)
                 {
