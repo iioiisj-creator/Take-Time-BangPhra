@@ -605,6 +605,7 @@
     <Compile Include="Class\EmailService.cs" />
     <Compile Include="Class\ExcelCreator.cs" />
     <Compile Include="Class\ReceiptService.cs" />
+    <Compile Include="Class\ReservationDataAccess.cs" />
     <Compile Include="Class\ReservationService.cs" />
     <Compile Include="Class\TelegramService.cs" />
     <Compile Include="Code.cs" />
