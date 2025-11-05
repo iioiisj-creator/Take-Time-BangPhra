@@ -607,7 +607,7 @@
                         <asp:Image ID="Image1" runat="server" Width="90%" style="max-width: 500px; border: 1px solid #D7CCC8; border-radius: 5px;"/>
                     </div>
 
-                    <!-- 🆕 Payment History GridView (shown in CheckIn/Edit/CheckOut modes) -->
+                    <!-- Payment History GridView (shown in CheckIn/Edit/CheckOut modes) -->
                     <div style="margin-top: 20px;" id="divPaymentHistory" runat="server" visible="false">
                         <h4 style="color: #5D4037; margin-bottom: 10px;">📋 ประวัติการชำระเงิน</h4>
 
