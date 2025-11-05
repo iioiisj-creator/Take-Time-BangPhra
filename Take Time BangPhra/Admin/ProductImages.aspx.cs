@@ -3,7 +3,6 @@ using System.Configuration;
 using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Admin
 {
@@ -12,7 +11,7 @@ namespace Take_Time_BangPhra.Admin
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
         private ProductService productService;
         private ProductDataAccess productDataAccess;
-        private code2 code2Instance = new code2();
+        private code codeInstance = new code();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -51,7 +50,7 @@ namespace Take_Time_BangPhra.Admin
                     GROUP BY a.AccommodationID, a.AccomName, a.Price
                     ORDER BY a.AccomName";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, null);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, null);
                 rptAccommodations.DataSource = dt;
                 rptAccommodations.DataBind();
             }
@@ -79,7 +78,7 @@ namespace Take_Time_BangPhra.Admin
                     GROUP BY i.ItemID, i.ItemName, i.Price
                     ORDER BY i.ItemName";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, null);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, null);
                 rptItems.DataSource = dt;
                 rptItems.DataBind();
             }

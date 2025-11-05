@@ -3,7 +3,6 @@ using System.Configuration;
 using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Payment
 {
@@ -11,7 +10,7 @@ namespace Take_Time_BangPhra.Payment
     {
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
         private PaymentDataAccess paymentDataAccess;
-        private code2 code2Instance = new code2();
+        private code codeInstance = new code();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -82,7 +81,7 @@ namespace Take_Time_BangPhra.Payment
                     {whereClause}
                     ORDER BY ph.PaymentDate DESC";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -120,7 +119,7 @@ namespace Take_Time_BangPhra.Payment
                         SUM(CASE WHEN Status = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedCount
                     FROM Payment_History";
 
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
@@ -185,7 +184,7 @@ namespace Take_Time_BangPhra.Payment
                 };
 
                 string query = "SELECT SlipFileURL FROM Payment_Slips WHERE ID = @slipId";
-                DataTable dt = code2Instance.DatabaseQuerySafe(connectionString, query, parameters);
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
