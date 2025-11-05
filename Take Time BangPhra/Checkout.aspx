@@ -1,4 +1,4 @@
-<%@ Page Title="เช็คเอาท์" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Checkout.aspx.cs" Inherits="Take_Time_BangPhra.Checkout" %>
+﻿<%@ Page Title="เช็คเอาท์" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Checkout.aspx.cs" Inherits="Take_Time_BangPhra.Checkout" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style>

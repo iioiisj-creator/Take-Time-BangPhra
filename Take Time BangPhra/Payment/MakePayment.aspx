@@ -1,4 +1,4 @@
-<%@ Page Title="ชำระเงินเพิ่ม" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MakePayment.aspx.cs" Inherits="Take_Time_BangPhra.Payment.MakePayment" %>
+﻿<%@ Page Title="ชำระเงินเพิ่ม" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MakePayment.aspx.cs" Inherits="Take_Time_BangPhra.Payment.MakePayment" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style>
