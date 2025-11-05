@@ -375,25 +375,21 @@
             }
             tableHTML += '</tbody></table>';
 
-            // เพิ่มตารางแนวนอนสำหรับกรอกค่าก่อน Footer
+            // เพิ่มข้อความ 3 อัน เรียงกัน เว้นระยะ 10%, 30%, 50%
             var summaryTableHTML = `
-                <div style="margin-top: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #000; margin-bottom: 10px;">
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
-                                <strong>ยอดเงินที่โอนเข้าบัญชีบริษัท:</strong><br>
-                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
-                            </td>
-                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
-                                <strong>ยอดเงินที่โอนเข้าบัญชีเงินสด:</strong><br>
-                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
-                            </td>
-                            <td style="border: 1px solid #000; padding: 1px; text-align: left; width: 33.33%; vertical-align: top;">
-                                <strong>เงินสด:</strong><br>
-                                <div style="height: 10px; border-bottom: 1px dashed #ccc; margin-top: 1px;">&nbsp;</div>
-                            </td>
-                        </tr>
-                    </table>
+                <div style="margin-top: 20px; font-size: 11px;">
+                    <div style="margin-left: 10%; margin-bottom: 15px;">
+                        <strong>ยอดเงินที่โอนเข้าบัญชีบริษัท:</strong>
+                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                    </div>
+                    <div style="margin-left: 30%; margin-bottom: 15px;">
+                        <strong>ยอดเงินที่โอนเข้าบัญชีเงินสด:</strong>
+                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                    </div>
+                    <div style="margin-left: 50%; margin-bottom: 15px;">
+                        <strong>เงินสด:</strong>
+                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                    </div>
                 </div>
             `;
 
