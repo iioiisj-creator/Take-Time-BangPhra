@@ -169,7 +169,7 @@ namespace Take_Time_BangPhra.Payment
                 }
 
                 // Get admin ID from session (if available)
-                int? adminId = Session["AdminID"] != null ? (int?)Convert.ToInt32(Session["AdminID"]) : null;
+                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
 
                 // Process payment
                 var result = paymentService.ProcessAdditionalPayment(

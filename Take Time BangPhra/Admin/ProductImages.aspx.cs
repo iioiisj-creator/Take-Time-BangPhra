@@ -16,9 +16,9 @@ namespace Take_Time_BangPhra.Admin
         protected void Page_Load(object sender, EventArgs e)
         {
             // Check admin authentication
-            if (Session["AdminID"] == null)
+            if (Session["UserID"] == null || Session["permission"]?.ToString() != "True")
             {
-                Response.Redirect("~/Login.aspx");
+                Response.Redirect("~/Admin/Login.aspx");
                 return;
             }
 
@@ -193,7 +193,7 @@ namespace Take_Time_BangPhra.Admin
                 }
 
                 // Get admin ID
-                int adminId = Convert.ToInt32(Session["AdminID"]);
+                int adminId = Convert.ToInt32(Session["UserID"]);
 
                 // Upload image via ProductService
                 long imageId = productService.UploadProductImage(
