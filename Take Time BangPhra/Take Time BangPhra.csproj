@@ -612,9 +612,14 @@
     <Compile Include="Class\CodeHelper.cs" />
     <Compile Include="Class\CustomerService.cs" />
     <Compile Include="Class\AccountingService.cs" />
+    <Compile Include="Class\CheckoutService.cs" />
     <Compile Include="Class\DatabaseHelper.cs" />
     <Compile Include="Class\EmailService.cs" />
     <Compile Include="Class\ExcelCreator.cs" />
+    <Compile Include="Class\PaymentDataAccess.cs" />
+    <Compile Include="Class\PaymentService.cs" />
+    <Compile Include="Class\ProductDataAccess.cs" />
+    <Compile Include="Class\ProductService.cs" />
     <Compile Include="Class\ReceiptService.cs" />
     <Compile Include="Class\ReservationDataAccess.cs" />
     <Compile Include="Class\ReservationService.cs" />
