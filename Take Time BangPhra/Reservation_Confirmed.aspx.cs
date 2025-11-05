@@ -31,6 +31,16 @@ namespace Take_Time_BangPhra
                     "inner join Accommodation on Accommodation.ID = Accommodation_ID " +
                     "where Reservation.ID = " + id + " AND Customer_MobilePhone = '" + check + "' order by Accommodation.OrderID asc");
 
+                // 🔍 Check if data exists
+                if (dtReservationAccommodation == null || dtReservationAccommodation.Rows.Count == 0)
+                {
+                    Label10.Text = "ไม่พบข้อมูลการจอง - กรุณาตรวจสอบรหัสการจองและเบอร์โทรศัพท์";
+                    code2.Logs(conn, "Reservation_Confirmed - No Data",
+                        $"ID: {id}, Check: {check} - No reservation data found",
+                        "SYSTEM");
+                    return;
+                }
+
                 // Load payment slips from Payment_History
                 LoadPaymentSlips(id, check);
 
@@ -112,8 +122,16 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                Label10.Text = "ยืนยันการจองผิดพลาด";
-                // You might want to log the exception
+                Label10.Text = "ยืนยันการจองผิดพลาด: " + ex.Message;
+
+                // Log detailed error for debugging
+                code2.Logs(conn, "Reservation_Confirmed Error",
+                    $"ID: {Request.QueryString["id"]}, Check: {Request.QueryString["check"]}, Error: {ex.Message}, StackTrace: {ex.StackTrace}",
+                    "SYSTEM");
+
+                // Show detailed error in development
+                System.Diagnostics.Debug.WriteLine($"Reservation_Confirmed Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
             }
         }
 
