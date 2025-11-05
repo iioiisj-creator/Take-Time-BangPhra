@@ -128,10 +128,18 @@ namespace Take_Time_BangPhra
 
                 dtReservation.Rows[i]["Items"] = Items.Trim();
 
-                // Calculate remaining amount
-                int totalPrice = Convert.ToInt32(dtReservation.Rows[i]["TotalPrice"]);
-                int deposit = Convert.ToInt32(dtReservation.Rows[i]["Deposit"]);
-                dtReservation.Rows[i]["Remain"] = (totalPrice - deposit).ToString();
+                // Calculate remaining amount using Payment_History (via SQL function)
+                int reservationId = Convert.ToInt32(dtReservation.Rows[i]["ID"]);
+                DataTable dtRemain = DatabaseQuery(conn,
+                    "SELECT dbo.fn_GetRemainingBalance(@ReservationId) as RemainingBalance",
+                    new SqlParameter("@ReservationId", reservationId));
+
+                decimal remainingBalance = 0;
+                if (dtRemain.Rows.Count > 0 && dtRemain.Rows[0]["RemainingBalance"] != DBNull.Value)
+                {
+                    remainingBalance = Convert.ToDecimal(dtRemain.Rows[0]["RemainingBalance"]);
+                }
+                dtReservation.Rows[i]["Remain"] = remainingBalance.ToString("N0");
 
                 // Get reservation count
                 string mobilePhone = dtReservation.Rows[i]["Customer_MobilePhone"].ToString();
@@ -402,11 +410,12 @@ namespace Take_Time_BangPhra
             try
             {
                 DataTable dt = DatabaseQuery(conn,
-                    @"SELECT r.ID, r.Customer_MobilePhone, c.Name, c.NickName, 
-                      ra.Accommodation_ID, a.AccomName, r.CheckinDate, r.CheckoutDate, 
-                      r.StayDays, r.TotalPrice, r.Deposit
+                    @"SELECT r.ID, r.Customer_MobilePhone, c.Name, c.NickName,
+                      ra.Accommodation_ID, a.AccomName, r.CheckinDate, r.CheckoutDate,
+                      r.StayDays, r.TotalPrice,
+                      dbo.fn_GetTotalPaid(r.ID) AS TotalPaid
                       FROM [Reservation] r
-                      INNER JOIN Reservation_Accommodation ra ON r.ID = ra.Reservation_ID 
+                      INNER JOIN Reservation_Accommodation ra ON r.ID = ra.Reservation_ID
                       INNER JOIN Accommodation a ON a.ID = ra.Accommodation_ID
                       INNER JOIN Customer c ON c.MobilePhone = r.Customer_MobilePhone
                       WHERE r.ID = @ReservationId",
@@ -420,7 +429,7 @@ namespace Take_Time_BangPhra
                     DateTime checkoutDate = Convert.ToDateTime(dt.Rows[0]["CheckoutDate"]);
                     int stayDays = Convert.ToInt32(dt.Rows[0]["StayDays"]);
                     decimal totalPrice = Convert.ToDecimal(dt.Rows[0]["TotalPrice"]);
-                    decimal deposit = Convert.ToDecimal(dt.Rows[0]["Deposit"]);
+                    decimal deposit = Convert.ToDecimal(dt.Rows[0]["TotalPaid"]);
 
                     StringBuilder roomDetails = new StringBuilder();
                     foreach (DataRow row in dt.Rows)

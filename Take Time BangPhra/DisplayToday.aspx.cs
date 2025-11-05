@@ -72,7 +72,18 @@ namespace Take_Time_BangPhra
                     }
                 }
                 dtReservation.Rows[i]["Items"] = Items;
-                dtReservation.Rows[i]["Remain"] = (Convert.ToInt32(dtReservation.Rows[i]["TotalPrice"].ToString()) - Convert.ToInt32(dtReservation.Rows[i]["Deposit"].ToString())).ToString();
+
+                // Calculate remaining amount using Payment_History (via SQL function)
+                int reservationId = Convert.ToInt32(dtReservation.Rows[i]["ID"]);
+                DataTable dtRemain = code.DatabaseQuery(conn,
+                    "SELECT dbo.fn_GetRemainingBalance(" + reservationId + ") as RemainingBalance");
+
+                decimal remainingBalance = 0;
+                if (dtRemain.Rows.Count > 0 && dtRemain.Rows[0]["RemainingBalance"] != DBNull.Value)
+                {
+                    remainingBalance = Convert.ToDecimal(dtRemain.Rows[0]["RemainingBalance"]);
+                }
+                dtReservation.Rows[i]["Remain"] = remainingBalance.ToString("N0");
             }
 
             DataTable dtAccommodation = code.DatabaseQuery(conn, "Select * From Accommodation Where Status = 1 order by OrderID asc");
