@@ -298,13 +298,19 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetAllReceipts(DateTime startDate, DateTime endDate, string status)
         {
             string query = @"
-                SELECT ar.*, c.Name as CustomerName, 'รายได้' as Category
+                SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
+                       ar.Total_Amount, ar.Vat, ar.IsDeposit, ar.UseDeposit,
+                       ar.Status, ar.Remark,
+                       c.Name as CustomerName,
+                       r.Customer_MobilePhone,
+                       a.Username as Created_By
                 FROM Account_Receipt ar
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
+                LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
                 WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
                   AND ar.Status LIKE @Status
-                ORDER BY ar.Created_Date DESC";
+                ORDER BY ar.ID ASC";
 
             var parameters = new Dictionary<string, object>
             {
@@ -402,20 +408,25 @@ namespace Take_Time_BangPhra.Account
                 // Detail records (show all including Cancel)
                 var dt = GetAllReceipts(startDate, endDate, "%");
                 csv.AppendLine("รายละเอียดเอกสาร");
-                csv.AppendLine("เลขที่เอกสาร,วันที่,ลูกค้า,วิธีชำระ,จำนวนเงิน,VAT,สถานะ,หมวด");
+                csv.AppendLine("เลขที่เอกสาร,รหัสจอง,วันที่,ชื่อลูกค้า,เบอร์โทร,วิธีชำระ,ยอดรวม,VAT,มัดจำ,ใช้มัดจำ,สถานะ,หมายเหตุ,ผู้สร้าง");
 
                 foreach (DataRow row in dt.Rows)
                 {
                     string docId = row["ID"]?.ToString() ?? "";
-                    string date = row["Created_Date"] != DBNull.Value ? Convert.ToDateTime(row["Created_Date"]).ToString("dd/MM/yyyy") : "";
+                    string reservationId = row["Reservation_ID"]?.ToString() ?? "";
+                    string date = row["Created_Date"] != DBNull.Value ? Convert.ToDateTime(row["Created_Date"]).ToString("dd/MM/yyyy HH:mm") : "";
                     string customer = row["CustomerName"]?.ToString() ?? "-";
+                    string phone = row["Customer_MobilePhone"]?.ToString() ?? "";
                     string paidType = row["Paid_Type"]?.ToString() ?? "";
                     string amount = row["Total_Amount"] != DBNull.Value ? Convert.ToDecimal(row["Total_Amount"]).ToString("N2") : "0.00";
                     string vat = row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]).ToString("N2") : "0.00";
+                    string isDeposit = row["IsDeposit"]?.ToString() ?? "";
+                    string useDeposit = row["UseDeposit"]?.ToString() ?? "";
                     string status = row["Status"]?.ToString() ?? "";
-                    string category = DetermineCategory(row);
+                    string remark = row["Remark"]?.ToString() ?? "";
+                    string createdBy = row["Created_By"]?.ToString() ?? "";
 
-                    csv.AppendLine($"{docId},{date},{customer},{paidType},{amount},{vat},{status},{category}");
+                    csv.AppendLine($"{docId},{reservationId},{date},{customer},{phone},{paidType},{amount},{vat},{isDeposit},{useDeposit},{status},{remark},{createdBy}");
                 }
 
                 // Send file to browser
@@ -430,20 +441,6 @@ namespace Take_Time_BangPhra.Account
             catch (Exception ex)
             {
                 ShowError("เกิดข้อผิดพลาดในการ export: " + ex.Message);
-            }
-        }
-
-        private string DetermineCategory(DataRow row)
-        {
-            // Determine which category this receipt belongs to
-            if (row["Reservation_ID"] != DBNull.Value && Convert.ToInt32(row["Reservation_ID"]) > 0)
-            {
-                return "จองพัก";
-            }
-            else
-            {
-                // Check product type if available
-                return "อื่นๆ";
             }
         }
 
@@ -526,8 +523,8 @@ namespace Take_Time_BangPhra.Account
         {
             try
             {
-                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[9].Text; // Status column
-                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[13].Text; // Status column (now at index 13)
+                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column (at index 3)
                 string docType = docNum.Remove(3, 9);
 
                 string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
