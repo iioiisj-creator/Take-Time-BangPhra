@@ -15,7 +15,6 @@ namespace Take_Time_BangPhra.Account
         protected global::System.Web.UI.WebControls.TextBox txtEndDate;
         protected global::System.Web.UI.WebControls.DropDownList ddlMonth;
         protected global::System.Web.UI.WebControls.DropDownList ddlYear;
-        protected global::System.Web.UI.WebControls.DropDownList ddlStatus;
         protected global::System.Web.UI.WebControls.Button btnSearch;
         protected global::System.Web.UI.WebControls.Button btnExport;
 

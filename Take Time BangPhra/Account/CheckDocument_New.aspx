@@ -240,7 +240,10 @@
                 <span>ถึง</span>
                 <asp:TextBox ID="txtEndDate" runat="server" CssClass="search-input"
                     placeholder="2025-01-31" Width="150px"></asp:TextBox>
-                <span style="margin-left: 20px;">หรือเลือกเดือน:</span>
+            </div>
+
+            <div class="search-row">
+                <span class="search-label">หรือเลือกเดือน:</span>
                 <asp:DropDownList ID="ddlMonth" runat="server" CssClass="search-input" Width="200px">
                     <asp:ListItem Value="">-- เลือกเดือน --</asp:ListItem>
                     <asp:ListItem Value="1">มกราคม</asp:ListItem>
@@ -261,12 +264,10 @@
             </div>
 
             <div class="search-row">
-                <span class="search-label">สถานะเอกสาร:</span>
-                <asp:DropDownList ID="ddlStatus" runat="server" CssClass="search-input" Width="200px">
-                    <asp:ListItem Value="Normal" Selected="True">ปกติ</asp:ListItem>
-                    <asp:ListItem Value="%">ทั้งหมด (รวมยกเลิก)</asp:ListItem>
-                    <asp:ListItem Value="Cancel">ยกเลิกเท่านั้น</asp:ListItem>
-                </asp:DropDownList>
+                <span style="color: #7f8c8d; font-size: 14px;">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>หมายเหตุ:</strong> ยอดรวมคำนวณเฉพาะเอกสารปกติ (ไม่รวมที่ยกเลิก) / ตารางแสดงทั้งหมดรวมเอกสารที่ยกเลิก
+                </span>
             </div>
 
             <div class="search-row">
@@ -377,13 +378,18 @@
                     <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="View" ShowSelectButton="True" />
                     <asp:ButtonField ButtonType="Button" CommandName="edit" Text="แก้ไข" HeaderText="แก้ไข" />
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />
-                    <asp:BoundField DataField="Created_Date" HeaderText="วันที่" DataFormatString="{0:dd/MM/yyyy}" />
-                    <asp:BoundField DataField="CustomerName" HeaderText="ลูกค้า" />
+                    <asp:BoundField DataField="Reservation_ID" HeaderText="รหัสจอง" />
+                    <asp:BoundField DataField="Created_Date" HeaderText="วันที่สร้าง" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
+                    <asp:BoundField DataField="CustomerName" HeaderText="ชื่อลูกค้า" />
+                    <asp:BoundField DataField="Customer_MobilePhone" HeaderText="เบอร์โทร" />
                     <asp:BoundField DataField="Paid_Type" HeaderText="วิธีชำระ" />
-                    <asp:BoundField DataField="Total_Amount" HeaderText="จำนวนเงิน" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
+                    <asp:BoundField DataField="Total_Amount" HeaderText="ยอดรวม" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
                     <asp:BoundField DataField="Vat" HeaderText="VAT" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
+                    <asp:BoundField DataField="IsDeposit" HeaderText="มัดจำ" />
+                    <asp:BoundField DataField="UseDeposit" HeaderText="ใช้มัดจำ" />
                     <asp:BoundField DataField="Status" HeaderText="สถานะ" />
-                    <asp:BoundField DataField="Category" HeaderText="หมวด" />
+                    <asp:BoundField DataField="Remark" HeaderText="หมายเหตุ" />
+                    <asp:BoundField DataField="Created_By" HeaderText="ผู้สร้าง" />
                 </Columns>
             </asp:GridView>
         </div>
