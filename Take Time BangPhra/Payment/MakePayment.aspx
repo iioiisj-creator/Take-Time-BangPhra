@@ -265,11 +265,8 @@
 
             <div class="form-group">
                 <label class="form-label">วิธีการชำระเงิน <span style="color: red;">*</span></label>
-                <asp:DropDownList ID="ddlPaymentMethod" runat="server" CssClass="form-control">
+                <asp:DropDownList ID="ddlPaymentMethod" runat="server" CssClass="form-control" DataTextField="Paid_How" DataValueField="ID">
                     <asp:ListItem Value="">-- เลือกวิธีการชำระ --</asp:ListItem>
-                    <asp:ListItem Value="โอนเงิน">โอนเงิน</asp:ListItem>
-                    <asp:ListItem Value="เงินสด">เงินสด</asp:ListItem>
-                    <asp:ListItem Value="บัตรเครดิต">บัตรเครดิต</asp:ListItem>
                 </asp:DropDownList>
                 <asp:RequiredFieldValidator ID="rfvPaymentMethod" runat="server" ControlToValidate="ddlPaymentMethod"
                     InitialValue="" ErrorMessage="กรุณาเลือกวิธีการชำระเงิน" ForeColor="Red" Display="Dynamic"></asp:RequiredFieldValidator>

@@ -20,8 +20,30 @@ namespace Take_Time_BangPhra.Payment
 
             if (!IsPostBack)
             {
+                LoadPaymentMethods();
                 LoadReservationData();
                 LoadPaymentHistory();
+            }
+        }
+
+        private void LoadPaymentMethods()
+        {
+            try
+            {
+                string query = @"SELECT ID, Paid_How FROM Account_Paid_How WHERE Status = 1 ORDER BY ID";
+                DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, null);
+
+                ddlPaymentMethod.DataSource = dt;
+                ddlPaymentMethod.DataTextField = "Paid_How";
+                ddlPaymentMethod.DataValueField = "ID";
+                ddlPaymentMethod.DataBind();
+
+                // Add default item at the beginning
+                ddlPaymentMethod.Items.Insert(0, new ListItem("-- เลือกวิธีการชำระ --", ""));
+            }
+            catch (Exception ex)
+            {
+                ShowError("ไม่สามารถโหลดวิธีการชำระเงินได้: " + ex.Message);
             }
         }
 
