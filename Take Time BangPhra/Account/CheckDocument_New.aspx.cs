@@ -300,9 +300,10 @@ namespace Take_Time_BangPhra.Account
             string query = @"
                 SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
                        ar.Total_Amount, ar.Vat, ar.IsDeposit, ar.UseDeposit,
-                       ar.Status, ar.Remark,
-                       c.Name as CustomerName,
+                       ar.Status,
+                       c.FullName as CustomerName,
                        r.Customer_MobilePhone,
+                       r.Remark,
                        a.Username as Created_By
                 FROM Account_Receipt ar
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
