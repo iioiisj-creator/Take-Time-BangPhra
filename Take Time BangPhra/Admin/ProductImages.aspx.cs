@@ -196,7 +196,7 @@ namespace Take_Time_BangPhra.Admin
                 int adminId = Convert.ToInt32(Session["AdminID"]);
 
                 // Upload image via ProductService
-                var result = productService.UploadProductImage(
+                long imageId = productService.UploadProductImage(
                     productType,
                     productId,
                     imageFile,
@@ -205,10 +205,10 @@ namespace Take_Time_BangPhra.Admin
                     adminId
                 );
 
-                if (result.Success)
+                if (imageId > 0)
                 {
                     ShowSuccess($"อัพโหลดรูปภาพสำเร็จ!<br/>" +
-                               $"ชื่อไฟล์: {result.FileName}<br/>" +
+                               $"ID รูปภาพ: {imageId}<br/>" +
                                $"ขนาดไฟล์: {(imageFile.ContentLength / 1024.0):N2} KB");
 
                     // Reload product lists
@@ -224,7 +224,7 @@ namespace Take_Time_BangPhra.Admin
                 }
                 else
                 {
-                    ShowError("การอัพโหลดล้มเหลว: " + result.Message);
+                    ShowError("การอัพโหลดล้มเหลว");
                 }
             }
             catch (Exception ex)

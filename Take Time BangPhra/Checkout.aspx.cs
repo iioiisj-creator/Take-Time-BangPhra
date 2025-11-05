@@ -207,29 +207,30 @@ namespace Take_Time_BangPhra
 
             try
             {
-                // Collect checklist data
-                var checklist = new System.Collections.Generic.Dictionary<string, bool>
-                {
-                    { "RoomCondition", chkRoomCondition.Checked },
-                    { "MissingItems", chkMissingItems.Checked },
-                    { "KeyReturn", chkKeyReturn.Checked },
-                    { "Cleaning", chkCleaning.Checked },
-                    { "Electrical", chkElectrical.Checked },
-                    { "PersonalItems", chkPersonalItems.Checked }
-                };
-
                 string notes = txtNotes.Text.Trim();
 
-                // Get admin ID from session (if available)
-                int? adminId = Session["AdminID"] != null ? (int?)Convert.ToInt32(Session["AdminID"]) : null;
+                // Get admin ID from session (required)
+                if (Session["AdminID"] == null)
+                {
+                    ShowError("ต้องเข้าสู่ระบบด้วยบัญชี Admin เพื่อทำการเช็คเอาท์");
+                    return;
+                }
+                int adminId = Convert.ToInt32(Session["AdminID"]);
 
-                // Process checkout
+                // Process checkout with checklist data
                 var result = checkoutService.ProcessCheckout(
                     reservationId,
-                    checklist,
-                    rating,
-                    notes,
-                    adminId
+                    adminId,
+                    roomDamage: !chkRoomCondition.Checked,  // ไม่ผ่าน = มีความเสียหาย
+                    damageDescription: !chkRoomCondition.Checked ? "ตรวจพบความเสียหาย" : null,
+                    damageCharge: 0,
+                    missingItems: !chkMissingItems.Checked, // ไม่ผ่าน = ของหาย
+                    missingItemsDescription: !chkMissingItems.Checked ? "อุปกรณ์ไม่ครบ" : null,
+                    missingItemsCharge: 0,
+                    keyReturned: chkKeyReturn.Checked,
+                    cleaningStatus: chkCleaning.Checked ? "GOOD" : "DIRTY",
+                    guestSatisfaction: (byte)rating,
+                    notes: notes
                 );
 
                 if (result.Success)
