@@ -21,6 +21,7 @@ namespace Take_Time_BangPhra.Account.Report
     public partial class Receipt : System.Web.UI.Page
     {
         _Default code = new _Default();
+        code code2 = new code();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         Reservation rv = new Reservation();
 
@@ -420,6 +421,90 @@ namespace Take_Time_BangPhra.Account.Report
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt_Detail] ([Number],[Receipt_ID],[ProductType_ID],[Product_ID],[Product_Data],[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount]) VALUES (" + dtDetail.Rows[i]["Number"].ToString() + ",'" + docNum + "','" + dtDetail.Rows[i]["ProductType_ID"].ToString() + "',0,N'" + dtDetail.Rows[i]["Product_Data"].ToString() + "'," + dtDetail.Rows[i]["Product_Amount"].ToString() + ",N'" + dtDetail.Rows[i]["Product_Unit"].ToString() + "'," + dtDetail.Rows[i]["Price_PerPeice"].ToString() + "," + dtDetail.Rows[i]["Price_Amount"].ToString() + ")");
 
                 }
+
+                // 🆕 Record payment to Payment_History when receipt is created
+                string actualReservationId = reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text;
+                if (!string.IsNullOrEmpty(actualReservationId) && actualReservationId != "0")
+                {
+                    try
+                    {
+                        string paymentType = CheckBox1.Checked ? "DEPOSIT" : "FULL";
+                        string paymentMethod = DropDownList2.SelectedItem?.Text ?? "CASH";
+                        string paymentNotes = "ออกใบกำกับภาษีแยก - " + docNum;
+                        decimal totalAmount = Convert.ToDecimal(TextBox6.Text);
+
+                        int? adminId = null;
+                        if (Session["UserID"] != null)
+                        {
+                            adminId = Convert.ToInt32(Session["UserID"]);
+                        }
+
+                        // Get customer phone from reservation
+                        string customerPhone = "";
+                        try
+                        {
+                            DataTable dtPhone = code.DatabaseQuery(conn,
+                                "SELECT Customer_MobilePhone FROM Reservation WHERE ID = '" + actualReservationId + "'");
+                            if (dtPhone.Rows.Count > 0)
+                            {
+                                customerPhone = dtPhone.Rows[0]["Customer_MobilePhone"].ToString();
+                            }
+                        }
+                        catch { }
+
+                        string insertPaymentQuery = @"
+                            INSERT INTO [dbo].[Payment_History] (
+                                Reservation_ID,
+                                PaymentDate,
+                                PaymentAmount,
+                                PaymentType,
+                                PaymentMethod,
+                                Receipt_ID,
+                                ProcessedBy_AdminID,
+                                PaidBy_CustomerPhone,
+                                Status,
+                                Notes,
+                                CreatedDate,
+                                UpdatedDate
+                            ) VALUES (
+                                @ReservationId,
+                                @PaymentDate,
+                                @PaymentAmount,
+                                @PaymentType,
+                                @PaymentMethod,
+                                @ReceiptId,
+                                @AdminId,
+                                @CustomerPhone,
+                                'COMPLETED',
+                                @Notes,
+                                GETDATE(),
+                                GETDATE()
+                            )";
+
+                        var paymentParams = new Dictionary<string, object>
+                        {
+                            { "@ReservationId", actualReservationId },
+                            { "@PaymentDate", Convert.ToDateTime(TextBox8.Text) },
+                            { "@PaymentAmount", totalAmount },
+                            { "@PaymentType", paymentType },
+                            { "@PaymentMethod", paymentMethod },
+                            { "@ReceiptId", docNum },
+                            { "@AdminId", adminId ?? (object)DBNull.Value },
+                            { "@CustomerPhone", customerPhone },
+                            { "@Notes", paymentNotes }
+                        };
+
+                        code2.DatabaseInsertSafe(conn, insertPaymentQuery, paymentParams);
+                        System.Diagnostics.Debug.WriteLine($"Created Payment_History for Receipt: {docNum}");
+                    }
+                    catch (Exception ex)
+                    {
+                        code2.Logs(conn, "Payment_History Insert Error (Account/Receipt)",
+                            ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                        // Don't fail receipt creation if payment history fails
+                    }
+                }
+
                 string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString();
                 try
                 {
