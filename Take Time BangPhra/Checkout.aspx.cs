@@ -7,7 +7,7 @@ namespace Take_Time_BangPhra
 {
     public partial class Checkout : System.Web.UI.Page
     {
-        private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
+        private readonly string connectionString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         private CheckoutService checkoutService;
         private PaymentDataAccess paymentDataAccess;
         private code codeInstance = new code();

@@ -8,7 +8,7 @@ namespace Take_Time_BangPhra.Payment
 {
     public partial class MakePayment : System.Web.UI.Page
     {
-        private readonly string connectionString = ConfigurationManager.ConnectionStrings["ATATB"].ConnectionString;
+        private readonly string connectionString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         private PaymentService paymentService;
         private PaymentDataAccess paymentDataAccess;
         private code codeInstance = new code();
