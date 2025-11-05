@@ -114,6 +114,24 @@ namespace Take_Time_BangPhra
         protected global::System.Web.UI.WebControls.Label Label13;
 
         /// <summary>
+        /// lblSlipCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblSlipCount;
+
+        /// <summary>
+        /// rptPaymentSlips control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptPaymentSlips;
+
+        /// <summary>
         /// Image1 control.
         /// </summary>
         /// <remarks>

@@ -396,7 +396,38 @@
                 <!-- Slip Image -->
                 <div class="slip-card">
                     <h3>📷 สลิปการโอนเงิน</h3>
-                    <asp:Image ID="Image1" runat="server" CssClass="slip-image" />
+                    <asp:Label ID="lblSlipCount" runat="server"
+                        style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 10px;"></asp:Label>
+
+                    <asp:Repeater ID="rptPaymentSlips" runat="server">
+                        <ItemTemplate>
+                            <div style="margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <div style="margin-bottom: 5px;">
+                                    <strong>📅 วันที่:</strong> <%# Eval("PaymentDate", "{0:dd/MM/yyyy HH:mm}") %>
+                                </div>
+                                <div style="margin-bottom: 5px;">
+                                    <strong>💰 จำนวน:</strong> <%# Eval("PaymentAmount", "{0:N2}") %> บาท
+                                </div>
+                                <div style="margin-bottom: 5px;">
+                                    <strong>📝 ประเภท:</strong> <%# Eval("PaymentType") %>
+                                </div>
+                                <div>
+                                    <a href='<%# ResolveUrl("~/") + Eval("SlipFileURL") %>'
+                                       target="_blank"
+                                       style="color: #1976d2; text-decoration: none; font-weight: bold;">
+                                        🔗 ดูสลิปการโอนเงิน
+                                    </a>
+                                </div>
+                            </div>
+                        </ItemTemplate>
+                        <FooterTemplate>
+                            <div style="color: #999; font-style: italic; margin-top: 10px;">
+                                <%# (((System.Web.UI.WebControls.Repeater)Container.Parent).Items.Count == 0) ? "ไม่พบสลิปการโอนเงิน" : "" %>
+                            </div>
+                        </FooterTemplate>
+                    </asp:Repeater>
+
+                    <asp:Image ID="Image1" runat="server" CssClass="slip-image" Visible="false" />
                     <p style="color: #666; margin: 5px 0 0 0; font-size: 0.7em;">
                         <em>หลักฐานการชำระเงิน</em>
                     </p>

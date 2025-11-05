@@ -1,4 +1,4 @@
-<%@ Page Title="ประวัติการชำระเงิน" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PaymentHistory.aspx.cs" Inherits="Take_Time_BangPhra.Payment.PaymentHistory" %>
+﻿<%@ Page Title="ประวัติการชำระเงิน" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PaymentHistory.aspx.cs" Inherits="Take_Time_BangPhra.Payment.PaymentHistory" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style>
