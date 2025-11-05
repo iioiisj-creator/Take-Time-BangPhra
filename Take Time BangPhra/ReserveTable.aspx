@@ -375,20 +375,20 @@
             }
             tableHTML += '</tbody></table>';
 
-            // เพิ่มข้อความ 3 อัน เรียงกัน เว้นระยะ 10%, 30%, 50%
+            // เพิ่มข้อความ 3 อัน ในบรรทัดเดียวกัน กระจายเต็มความกว้าง
             var summaryTableHTML = `
-                <div style="margin-top: 20px; font-size: 11px;">
-                    <div style="margin-left: 10%; margin-bottom: 15px;">
+                <div style="margin-top: 20px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1; text-align: left;">
                         <strong>ยอดเงินที่โอนเข้าบัญชีบริษัท:</strong>
-                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                        <span style="display: inline-block; width: 80px; border-bottom: 1px dashed #666; margin-left: 5px;">&nbsp;</span>
                     </div>
-                    <div style="margin-left: 30%; margin-bottom: 15px;">
+                    <div style="flex: 1; text-align: center;">
                         <strong>ยอดเงินที่โอนเข้าบัญชีเงินสด:</strong>
-                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                        <span style="display: inline-block; width: 80px; border-bottom: 1px dashed #666; margin-left: 5px;">&nbsp;</span>
                     </div>
-                    <div style="margin-left: 50%; margin-bottom: 15px;">
+                    <div style="flex: 1; text-align: right;">
                         <strong>เงินสด:</strong>
-                        <span style="display: inline-block; width: 150px; border-bottom: 1px dashed #666; margin-left: 10px;">&nbsp;</span>
+                        <span style="display: inline-block; width: 80px; border-bottom: 1px dashed #666; margin-left: 5px;">&nbsp;</span>
                     </div>
                 </div>
             `;
