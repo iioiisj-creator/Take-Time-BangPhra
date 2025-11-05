@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -351,13 +353,101 @@ namespace Take_Time_BangPhra.Account
 
         protected void btnExport_Click(object sender, EventArgs e)
         {
-            // TODO: Implement CSV export
-            ShowError("ฟังก์ชั่น Export CSV กำลังพัฒนา");
+            try
+            {
+                DateTime startDate, endDate;
+
+                // Determine date range
+                if (ddlMonth.SelectedIndex > 0 && !string.IsNullOrEmpty(ddlYear.SelectedValue))
+                {
+                    int month = Convert.ToInt32(ddlMonth.SelectedValue);
+                    int year = Convert.ToInt32(ddlYear.SelectedValue);
+                    startDate = new DateTime(year, month, 1);
+                    endDate = startDate.AddMonths(1).AddDays(-1);
+                }
+                else
+                {
+                    startDate = Convert.ToDateTime(txtStartDate.Text);
+                    endDate = Convert.ToDateTime(txtEndDate.Text);
+                }
+
+                // Create CSV content
+                StringBuilder csv = new StringBuilder();
+
+                // Add BOM for UTF-8 Excel compatibility
+                csv.Append("\uFEFF");
+
+                // Header
+                csv.AppendLine("สรุปรายได้ตามหมวด");
+                csv.AppendLine($"ช่วงวันที่:,{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}");
+                csv.AppendLine($"สถานะ:,{ddlStatus.SelectedItem.Text}");
+                csv.AppendLine($"วันที่ออกรายงาน:,{DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+                csv.AppendLine();
+
+                // Summary table
+                csv.AppendLine("หมวดรายได้,เงินสด,โอนกสิกร,โอนกรุงไทย,เงินกรรมการ,รวม");
+                csv.AppendLine($"1. จองพัก (เช็คอินในช่วง),{lblCat1Cash.Text},{lblCat1KBANK.Text},{lblCat1KTB.Text},{lblCat1Director.Text},{lblCat1Total.Text}");
+                csv.AppendLine($"2. จองพัก (โอนในช่วง),{lblCat2Cash.Text},{lblCat2KBANK.Text},{lblCat2KTB.Text},{lblCat2Director.Text},{lblCat2Total.Text}");
+                csv.AppendLine($"3. ขายสินค้า,{lblCat3Cash.Text},{lblCat3KBANK.Text},{lblCat3KTB.Text},{lblCat3Director.Text},{lblCat3Total.Text}");
+                csv.AppendLine($"4. อื่นๆ,{lblCat4Cash.Text},{lblCat4KBANK.Text},{lblCat4KTB.Text},{lblCat4Director.Text},{lblCat4Total.Text}");
+                csv.AppendLine($"รวมทั้งหมด,{lblTotalCash.Text},{lblTotalKBANK.Text},{lblTotalKTB.Text},{lblTotalDirector.Text},{lblGrandTotal.Text}");
+                csv.AppendLine();
+
+                // Additional info
+                csv.AppendLine($"จำนวนเอกสาร:,{lblDocCount.Text}");
+                csv.AppendLine($"ยอดรวม VAT:,{lblTotalVAT.Text}");
+                csv.AppendLine();
+
+                // Detail records
+                var dt = GetAllReceipts(startDate, endDate, ddlStatus.SelectedValue);
+                csv.AppendLine("รายละเอียดเอกสาร");
+                csv.AppendLine("เลขที่เอกสาร,วันที่,ลูกค้า,วิธีชำระ,จำนวนเงิน,VAT,สถานะ,หมวด");
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    string docId = row["ID"]?.ToString() ?? "";
+                    string date = row["Created_Date"] != DBNull.Value ? Convert.ToDateTime(row["Created_Date"]).ToString("dd/MM/yyyy") : "";
+                    string customer = row["CustomerName"]?.ToString() ?? "-";
+                    string paidType = row["Paid_Type"]?.ToString() ?? "";
+                    string amount = row["Total_Amount"] != DBNull.Value ? Convert.ToDecimal(row["Total_Amount"]).ToString("N2") : "0.00";
+                    string vat = row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]).ToString("N2") : "0.00";
+                    string status = row["Status"]?.ToString() ?? "";
+                    string category = DetermineCategory(row);
+
+                    csv.AppendLine($"{docId},{date},{customer},{paidType},{amount},{vat},{status},{category}");
+                }
+
+                // Send file to browser
+                Response.Clear();
+                Response.ContentType = "text/csv";
+                Response.ContentEncoding = Encoding.UTF8;
+                Response.Charset = "UTF-8";
+                Response.AddHeader("Content-Disposition", $"attachment;filename=รายงานรายได้_{startDate:yyyyMMdd}_{endDate:yyyyMMdd}.csv");
+                Response.Write(csv.ToString());
+                Response.End();
+            }
+            catch (Exception ex)
+            {
+                ShowError("เกิดข้อผิดพลาดในการ export: " + ex.Message);
+            }
+        }
+
+        private string DetermineCategory(DataRow row)
+        {
+            // Determine which category this receipt belongs to
+            if (row["Reservation_ID"] != DBNull.Value && Convert.ToInt32(row["Reservation_ID"]) > 0)
+            {
+                return "จองพัก";
+            }
+            else
+            {
+                // Check product type if available
+                return "อื่นๆ";
+            }
         }
 
         private void ShowError(string message)
         {
-            // TODO: Implement error display
             ScriptManager.RegisterStartupScript(this, GetType(), "error", $"alert('{message}');", true);
         }
     }
