@@ -33,10 +33,15 @@ namespace Take_Time_BangPhra
             };
 
             return _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT ph.*, ar.ID as ReceiptNumber, a.Username as ProcessedBy
+                @"SELECT ph.*,
+                         ar.ID as ReceiptNumber,
+                         a.Username as ProcessedBy,
+                         ps.SlipFileURL,
+                         ps.FileName as SlipFileName
                   FROM Payment_History ph
                   LEFT JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
                   LEFT JOIN Admin a ON ph.ProcessedBy_AdminID = a.ID
+                  LEFT JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
                   WHERE ph.Reservation_ID = @reservationId
                   ORDER BY ph.PaymentDate DESC",
                 parameters);
