@@ -30,6 +30,7 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using Take_Time_BangPhra.Account.Report;
 using Google.Apis.Gmail.v1.Data;
+using Take_Time_BangPhra.DataAccess;
 
 namespace Take_Time_BangPhra
 {
@@ -316,7 +317,7 @@ namespace Take_Time_BangPhra
                                 { "@id", id },
                                 { "@phone", check }
                             };
-                            DataTable dtReservation = code.DatabaseQuerySafe(conn,
+                            DataTable dtReservation = code2.DatabaseQuerySafe(conn,
                                 "SELECT * FROM [Reservation] WHERE ID = @id AND Customer_MobilePhone = @phone",
                                 parameters);
 
@@ -829,6 +830,9 @@ namespace Take_Time_BangPhra
                 int deposit = 0;
                 bool IsDeposit = true;
                 DataTable dtReserve = new DataTable();
+
+                // 🔒 SECURITY: Initialize secure data access layer
+                var reservationDA = new ReservationDataAccess(conn);
                 try
                 {
                     dtReserve.Columns.Add("Number");
@@ -4562,7 +4566,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                         var parameters = new Dictionary<string, object> {
                             { "@couponCode", couponCode }
                         };
-                        DataTable dtDiscount = code.DatabaseQuerySafe(conn,
+                        DataTable dtDiscount = code2.DatabaseQuerySafe(conn,
                             "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] WHERE Coupon_Code = @couponCode",
                             parameters);
 
@@ -4614,7 +4618,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                             { "@voucherNumber", couponCode },
                             { "@expiredDate", code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") }
                         };
-                        dtVoucher = code.DatabaseQuerySafe(conn,
+                        dtVoucher = code2.DatabaseQuerySafe(conn,
                             @"SELECT * FROM [Taketime].[dbo].[Voucher]
                               INNER JOIN Voucher_RatePlan_Group ON Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number
                               INNER JOIN Accommodation_RatePlan_Group ON Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID
@@ -4641,7 +4645,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                             var checkParams = new Dictionary<string, object> {
                                 { "@voucherNumber", couponCode }
                             };
-                            DataTable dtVoucherCheck = code.DatabaseQuerySafe(conn,
+                            DataTable dtVoucherCheck = code2.DatabaseQuerySafe(conn,
                                 "SELECT Used_Status, Expired_Date FROM [Taketime].[dbo].[Voucher] WHERE Voucher_Number = @voucherNumber",
                                 checkParams);
 
