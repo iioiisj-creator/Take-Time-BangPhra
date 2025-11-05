@@ -639,7 +639,14 @@
                         </style>
 
                         <asp:GridView ID="gvPaymentHistory" runat="server" CssClass="payment-history-table"
+                            AutoGenerateColumns="False" EmptyDataText="ยังไม่มีประวัติการชำระเงิน"
+                            style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #D7CCC8;">
+                            <HeaderStyle BackColor="#5D4037" ForeColor="White" Font-Bold="True" />
+                            <RowStyle BorderColor="#D7CCC8" BorderWidth="1px" />
+                            <AlternatingRowStyle BackColor="#F5F5F5" />
+=======
                             AutoGenerateColumns="False" EmptyDataText="ยังไม่มีประวัติการชำระเงิน">
+>>>>>>> 25d22976a5167e9b44b509d94fb4e6dfae7b2f97
                             <Columns>
                                 <asp:BoundField DataField="PaymentDate" HeaderText="วันที่ชำระ" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
                                 <asp:BoundField DataField="PaymentAmount" HeaderText="จำนวนเงิน" DataFormatString="{0:N2}" ItemStyle-HorizontalAlign="Right" />
