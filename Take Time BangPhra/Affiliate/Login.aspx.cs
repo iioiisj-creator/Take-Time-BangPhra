@@ -36,8 +36,23 @@ namespace Take_Time_BangPhra.Affiliate
         {
             try
             {
-                DataTable dtUser = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] Where (ID_Number = '"+TextBox1.Text+ "' OR Coupon_Code = '"+TextBox1.Text+ "') and Password = N'" + TextBox2.Text.Replace("'","''")+"'");
-                if(dtUser.Rows.Count >= 0)
+                // 🔒 SECURE: Using parameterized query to prevent SQL Injection
+                // 🐛 FIXED: Changed >= 0 to >= 1 (was allowing everyone to login!)
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@username", TextBox1.Text?.Trim() ?? "" },
+                    { "@password", TextBox2.Text ?? "" }
+                };
+
+                DataTable dtUser = code.DatabaseQuerySafe(conn,
+                    @"SELECT * FROM [Taketime].[dbo].[Affiliate_Member]
+                      WHERE (ID_Number = @username OR Coupon_Code = @username)
+                      AND Password = @password",
+                    parameters);
+
+                // CRITICAL FIX: Changed >= 0 to >= 1
+                // Previous code: if(dtUser.Rows.Count >= 0) was ALWAYS true!
+                if (dtUser.Rows.Count >= 1)
                 {
                     Session["AffiliateID"] = dtUser.Rows[0]["ID_Number"].ToString();
                     code.Logs(conn, "Affiliate-Login-Success", TextBox1.Text, TextBox1.Text);
@@ -49,12 +64,13 @@ namespace Take_Time_BangPhra.Affiliate
                     ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');", true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                // Log the actual error for debugging
+                System.Diagnostics.Trace.TraceError($"Affiliate Login Error: {ex.Message}");
+                code.Logs(conn, "Affiliate-Login-Error", TextBox1.Text + " - " + ex.Message, TextBox1.Text);
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');", true);
             }
-
-
         }
 
         
