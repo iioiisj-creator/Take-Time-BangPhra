@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Configuration;
 
-namespace Take_Time_BangPhra.DataAccess
+namespace Take_Time_BangPhra
 {
     /// <summary>
     /// 🔒 SECURE Data Access Layer for Reservation operations

@@ -30,7 +30,6 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using Take_Time_BangPhra.Account.Report;
 using Google.Apis.Gmail.v1.Data;
-using Take_Time_BangPhra.DataAccess;
 
 namespace Take_Time_BangPhra
 {
@@ -434,7 +433,7 @@ namespace Take_Time_BangPhra
                     Button1.Enabled = true;
 
                     // 🔒 SECURE: Using parameterized queries via ReservationDataAccess
-                    var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+                    var reservationDA = new ReservationDataAccess(conn);
 
                     DataTable dtReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), check);
                     DataTable dtAccom = reservationDA.GetReservationWithAccommodations(Convert.ToInt32(id), check);
@@ -718,7 +717,7 @@ namespace Take_Time_BangPhra
                 catch { id = "0"; }
                 int checkdup = 0;
                 DataTable dtAccom = (DataTable)Session["dtAccommodation"];
-                var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+                var reservationDA = new ReservationDataAccess(conn);
 
                 for (int i = 0;i<Convert.ToInt32(DropDownList1.SelectedValue);i++)
                 {
@@ -830,9 +829,6 @@ namespace Take_Time_BangPhra
                 int deposit = 0;
                 bool IsDeposit = true;
                 DataTable dtReserve = new DataTable();
-
-                // 🔒 SECURITY: Initialize secure data access layer
-                var reservationDA = new ReservationDataAccess(conn);
                 try
                 {
                     dtReserve.Columns.Add("Number");
@@ -941,7 +937,7 @@ namespace Take_Time_BangPhra
                                         dtReserve.AcceptChanges();
 
                                         // 🔒 SECURE: Using ReservationDataAccess
-                                        var reservationDA = new Take_Time_BangPhra.DataAccess.ReservationDataAccess(conn);
+                                        var reservationDA = new ReservationDataAccess(conn);
                                         DataTable dtoldAccom = reservationDA.GetOldAccommodations(Convert.ToInt32(id));
                                         DataTable dtoldItem = reservationDA.GetOldItems(Convert.ToInt32(id));
                                         IsDeposit = false;
@@ -1608,6 +1604,9 @@ namespace Take_Time_BangPhra
                                     }
                                     else if (command == "checkin" && Session["permission"].ToString() == "True" && TextBox1.Text != "02")
                                     {
+                                        // 🔒 SECURE: Initialize ReservationDataAccess for checkin mode
+                                        var reservationDA = new ReservationDataAccess(conn);
+
                                         IsDeposit = false;
                                         // Upsert customer data (insert or update) - ensures no duplicates and always latest data
                                         code.UpsertCustomer(
@@ -1731,6 +1730,9 @@ namespace Take_Time_BangPhra
                                     }
                                     else if (command == "reserve")
                                     {
+                                        // 🔒 SECURE: Initialize ReservationDataAccess for reserve mode
+                                        var reservationDA = new ReservationDataAccess(conn);
+
                                         try
                                         {
                                             // ✅ FIXED: Use parameterized query to prevent SQL Injection
