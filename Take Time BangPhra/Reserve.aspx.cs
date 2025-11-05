@@ -4464,7 +4464,13 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                     {
                         LogCouponAttempt(couponCode, "Affiliate", "Validating affiliate code");
 
-                        DataTable dtDiscount = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] Where Coupon_Code = N'" + couponCode + "'");
+                        // 🔒 SECURE: Using parameterized query to prevent SQL Injection
+                        var parameters = new Dictionary<string, object> {
+                            { "@couponCode", couponCode }
+                        };
+                        DataTable dtDiscount = code.DatabaseQuerySafe(conn,
+                            "SELECT * FROM [Taketime].[dbo].[Affiliate_Member] WHERE Coupon_Code = @couponCode",
+                            parameters);
 
                         if (dtDiscount.Rows.Count >= 1)
                         {
@@ -4509,7 +4515,20 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                     {
                         LogCouponAttempt(couponCode, "Voucher", "Validating voucher code for date: " + TextBox12.Text);
 
-                        dtVoucher = code.DatabaseQuery(conn, "SELECT * FROM [Taketime].[dbo].[Voucher] inner join Voucher_RatePlan_Group on Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number inner join Accommodation_RatePlan_Group on Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID inner join Accommodation_RatePlan on Accommodation_RatePlan.ID = Rateplan_ID  Where Voucher.Voucher_Number = N'" + couponCode + "' AND Used_Status = 'False' AND Expired_Date >= '" + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") + "'");
+                        // 🔒 SECURE: Using parameterized query to prevent SQL Injection
+                        var voucherParams = new Dictionary<string, object> {
+                            { "@voucherNumber", couponCode },
+                            { "@expiredDate", code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToInt32(DropDownList1.SelectedValue) - 1).ToString("yyyy-MM-dd") }
+                        };
+                        dtVoucher = code.DatabaseQuerySafe(conn,
+                            @"SELECT * FROM [Taketime].[dbo].[Voucher]
+                              INNER JOIN Voucher_RatePlan_Group ON Voucher_RatePlan_Group.Voucher_Number = Voucher.Voucher_Number
+                              INNER JOIN Accommodation_RatePlan_Group ON Rateplan_GroupID = Accommodation_RatePlan_Group.GroupID
+                              INNER JOIN Accommodation_RatePlan ON Accommodation_RatePlan.ID = Rateplan_ID
+                              WHERE Voucher.Voucher_Number = @voucherNumber
+                              AND Used_Status = 'False'
+                              AND Expired_Date >= @expiredDate",
+                            voucherParams);
 
                         if (dtVoucher.Rows.Count >= 1)
                         {
@@ -4525,7 +4544,12 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                         else
                         {
                             // Check if voucher exists but is used or expired
-                            DataTable dtVoucherCheck = code.DatabaseQuery(conn, "SELECT Used_Status, Expired_Date FROM [Taketime].[dbo].[Voucher] Where Voucher_Number = N'" + couponCode + "'");
+                            var checkParams = new Dictionary<string, object> {
+                                { "@voucherNumber", couponCode }
+                            };
+                            DataTable dtVoucherCheck = code.DatabaseQuerySafe(conn,
+                                "SELECT Used_Status, Expired_Date FROM [Taketime].[dbo].[Voucher] WHERE Voucher_Number = @voucherNumber",
+                                checkParams);
 
                             Button8.Text = "Submit";
                             Session["UseCoupon"] = "false";
