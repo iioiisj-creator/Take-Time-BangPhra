@@ -610,12 +610,36 @@
                     <!-- 🆕 Payment History GridView (shown in CheckIn/Edit/CheckOut modes) -->
                     <div style="margin-top: 20px;" id="divPaymentHistory" runat="server" visible="false">
                         <h4 style="color: #5D4037; margin-bottom: 10px;">📋 ประวัติการชำระเงิน</h4>
+
+                        <style>
+                            .payment-history-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                background: white;
+                                border: 1px solid #D7CCC8;
+                            }
+                            .payment-history-table th {
+                                background-color: #5D4037;
+                                color: white;
+                                font-weight: bold;
+                                padding: 10px;
+                                text-align: left;
+                                border: 1px solid #4E342E;
+                            }
+                            .payment-history-table td {
+                                padding: 8px;
+                                border: 1px solid #D7CCC8;
+                            }
+                            .payment-history-table tr:nth-child(even) {
+                                background-color: #F5F5F5;
+                            }
+                            .payment-history-table tr:hover {
+                                background-color: #EFEBE9;
+                            }
+                        </style>
+
                         <asp:GridView ID="gvPaymentHistory" runat="server" CssClass="payment-history-table"
-                            AutoGenerateColumns="False" EmptyDataText="ยังไม่มีประวัติการชำระเงิน"
-                            style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #D7CCC8;">
-                            <HeaderStyle BackColor="#5D4037" ForeColor="White" Font-Bold="True" Padding="10px" />
-                            <RowStyle Padding="8px" BorderColor="#D7CCC8" BorderWidth="1px" />
-                            <AlternatingRowStyle BackColor="#F5F5F5" />
+                            AutoGenerateColumns="False" EmptyDataText="ยังไม่มีประวัติการชำระเงิน">
                             <Columns>
                                 <asp:BoundField DataField="PaymentDate" HeaderText="วันที่ชำระ" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
                                 <asp:BoundField DataField="PaymentAmount" HeaderText="จำนวนเงิน" DataFormatString="{0:N2}" ItemStyle-HorizontalAlign="Right" />
