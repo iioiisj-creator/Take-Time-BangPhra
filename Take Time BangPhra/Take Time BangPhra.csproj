@@ -357,6 +357,7 @@
     <Content Include="Admin\Edit_Home.aspx" />
     <Content Include="Admin\HolidayPrice.aspx" />
     <Content Include="Admin\Login.aspx" />
+    <Content Include="Admin\ProductImages.aspx" />
     <Content Include="Admin\Report.aspx" />
     <Content Include="Admin\Vendor.aspx" />
     <Content Include="Admin\CustomerManagement.aspx" />
@@ -417,6 +418,9 @@
     <Content Include="Resource\EDocument_PDFAExtensionSchema.xml" />
     <Content Include="Resource\sRGB Color Space Profile.icm" />
     <None Include="Scripts\jquery-3.4.1.intellisense.js" />
+    <Content Include="Checkout.aspx" />
+    <Content Include="Payment\MakePayment.aspx" />
+    <Content Include="Payment\PaymentHistory.aspx" />
     <Content Include="PostponeList.aspx" />
     <Content Include="Reservation.aspx" />
     <Content Include="Reservation_Confirmed.aspx" />
@@ -539,6 +543,13 @@
     </Compile>
     <Compile Include="Admin\Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\ProductImages.aspx.cs">
+      <DependentUpon>ProductImages.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\ProductImages.aspx.designer.cs">
+      <DependentUpon>ProductImages.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\Report.aspx.cs">
       <DependentUpon>Report.aspx</DependentUpon>
@@ -712,6 +723,27 @@
     </Compile>
     <Compile Include="Reservation.aspx.designer.cs">
       <DependentUpon>Reservation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Checkout.aspx.cs">
+      <DependentUpon>Checkout.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Checkout.aspx.designer.cs">
+      <DependentUpon>Checkout.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Payment\MakePayment.aspx.cs">
+      <DependentUpon>MakePayment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Payment\MakePayment.aspx.designer.cs">
+      <DependentUpon>MakePayment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Payment\PaymentHistory.aspx.cs">
+      <DependentUpon>PaymentHistory.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Payment\PaymentHistory.aspx.designer.cs">
+      <DependentUpon>PaymentHistory.aspx</DependentUpon>
     </Compile>
     <Compile Include="Reservation_Confirmed.aspx.cs">
       <DependentUpon>Reservation_Confirmed.aspx</DependentUpon>
