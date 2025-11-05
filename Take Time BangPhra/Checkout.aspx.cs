@@ -218,12 +218,12 @@ namespace Take_Time_BangPhra
                 string notes = txtNotes.Text.Trim();
 
                 // Get admin ID from session (required)
-                if (Session["AdminID"] == null)
+                if (Session["UserID"] == null)
                 {
                     ShowError("ต้องเข้าสู่ระบบด้วยบัญชี Admin เพื่อทำการเช็คเอาท์");
                     return;
                 }
-                int adminId = Convert.ToInt32(Session["AdminID"]);
+                int adminId = Convert.ToInt32(Session["UserID"]);
 
                 // Process checkout with checklist data
                 var result = checkoutService.ProcessCheckout(
