@@ -193,6 +193,8 @@ namespace Take_Time_BangPhra
                 GridView1.Enabled = false;
                 GridView2.Enabled = false;
                 TextBox5.Enabled = false;
+                CheckBox2.Visible = true;
+                CheckBox2.Text = "ชำระเงิน";
                 Button1.Text = "ยืนยันการเช็คอิน";
                 CheckBox1.Visible = false;
                 Button1.Enabled = true;
@@ -1626,13 +1628,20 @@ namespace Take_Time_BangPhra
                                             TextBox18.Text  // Branch_Number
                                         );
 
-                                        if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
+                                        // 🆕 Check if payment checkbox is checked
+                                        if (CheckBox2.Checked && !string.IsNullOrEmpty(TextBox10.Text))
                                         {
-                                            // ✅ FIXED: Use parameterized query to prevent SQL Injection
-                                            reservationDA.CheckInReservation(Convert.ToInt32(id));
-                                        }
-                                        else
-                                        {
+                                            // User must enter payment amount manually (like rentmore)
+                                            int paymentAmount = Convert.ToInt32(TextBox10.Text);
+                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+
+                                            if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
+                                            {
+                                                // Already paid in full - just check in
+                                                reservationDA.CheckInReservation(Convert.ToInt32(id));
+                                            }
+                                            else
+                                            {
                                             TextBox5.Enabled = false;
                                             // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                             DataTable dtfindDeposit = reservationDA.GetDepositReceipts(Convert.ToInt32(id));
@@ -1667,16 +1676,15 @@ namespace Take_Time_BangPhra
                                                 }
                                             }
                                             int DepositAmount = 0;
-                                            int totalAmount = Convert.ToInt32(TextBox4.Text);
                                             if (dtfindDeposit.Rows.Count <= 0)
                                             {
-
+                                                // 🆕 Use manual payment amount from TextBox10 (like rentmore)
                                                 int Deposit = Convert.ToInt32(TextBox5.Text);
                                                 dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", Deposit * -1, Deposit * -1);
                                                 id = Request.QueryString["id"];
                                                 if (CheckBox4.Checked == false)
                                                 {
-                                                    createReceipt(id, totalAmount - Deposit, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
                                                 // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                 reservationDA.CheckInReservation(Convert.ToInt32(id));
@@ -1697,32 +1705,35 @@ namespace Take_Time_BangPhra
 
                                                 if (DepositAmount == Convert.ToInt32(TextBox5.Text))
                                                 {
-                                                    totalAmount = totalAmount - DepositAmount;
+                                                    // 🆕 Use manual payment amount from TextBox10
                                                     id = Request.QueryString["id"];
                                                     if (CheckBox4.Checked == false)
                                                     {
-                                                        createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                     reservationDA.CheckInReservation(Convert.ToInt32(id));
                                                 }
                                                 else
                                                 {
+                                                    // 🆕 Use manual payment amount from TextBox10
                                                     int remain = Convert.ToInt32(TextBox5.Text) - (DepositAmount);
                                                     dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", remain * -1, remain * -1);
                                                     id = Request.QueryString["id"];
-                                                    totalAmount = totalAmount - (DepositAmount + remain);
-                                                    if (DepositAmount + remain + totalAmount == Convert.ToInt32(TextBox4.Text))
+                                                    if (CheckBox4.Checked == false)
                                                     {
-                                                        if (CheckBox4.Checked == false)
-                                                        {
-                                                            createReceipt(id, totalAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
-                                                        }
-                                                        // ✅ FIXED: Use parameterized query to prevent SQL Injection
-                                                        reservationDA.CheckInReservation(Convert.ToInt32(id));
+                                                        createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
+                                                    // ✅ FIXED: Use parameterized query to prevent SQL Injection
+                                                    reservationDA.CheckInReservation(Convert.ToInt32(id));
                                                 }
                                             }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // 🆕 If checkbox not checked, show error
+                                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือก \"ชำระเงิน\" และกรอกยอดเงิน');", true);
                                         }
 
                                         Response.Redirect("/ReserveTable",false);
