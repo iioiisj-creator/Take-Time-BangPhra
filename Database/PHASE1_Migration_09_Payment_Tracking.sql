@@ -330,6 +330,7 @@ BEGIN
     FROM [dbo].[Account_Receipt] ar
     WHERE ar.Reservation_ID IS NOT NULL
     AND ar.Total_Amount > 0  -- Skip zero or negative amounts
+    AND EXISTS (SELECT 1 FROM [dbo].[Reservation] WHERE ID = ar.Reservation_ID)  -- Only valid reservations
     ORDER BY ar.Created_Date;
 
     PRINT '✅ Migrated ' + CAST(@@ROWCOUNT AS nvarchar(10)) + ' payment records';
