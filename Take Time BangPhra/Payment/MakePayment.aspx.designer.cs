@@ -96,6 +96,15 @@ namespace Take_Time_BangPhra.Payment
         protected global::System.Web.UI.WebControls.Label lblCheckoutDate;
 
         /// <summary>
+        /// lblTotalPaid control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblTotalPaid;
+
+        /// <summary>
         /// lblTotalPrice control.
         /// </summary>
         /// <remarks>

@@ -110,7 +110,7 @@ namespace Take_Time_BangPhra.Admin
                         WHERE Status = 'AVAILABLE'
                         ORDER BY AccomName";
 
-                    dt = code2Instance.DatabaseQuerySafe(connectionString, query, null);
+                    dt = codeInstance.DatabaseQuerySafe(connectionString, query, null);
 
                     foreach (DataRow row in dt.Rows)
                     {
@@ -128,7 +128,7 @@ namespace Take_Time_BangPhra.Admin
                         WHERE Status = 'AVAILABLE'
                         ORDER BY ItemName";
 
-                    dt = code2Instance.DatabaseQuerySafe(connectionString, query, null);
+                    dt = codeInstance.DatabaseQuerySafe(connectionString, query, null);
 
                     foreach (DataRow row in dt.Rows)
                     {
