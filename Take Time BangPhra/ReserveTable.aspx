@@ -359,17 +359,17 @@
                 }
 
                 // สร้างแถวข้อมูลด้วยความกว้างใหม่ และความสูง 74px (ลดลงอีก 30% จาก 105px)
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 74px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 14%; height: 74px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 74px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 74px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 24%; height: 74px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 4%; height: 74px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 74px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 74px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
-                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 12%; height: 74px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 90px; vertical-align: top;">' + (data.countReserved || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 90px; vertical-align: top;">' + (data.name || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 90px; vertical-align: top;">' + (data.accomName || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 90px; vertical-align: top;">' + (data.stayDays || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 25%; height: 90px; vertical-align: top;">' + (data.items || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3; height: 90px; vertical-align: top;">' + (data.totalPrice || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 90px; vertical-align: top;">' + (data.deposit || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 3%; height: 90px; vertical-align: top;">' + (data.remain || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: left; width: 10%; height: 90px; vertical-align: top;">' + (data.remark || '&nbsp;') + '</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 15%; height: 90px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
+                tableHTML += '<td style="border: 1px solid #000; padding: 2px; text-align: center; width: 15%; height: 90px; background-color: #f9f9f9; vertical-align: top;">&nbsp;</td>';
 
                 tableHTML += '</tr>';
             }
