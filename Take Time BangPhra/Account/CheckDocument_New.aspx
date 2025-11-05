@@ -364,9 +364,18 @@
         <!-- Detail Section -->
         <div class="detail-section">
             <div class="detail-title">📋 รายละเอียดเอกสาร</div>
+            <div style="margin-bottom: 10px;">
+                <asp:CheckBox ID="chkEnableDelete" runat="server" Text="เปิดใช้งานปุ่มลบ (Delete)" />
+            </div>
             <asp:GridView ID="gvDetails" runat="server" CssClass="gridview-custom"
-                AutoGenerateColumns="False" EmptyDataText="ไม่พบข้อมูล">
+                AutoGenerateColumns="False" EmptyDataText="ไม่พบข้อมูล"
+                OnRowDeleting="gvDetails_RowDeleting"
+                OnSelectedIndexChanging="gvDetails_SelectedIndexChanging"
+                OnRowCommand="gvDetails_RowCommand">
                 <Columns>
+                    <asp:CommandField ButtonType="Button" HeaderText="ลบ" ShowDeleteButton="True" />
+                    <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="View" ShowSelectButton="True" />
+                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="แก้ไข" HeaderText="แก้ไข" />
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />
                     <asp:BoundField DataField="Created_Date" HeaderText="วันที่" DataFormatString="{0:dd/MM/yyyy}" />
                     <asp:BoundField DataField="CustomerName" HeaderText="ลูกค้า" />
