@@ -46,17 +46,13 @@ namespace Take_Time_BangPhra
                         r.ID,
                         r.Customer_MobilePhone,
                         c.Name AS CustomerName,
-                        r.AccommodationID,
-                        a.AccomName,
                         r.CheckinDate,
                         r.CheckoutDate,
                         r.TotalPrice,
                         r.Deposit,
-                        r.Status,
-                        r.CheckoutStatus
+                        r.Status
                     FROM Reservation r
                     LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
-                    LEFT JOIN Accommodation a ON r.AccommodationID = a.AccommodationID
                     WHERE r.ID = @reservationId";
 
                 DataTable dt = codeInstance.DatabaseQuerySafe(connectionString, query, parameters);
@@ -65,18 +61,9 @@ namespace Take_Time_BangPhra
                 {
                     DataRow row = dt.Rows[0];
 
-                    // Check if already checked out
-                    string checkoutStatus = row["CheckoutStatus"]?.ToString();
-                    if (checkoutStatus == "CHECKED_OUT")
-                    {
-                        ShowWarning("การจองนี้เช็คเอาท์แล้ว");
-                        btnCheckout.Enabled = false;
-                        return;
-                    }
-
                     // Check if checked in
                     string status = row["Status"]?.ToString();
-                    if (status != "CHECKED_IN")
+                    if (status != "เช็คอินแล้ว")
                     {
                         ShowWarning("การจองนี้ยังไม่ได้เช็คอิน หรือถูกยกเลิกแล้ว");
                         btnCheckout.Enabled = false;
@@ -86,7 +73,28 @@ namespace Take_Time_BangPhra
                     lblReservationID.Text = row["ID"].ToString();
                     lblCustomerName.Text = row["CustomerName"]?.ToString() ?? "-";
                     lblCustomerPhone.Text = row["Customer_MobilePhone"].ToString();
-                    lblAccommodation.Text = row["AccomName"]?.ToString() ?? "-";
+
+                    // Get accommodation names from Reservation_Accommodation
+                    var accomParams = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "@reservationId", reservationId }
+                    };
+                    string accomQuery = @"
+                        SELECT a.AccomName
+                        FROM Reservation_Accommodation ra
+                        INNER JOIN Accommodation a ON ra.Accommodation_ID = a.ID
+                        WHERE ra.Reservation_ID = @reservationId";
+
+                    DataTable dtAccom = codeInstance.DatabaseQuerySafe(connectionString, accomQuery, accomParams);
+                    string accomNames = "";
+                    foreach (DataRow accomRow in dtAccom.Rows)
+                    {
+                        accomNames += accomRow["AccomName"].ToString() + ", ";
+                    }
+                    lblAccommodation.Text = !string.IsNullOrEmpty(accomNames)
+                        ? accomNames.TrimEnd(',', ' ')
+                        : "-";
+
                     lblCheckinDate.Text = Convert.ToDateTime(row["CheckinDate"]).ToString("dd/MM/yyyy");
                     lblCheckoutDate.Text = Convert.ToDateTime(row["CheckoutDate"]).ToString("dd/MM/yyyy");
 
