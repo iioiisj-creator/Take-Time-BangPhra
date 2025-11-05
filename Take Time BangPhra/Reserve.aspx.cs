@@ -1803,6 +1803,73 @@ namespace Take_Time_BangPhra
                                             }
                                         }
                                         catch { }
+
+                                        // 🆕 Record payment to Payment_History if deposit paid
+                                        if (Reservation_ID > 0 && Convert.ToDecimal(TextBox5.Text ?? "0") > 0)
+                                        {
+                                            try
+                                            {
+                                                decimal depositAmount = Convert.ToDecimal(TextBox5.Text ?? "0");
+                                                string paymentMethod = DropDownList2.SelectedItem?.Text ?? "CASH";
+                                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                                // Determine payment type
+                                                decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? "0");
+                                                string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                // Insert Payment_History record (without slip first)
+                                                string insertPaymentQuery = @"
+                                                    INSERT INTO [dbo].[Payment_History] (
+                                                        Reservation_ID,
+                                                        PaymentDate,
+                                                        PaymentAmount,
+                                                        PaymentType,
+                                                        PaymentMethod,
+                                                        ProcessedBy_AdminID,
+                                                        PaidBy_CustomerPhone,
+                                                        Status,
+                                                        Notes,
+                                                        CreatedDate,
+                                                        UpdatedDate
+                                                    ) OUTPUT INSERTED.ID VALUES (
+                                                        @ReservationId,
+                                                        GETDATE(),
+                                                        @PaymentAmount,
+                                                        @PaymentType,
+                                                        @PaymentMethod,
+                                                        @AdminId,
+                                                        @CustomerPhone,
+                                                        'COMPLETED',
+                                                        N'มัดจำเมื่อจอง',
+                                                        GETDATE(),
+                                                        GETDATE()
+                                                    )";
+
+                                                var paymentParams = new Dictionary<string, object>
+                                                {
+                                                    { "@ReservationId", Reservation_ID },
+                                                    { "@PaymentAmount", depositAmount },
+                                                    { "@PaymentType", paymentType },
+                                                    { "@PaymentMethod", paymentMethod },
+                                                    { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                    { "@CustomerPhone", TextBox1.Text }
+                                                };
+
+                                                DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                if (dtPaymentId.Rows.Count > 0)
+                                                {
+                                                    long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                    Session["PaymentHistoryId"] = paymentHistoryId;
+                                                    System.Diagnostics.Debug.WriteLine($"Created Payment_History ID: {paymentHistoryId}");
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                code2.Logs(conn, "Payment_History Insert Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                                                // Don't fail the whole reservation if payment history fails
+                                            }
+                                        }
+
                                         int i = 0;
                                         string msg = "";
                                         int PriceAccom = 0;
@@ -2241,6 +2308,91 @@ namespace Take_Time_BangPhra
                         string filename = ID + "_" + TextBox1.Text + ".jpg";
                         FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename.Replace("/", "").Replace("\\", "").Replace("'", ""));
                         FileUpload1.SaveAs(FileSaveWithPath);
+                    }
+                }
+
+                // 🆕 Record Payment_Slip if file exists and Payment_History was created
+                if (Session["PaymentHistoryId"] != null && Convert.ToInt32(ID) > 0)
+                {
+                    string slipPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg";
+                    if (File.Exists(slipPath))
+                    {
+                        try
+                        {
+                            long paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
+                            string slipFileURL = "Upload/Slip/" + ID + "_" + TextBox1.Text + ".jpg";
+                            string fileName = ID + "_" + TextBox1.Text + ".jpg";
+                            FileInfo fileInfo = new FileInfo(slipPath);
+                            long fileSize = fileInfo.Length;
+                            int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                            // Insert Payment_Slip record
+                            string insertSlipQuery = @"
+                                INSERT INTO [dbo].[Payment_Slips] (
+                                    Account_Receipt_ID,
+                                    Reservation_ID,
+                                    SlipFileURL,
+                                    FileName,
+                                    FileType,
+                                    FileSize,
+                                    UploadedBy_ID,
+                                    UploadedBy_CustomerPhone,
+                                    UploadedDate,
+                                    Notes,
+                                    Status
+                                ) OUTPUT INSERTED.ID VALUES (
+                                    0,
+                                    @ReservationId,
+                                    @SlipFileURL,
+                                    @FileName,
+                                    'image/jpeg',
+                                    @FileSize,
+                                    @AdminId,
+                                    @CustomerPhone,
+                                    GETDATE(),
+                                    N'อัพโหลดเมื่อจอง',
+                                    1
+                                )";
+
+                            var slipParams = new Dictionary<string, object>
+                            {
+                                { "@ReservationId", Convert.ToInt32(ID) },
+                                { "@SlipFileURL", slipFileURL },
+                                { "@FileName", fileName },
+                                { "@FileSize", (int)fileSize },
+                                { "@AdminId", adminId ?? (object)DBNull.Value },
+                                { "@CustomerPhone", TextBox1.Text }
+                            };
+
+                            DataTable dtSlipId = code2.DatabaseQuerySafe(conn, insertSlipQuery, slipParams);
+                            if (dtSlipId.Rows.Count > 0)
+                            {
+                                long paymentSlipId = Convert.ToInt64(dtSlipId.Rows[0][0]);
+
+                                // Update Payment_History with PaymentSlip_ID
+                                string updatePaymentQuery = @"
+                                    UPDATE [dbo].[Payment_History]
+                                    SET PaymentSlip_ID = @PaymentSlipId
+                                    WHERE ID = @PaymentHistoryId";
+
+                                var updateParams = new Dictionary<string, object>
+                                {
+                                    { "@PaymentSlipId", paymentSlipId },
+                                    { "@PaymentHistoryId", paymentHistoryId }
+                                };
+
+                                code2.DatabaseInsertSafe(conn, updatePaymentQuery, updateParams);
+                                System.Diagnostics.Debug.WriteLine($"Created Payment_Slip ID: {paymentSlipId}, linked to Payment_History ID: {paymentHistoryId}");
+                            }
+
+                            // Clear session after successful save
+                            Session.Remove("PaymentHistoryId");
+                        }
+                        catch (Exception ex)
+                        {
+                            code2.Logs(conn, "Payment_Slip Insert Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                            // Don't fail if slip upload fails
+                        }
                     }
                 }
             }
