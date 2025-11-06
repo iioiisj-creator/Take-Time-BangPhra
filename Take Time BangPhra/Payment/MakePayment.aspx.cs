@@ -163,7 +163,7 @@ namespace Take_Time_BangPhra.Payment
             try
             {
                 decimal paymentAmount = decimal.Parse(txtPaymentAmount.Text);
-                string paymentMethod = ddlPaymentMethod.SelectedValue;
+                string paymentMethod = ddlPaymentMethod.SelectedItem?.Text ?? "";
                 string notes = txtNotes.Text.Trim();
                 string customerPhone = lblCustomerPhone.Text;
 
