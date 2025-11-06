@@ -486,14 +486,44 @@ namespace Take_Time_BangPhra
 
             if ((command == "edit" || command == "checkin" || command == "rentmore") && Session["permission"].ToString() == "True")
             {
+                // 🔒 SECURE: Load data every time (even on PostBack) to ensure accuracy
+                Button1.Enabled = true;
+                var reservationDA = new ReservationDataAccess(conn);
+
+                DataTable dtReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), check);
+                DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
+
+                // 💰 Always load current payment amounts (needed for PostBack validation)
+                TextBox4.Text = dtCustomer.Rows[0]["TotalPrice"].ToString();
+
+                // 💰 Get actual total paid amount from Payment_History instead of Deposit column
+                decimal totalPaid = 0;
+                try
+                {
+                    totalPaid = _paymentDA.GetTotalPaidAmount(Convert.ToInt32(id));
+                }
+                catch
+                {
+                    // Fallback to Deposit if Payment_History not available
+                    totalPaid = Convert.ToDecimal(dtCustomer.Rows[0]["Deposit"] ?? "0");
+                }
+                TextBox5.Text = totalPaid.ToString();
+
+                // Update remaining balance label
+                Label7.Visible = true;
+                decimal remainingAmount = Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text);
+                Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + remainingAmount.ToString("N2") + " บาท";
+
+                if (command == "checkin")
+                {
+                    string paidType = dtCustomer.Rows[0]["Paid_Type"]?.ToString() ?? "เงินสด";
+                    if (string.IsNullOrWhiteSpace(paidType) || paidType.Length <= 5) paidType = "เงินสด";
+                    Label7.Text += " ยอดเดิมลูกค้าชำระโดยวิธี " + paidType;
+                }
+
                 if (!IsPostBack)
                 {
-                    Button1.Enabled = true;
-
-                    // 🔒 SECURE: Using parameterized queries via ReservationDataAccess
-                    var reservationDA = new ReservationDataAccess(conn);
-
-                    DataTable dtReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), check);
+                    // Load data only on first load (not on PostBack)
                     DataTable dtAccom = reservationDA.GetReservationWithAccommodations(Convert.ToInt32(id), check);
                     DataTable dtItemsold = reservationDA.GetReservationWithItems(Convert.ToInt32(id), check);
                     DataTable dtReceipt = reservationDA.GetReceiptsByReservation(Convert.ToInt32(id));
@@ -621,8 +651,8 @@ namespace Take_Time_BangPhra
                             }
                         }
                     }
-                    // 🔒 SECURE: Using ReservationDataAccess
-                    DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
+
+                    // Load customer details for form fields (address, email, etc.)
                     try //Address
                     {
                         try
@@ -679,54 +709,13 @@ namespace Take_Time_BangPhra
                             }
                         }
                     }
-                    TextBox4.Text = dtCustomer.Rows[0]["TotalPrice"].ToString();
 
-                    // 💰 Get actual total paid amount from Payment_History instead of Deposit column
-                    decimal totalPaid = 0;
-                    try
-                    {
-                        totalPaid = _paymentDA.GetTotalPaidAmount(Convert.ToInt32(id));
-                    }
-                    catch
-                    {
-                        // Fallback to Deposit if Payment_History not available
-                        totalPaid = Convert.ToDecimal(dtCustomer.Rows[0]["Deposit"] ?? "0");
-                    }
-                    TextBox5.Text = totalPaid.ToString();
-
-
+                    // Load slip image and remark
                     Image1.ImageUrl = "./Upload/Slip/" + id + "_" + check + ".jpg";
                     Image1.DataBind();
                     TextBox6.Text = dtCustomer.Rows[0]["Remark"].ToString();
-
-                    Label7.Visible = true;
-                    decimal remainingAmount = Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text);
-                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + remainingAmount.ToString("N2") + " บาท";
-
-                    string paidType = dtCustomer.Rows[0]["Paid_Type"].ToString();
-                    try
-                    {
-                        if(paidType.Length > 5)
-                        {
-
-                        }
-                        else{
-                            paidType = "เงินสด";
-                        }
-                    }
-                    catch
-                    {
-                        paidType = "เงินสด";
-                    }
-                    if (command == "checkin")
-                    {
-                        Label7.Text += " ยอดเดิมลูกค้าชำระโดยวิธี "+ paidType;
-                    }
                 }
-                else
-                {
-
-                }
+                // Note: TextBox4, TextBox5, Label7 are now loaded outside if (!IsPostBack) above
 
             }
 
