@@ -189,15 +189,14 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Reservations with check-in in date range
+            // Fixed: Don't JOIN with Account_Paid_How to avoid duplicate amounts
             string query = @"
-                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                SELECT ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
                 WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
                   AND ar.Status LIKE @Status
-                  AND ar.Reservation_ID > 0
-                GROUP BY ar.Paid_Type, aph.ID";
+                  AND ar.Reservation_ID > 0";
 
             var parameters = new Dictionary<string, object>
             {
@@ -212,16 +211,15 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory2Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Reservations with receipt created in date range but check-in outside
+            // Fixed: Don't JOIN with Account_Paid_How to avoid duplicate amounts
             string query = @"
-                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                SELECT ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
                 WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
                   AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate)
                   AND ar.Status LIKE @Status
-                  AND ar.Reservation_ID > 0
-                GROUP BY ar.Paid_Type, aph.ID";
+                  AND ar.Reservation_ID > 0";
 
             var parameters = new Dictionary<string, object>
             {
@@ -236,16 +234,15 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory3Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Product sales (ProductType_ID = 3)
+            // Fixed: Don't JOIN with Account_Paid_How to avoid duplicate amounts
             string query = @"
-                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                SELECT ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Account_Receipt_Detail ard ON ar.ID = ard.Receipt_ID
-                LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
                 WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
                   AND ard.ProductType_ID = 3
                   AND ar.Status LIKE @Status
-                  AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)
-                GROUP BY ar.Paid_Type, aph.ID";
+                  AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)";
 
             var parameters = new Dictionary<string, object>
             {
@@ -260,16 +257,15 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory4Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Others (not in categories 1-3)
+            // Fixed: Don't JOIN with Account_Paid_How to avoid duplicate amounts
             string query = @"
-                SELECT ar.Paid_Type, SUM(ar.Total_Amount) as Total, aph.ID as PaymentMethodID
+                SELECT ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 LEFT JOIN Account_Receipt_Detail ard ON ar.ID = ard.Receipt_ID
-                LEFT JOIN Account_Paid_How aph ON ar.Paid_Type LIKE '%' + aph.Paid_How + '%'
                 WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
                   AND ar.Status LIKE @Status
                   AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)
-                  AND (ard.ProductType_ID IS NULL OR ard.ProductType_ID != 3)
-                GROUP BY ar.Paid_Type, aph.ID";
+                  AND (ard.ProductType_ID IS NULL OR ard.ProductType_ID != 3)";
 
             var parameters = new Dictionary<string, object>
             {
@@ -283,13 +279,29 @@ namespace Take_Time_BangPhra.Account
 
         private decimal GetAmountByPaymentMethod(DataTable dt, int paymentMethodID)
         {
+            // Fixed: Parse Paid_Type string instead of using JOIN to avoid duplicate amounts
+            // Map payment method IDs to their Thai names
+            string paymentMethodName = "";
+            switch (paymentMethodID)
+            {
+                case 1: paymentMethodName = "โอนกสิกร"; break;  // KBANK transfer
+                case 2: paymentMethodName = "เงินสด"; break;     // Cash
+                case 3: paymentMethodName = "เงินกรรมการ"; break; // Director money
+                case 4: paymentMethodName = "โอนกรุงไทย"; break;  // KTB transfer
+                default: return 0;
+            }
+
             decimal total = 0;
             foreach (DataRow row in dt.Rows)
             {
-                if (row["PaymentMethodID"] != DBNull.Value &&
-                    Convert.ToInt32(row["PaymentMethodID"]) == paymentMethodID)
+                string paidType = row["Paid_Type"]?.ToString() ?? "";
+
+                // Check if Paid_Type contains the payment method name
+                if (!string.IsNullOrEmpty(paidType) && paidType.Contains(paymentMethodName))
                 {
-                    total += row["Total"] != DBNull.Value ? Convert.ToDecimal(row["Total"]) : 0;
+                    decimal amount = row["Total_Amount"] != DBNull.Value ?
+                        Convert.ToDecimal(row["Total_Amount"]) : 0;
+                    total += amount;
                 }
             }
             return total;
