@@ -1756,8 +1756,28 @@ namespace Take_Time_BangPhra
                                         }
                                         else
                                         {
-                                            // 🆕 If checkbox not checked, show error
-                                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือก \"ชำระเงิน\" และกรอกยอดเงิน');", true);
+                                            // ❌ ไม่ได้ tick checkbox หรือไม่ได้กรอกยอดเงิน - ไม่ทำการเช็คอิน
+                                            string alertMessage = "⚠️ ยังไม่ได้ทำการเช็คอิน!\\n\\n" +
+                                                                "กรุณาติ๊กเลือก \\'ชำระเงิน\\' และกรอกยอดเงินที่รับ\\n" +
+                                                                "จึงจะสามารถเช็คอินได้\\n\\n" +
+                                                                "สถานะการจองยังไม่เปลี่ยนแปลง";
+
+                                            ClientScript.RegisterStartupScript(this.GetType(), "checkinWarning",
+                                                $"alert('{alertMessage}');", true);
+
+                                            // Log การพยายามเช็คอินโดยไม่ชำระเงิน
+                                            try
+                                            {
+                                                var loggingService = new Class.LoggingService(conn);
+                                                loggingService.LogAccountingOperation(
+                                                    "CheckInAttemptWithoutPayment",
+                                                    $"User attempted to check-in Reservation ID: {id} without payment checkbox. " +
+                                                    $"User: {Session["UserName"]?.ToString() ?? "Unknown"}",
+                                                    false,
+                                                    Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null,
+                                                    Convert.ToInt64(id));
+                                            }
+                                            catch { }
                                         }
 
                                         Response.Redirect("/ReserveTable",false);
