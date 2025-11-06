@@ -218,10 +218,13 @@ box-shadow: 0 0 7px 3px #e5e5e5;}
          <td class="auto-style1" style="vertical-align: middle;">
              เลือกห้องพัก (Room Charge): </td>
          <td class="auto-style2">
-             <asp:DropDownList ID="ddlGuestReservation" runat="server" Width="80%"
-                 AutoPostBack="True" OnSelectedIndexChanged="ddlGuestReservation_SelectedIndexChanged"
-                 AppendDataBoundItems="true" CssClass="form-control">
-                 <asp:ListItem Value="0">--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---</asp:ListItem>
+             <asp:DropDownList ID="ddlGuestReservation" runat="server"
+                 Width="100%"
+                 Height="40px"
+                 AutoPostBack="True"
+                 OnSelectedIndexChanged="ddlGuestReservation_SelectedIndexChanged"
+                 CssClass="form-control"
+                 style="font-size: 14px; padding: 8px;">
              </asp:DropDownList>
              <br />
              <asp:Label ID="lblActiveGuestCount" runat="server" CssClass="text-muted"

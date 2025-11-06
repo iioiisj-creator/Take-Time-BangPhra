@@ -1028,17 +1028,24 @@ namespace Take_Time_BangPhra.Product
         {
             try
             {
+                // Clear existing items first to prevent duplicates
+                ddlGuestReservation.Items.Clear();
+
+                // Always add default "no room charge" option first
+                ddlGuestReservation.Items.Add(new ListItem("--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---", "0"));
+
                 var guests = _roomChargeDA.GetActiveGuestReservations();
 
                 if (guests.Rows.Count > 0)
                 {
-                    ddlGuestReservation.DataSource = guests;
-                    ddlGuestReservation.DataTextField = "DisplayText";
-                    ddlGuestReservation.DataValueField = "ReservationID";
-                    ddlGuestReservation.DataBind();
-
-                    // Add default item at top
-                    ddlGuestReservation.Items.Insert(0, new ListItem("--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---", "0"));
+                    // Add all active guests
+                    foreach (DataRow row in guests.Rows)
+                    {
+                        ddlGuestReservation.Items.Add(new ListItem(
+                            row["DisplayText"].ToString(),
+                            row["ReservationID"].ToString()
+                        ));
+                    }
 
                     // Show count of active guests
                     lblActiveGuestCount.Text = $"📊 มีผู้เข้าพัก {guests.Rows.Count} รายการ ที่อยู่ในช่วงวันนี้";

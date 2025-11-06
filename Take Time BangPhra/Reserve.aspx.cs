@@ -455,8 +455,26 @@ namespace Take_Time_BangPhra
             }
 
             Session["PriceItems"] = PriceItems;
-            totalPrice = PriceAccom + PriceItems;
+
+            // 🏨 เพิ่มสินค้าค้างชำระ (Pending Product Charges)
+            double PendingCharges = 0;
+            try
+            {
+                if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
+                {
+                    int reservationId = Convert.ToInt32(id);
+                    decimal pendingCharges = _roomChargeDA.GetTotalPendingCharges(reservationId);
+                    PendingCharges = Convert.ToDouble(pendingCharges);
+                }
+            }
+            catch
+            {
+                PendingCharges = 0;
+            }
+
+            totalPrice = PriceAccom + PriceItems + PendingCharges;
             Session["totalPrice"] = totalPrice;
+            Session["PendingCharges"] = PendingCharges;
 
             TextBox4.Text = Session["totalPrice"].ToString();
 
@@ -3786,6 +3804,7 @@ namespace Take_Time_BangPhra
             double totalPrice = 0;
             double PriceAccom = 0;
             int PriceItems = 0;
+            double PendingCharges = 0;
 
             // คำนวณราคาห้องพัก
             foreach (GridViewRow row in GridView1.Rows)
@@ -3817,10 +3836,30 @@ namespace Take_Time_BangPhra
                 }
             }
 
-            totalPrice = PriceAccom + PriceItems;
+            // 🏨 รวมสินค้าค้างชำระ (Pending Product Charges)
+            try
+            {
+                string command = Request.QueryString["command"];
+                string id = Request.QueryString["id"];
+
+                if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
+                {
+                    int reservationId = Convert.ToInt32(id);
+                    decimal pendingCharges = _roomChargeDA.GetTotalPendingCharges(reservationId);
+                    PendingCharges = Convert.ToDouble(pendingCharges);
+                }
+            }
+            catch
+            {
+                // If error, pending charges = 0 (don't break the calculation)
+                PendingCharges = 0;
+            }
+
+            totalPrice = PriceAccom + PriceItems + PendingCharges;
             Session["totalPrice"] = totalPrice;
             Session["PriceAccom"] = PriceAccom;
             Session["PriceItems"] = PriceItems;
+            Session["PendingCharges"] = PendingCharges;
 
             TextBox4.Text = totalPrice.ToString();
         }
