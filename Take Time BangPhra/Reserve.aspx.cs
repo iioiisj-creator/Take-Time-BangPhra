@@ -1840,7 +1840,9 @@ namespace Take_Time_BangPhra
                                         catch { }
 
                                         // 🆕 Record payment to Payment_History if deposit paid
-                                        if (Reservation_ID > 0 && Convert.ToDecimal(TextBox5.Text ?? "0") > 0)
+                                        // Only record here if NOT creating receipt (CheckBox4.Checked == true)
+                                        // If creating receipt, it will be recorded in createReceipt() with Receipt_ID
+                                        if (Reservation_ID > 0 && Convert.ToDecimal(TextBox5.Text ?? "0") > 0 && CheckBox4.Checked)
                                         {
                                             try
                                             {
@@ -1852,7 +1854,7 @@ namespace Take_Time_BangPhra
                                                 decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? "0");
                                                 string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
 
-                                                // Insert Payment_History record (without slip first)
+                                                // Insert Payment_History record (without Receipt_ID, since no receipt created)
                                                 string insertPaymentQuery = @"
                                                     INSERT INTO [dbo].[Payment_History] (
                                                         Reservation_ID,
