@@ -107,13 +107,35 @@ namespace Take_Time_BangPhra.Account
                 catch { /* Ignore logging errors */ }
 
                 // Calculate revenue by category (always use Normal status, never include Cancel)
-                CalculateRevenue(startDate, endDate);
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚙️ Calling CalculateRevenue...");
+                    CalculateRevenue(startDate, endDate);
+                    System.Diagnostics.Debug.WriteLine($"✅ CalculateRevenue completed");
+                }
+                catch (Exception calcEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ CalculateRevenue failed: {calcEx.Message}");
+                    lblDateRange.Text += $" <span style='color: red;'>[CalculateRevenue Error: {calcEx.Message}]</span>";
+                    ShowError($"เกิดข้อผิดพลาดในการคำนวณรายได้:\n{calcEx.Message}\n\nStack:\n{calcEx.StackTrace}");
+                    // Continue to LoadDetails even if CalculateRevenue fails
+                }
 
                 // Load details (show all documents including Cancel)
+                System.Diagnostics.Debug.WriteLine($"⚙️ Calling LoadDetails...");
                 LoadDetails(startDate, endDate);
+                System.Diagnostics.Debug.WriteLine($"✅ LoadDetails completed");
 
                 // Show validation
-                ValidateTotal();
+                try
+                {
+                    ValidateTotal();
+                }
+                catch (Exception valEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ ValidateTotal failed: {valEx.Message}");
+                    // Ignore validation errors
+                }
             }
             catch (Exception ex)
             {
@@ -575,6 +597,7 @@ namespace Take_Time_BangPhra.Account
 
         private void LoadDetails(DateTime startDate, DateTime endDate)
         {
+            DataTable dt = null;
             try
             {
                 System.Diagnostics.Debug.WriteLine($"📊 LoadDetails called:");
@@ -582,11 +605,19 @@ namespace Take_Time_BangPhra.Account
                 System.Diagnostics.Debug.WriteLine($"   End: {endDate:yyyy-MM-dd HH:mm:ss}");
 
                 // Always show all documents (both Normal and Cancel) in GridView
-                var dt = GetAllReceipts(startDate, endDate, "%");
+                try
+                {
+                    dt = GetAllReceipts(startDate, endDate, "%");
+                    System.Diagnostics.Debug.WriteLine($"   Retrieved {dt?.Rows.Count ?? 0} rows from GetAllReceipts");
+                }
+                catch (Exception queryEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ GetAllReceipts failed: {queryEx.Message}");
+                    lblDateRange.Text += $" <span style='color: red;'>[Query Error: {queryEx.Message}]</span>";
+                    throw;
+                }
 
-                System.Diagnostics.Debug.WriteLine($"   Retrieved {dt?.Rows.Count ?? 0} rows from GetAllReceipts");
-
-                // Debug: Add message to date range label
+                // Debug: Add message to date range label (ALWAYS execute this)
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     lblDateRange.Text += $" <span style='color: green; font-weight: bold;'>(✓ พบ {dt.Rows.Count} เอกสาร)</span>";
@@ -612,24 +643,45 @@ namespace Take_Time_BangPhra.Account
                         var testResult = codeInstance.DatabaseQuerySafe(conn, testQuery, testParams);
                         int inRange = testResult != null ? Convert.ToInt32(testResult.Rows[0]["Total"]) : 0;
 
-                        diagInfo = $"\n\nข้อมูลเพิ่มเติม:\n- มีเอกสารทั้งหมดในระบบ: {totalReceipts} รายการ\n- มีเอกสารในช่วง {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}: {inRange} รายการ";
+                        // Get latest receipt date
+                        var latestQuery = "SELECT TOP 1 Created_Date FROM Account_Receipt ORDER BY Created_Date DESC";
+                        var latestResult = codeInstance.DatabaseQuerySafe(conn, latestQuery, new Dictionary<string, object>());
+                        string latestDate = latestResult != null && latestResult.Rows.Count > 0 ?
+                            Convert.ToDateTime(latestResult.Rows[0]["Created_Date"]).ToString("dd/MM/yyyy") : "ไม่มี";
+
+                        diagInfo = $"\n\nข้อมูลเพิ่มเติม:\n- มีเอกสารทั้งหมดในระบบ: {totalReceipts} รายการ\n- มีเอกสารในช่วง {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}: {inRange} รายการ\n- เอกสารล่าสุดสร้างวันที่: {latestDate}";
+
+                        System.Diagnostics.Debug.WriteLine($"   📊 Diagnostic: Total={totalReceipts}, InRange={inRange}, Latest={latestDate}");
                     }
-                    catch { }
+                    catch (Exception diagEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"   ⚠️ Diagnostic query failed: {diagEx.Message}");
+                        diagInfo = "\n\n(ไม่สามารถดึงข้อมูลสถิติได้)";
+                    }
 
                     // Show helpful message to user
                     ShowError($"ไม่พบเอกสารในช่วง {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}{diagInfo}\n\nกรุณาตรวจสอบ:\n1. เลือกช่วงวันที่ที่มีเอกสาร\n2. วันที่ที่เลือกถูกต้องหรือไม่\n3. ตรวจสอบ Debug Output สำหรับรายละเอียดเพิ่มเติม");
                 }
 
+                // Bind to GridView
                 gvDetails.DataSource = dt;
                 gvDetails.DataBind();
+                System.Diagnostics.Debug.WriteLine($"   ✅ GridView.DataBind() completed");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"   ❌ Error in LoadDetails: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"   Stack: {ex.StackTrace}");
-                lblDateRange.Text += $" <span style='color: red;'>(Error: {ex.Message})</span>";
+                lblDateRange.Text += $" <span style='color: red; font-weight: bold;'>[LoadDetails Error: {ex.Message}]</span>";
                 ShowError($"เกิดข้อผิดพลาดในการโหลดข้อมูล:\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}");
-                throw;
+
+                // Try to bind empty DataTable to prevent further errors
+                try
+                {
+                    gvDetails.DataSource = new DataTable();
+                    gvDetails.DataBind();
+                }
+                catch { }
             }
         }
 
