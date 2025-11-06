@@ -33,6 +33,24 @@ namespace Take_Time_BangPhra.Product
         protected global::System.Web.UI.WebControls.DropDownList ddlGuestReservation;
 
         /// <summary>
+        /// lblActiveGuestCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblActiveGuestCount;
+
+        /// <summary>
+        /// trGuestInfo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trGuestInfo;
+
+        /// <summary>
         /// lblGuestInfo control.
         /// </summary>
         /// <remarks>
