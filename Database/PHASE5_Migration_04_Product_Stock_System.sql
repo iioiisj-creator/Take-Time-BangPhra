@@ -92,7 +92,8 @@ PRINT '✅ View vw_ProductStock created successfully!';
 GO
 
 -- Grant permissions
-GRANT SELECT ON dbo.fn_GetProductStock TO PUBLIC;
+-- Note: Functions require EXECUTE permission, not SELECT
+GRANT EXECUTE ON dbo.fn_GetProductStock TO PUBLIC;
 GRANT SELECT ON vw_ProductStock TO PUBLIC;
 GO
 
