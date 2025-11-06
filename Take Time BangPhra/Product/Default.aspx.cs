@@ -349,6 +349,23 @@ namespace Take_Time_BangPhra.Product
             double total = 0;
             DataTable dtOrder = (DataTable)Session["dtOrder"];
 
+            // ✅ Validation: Check if cart is empty
+            if (dtOrder == null || dtOrder.Rows.Count == 0)
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "error",
+                    "alert('⚠️ กรุณาเพิ่มสินค้าลงในตะกร้าก่อนบันทึก');", true);
+                return;
+            }
+
+            // ✅ Validation: Check payment method for non-room charge
+            if ((ddlGuestReservation.SelectedValue == "0" || rblChargeMode.SelectedValue != "ROOM_CHARGE")
+                && string.IsNullOrEmpty(DropDownList1.SelectedValue))
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "error",
+                    "alert('⚠️ กรุณาเลือกวิธีการชำระเงิน');", true);
+                return;
+            }
+
             // 🏨 Check if Room Charge mode
             if (ddlGuestReservation.SelectedValue != "0" && rblChargeMode.SelectedValue == "ROOM_CHARGE")
             {
@@ -1022,12 +1039,20 @@ namespace Take_Time_BangPhra.Product
 
                     // Add default item at top
                     ddlGuestReservation.Items.Insert(0, new ListItem("--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---", "0"));
+
+                    // Show count of active guests
+                    lblActiveGuestCount.Text = $"📊 มีผู้เข้าพัก {guests.Rows.Count} รายการ ที่อยู่ในช่วงวันนี้";
+                }
+                else
+                {
+                    // No active guests today
+                    lblActiveGuestCount.Text = "ℹ️ ไม่มีผู้เข้าพักในช่วงวันนี้";
                 }
             }
             catch (Exception ex)
             {
                 code.Logs(conn, "Product.LoadActiveGuests Error", ex.Message, Session["User"]?.ToString());
-                // Keep default "--- ไม่ชาร์จเข้าห้อง ---" option
+                lblActiveGuestCount.Text = "⚠️ ไม่สามารถโหลดรายชื่อผู้เข้าพักได้";
             }
         }
 
@@ -1040,6 +1065,7 @@ namespace Take_Time_BangPhra.Product
             {
                 // Guest selected - show charge mode options
                 trChargeMode.Visible = true;
+                trGuestInfo.Visible = true;
 
                 // Load and display guest info
                 int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
@@ -1061,8 +1087,9 @@ namespace Take_Time_BangPhra.Product
             }
             else
             {
-                // No guest selected - hide charge mode
+                // No guest selected - hide charge mode and guest info
                 trChargeMode.Visible = false;
+                trGuestInfo.Visible = false;
                 DropDownList1.Enabled = true;
                 lblGuestInfo.Text = "";
             }
@@ -1080,12 +1107,29 @@ namespace Take_Time_BangPhra.Product
                 if (dt.Rows.Count > 0)
                 {
                     var row = dt.Rows[0];
+                    string customerName = row["CustomerName"]?.ToString() ?? "ไม่ระบุ";
+                    string roomNames = row["RoomNames"]?.ToString() ?? "ไม่ระบุห้อง";
+                    string checkIn = row["CheckInDate"] != DBNull.Value ? Convert.ToDateTime(row["CheckInDate"]).ToString("dd/MM/yyyy") : "-";
+                    string checkOut = row["CheckOutDate"] != DBNull.Value ? Convert.ToDateTime(row["CheckOutDate"]).ToString("dd/MM/yyyy") : "-";
+                    string status = row["Status"]?.ToString() ?? "-";
+
                     decimal totalPrice = row["TotalPrice"] != DBNull.Value ? Convert.ToDecimal(row["TotalPrice"]) : 0;
                     decimal totalPaid = row["TotalPaid"] != DBNull.Value ? Convert.ToDecimal(row["TotalPaid"]) : 0;
                     decimal remaining = row["RemainingBalance"] != DBNull.Value ? Convert.ToDecimal(row["RemainingBalance"]) : 0;
                     decimal pendingCharges = row["PendingCharges"] != DBNull.Value ? Convert.ToDecimal(row["PendingCharges"]) : 0;
 
-                    lblGuestInfo.Text = $"💰 ยอดรวม: {totalPrice:N2} บาท | ชำระแล้ว: {totalPaid:N2} บาท | ค้างชำระ: {remaining:N2} บาท | สินค้าค้างชำระ: {pendingCharges:N2} บาท";
+                    lblGuestInfo.Text = $@"
+                        <strong>👤 ชื่อ:</strong> {customerName} &nbsp;&nbsp;
+                        <strong>🏠 ห้อง:</strong> {roomNames} &nbsp;&nbsp;
+                        <strong>📅 เข้า:</strong> {checkIn} &nbsp;&nbsp;
+                        <strong>📅 ออก:</strong> {checkOut} &nbsp;&nbsp;
+                        <strong>📊 สถานะ:</strong> {status}
+                        <br/>
+                        <strong>💰 ยอดรวม:</strong> {totalPrice:N2} บาท &nbsp;&nbsp;
+                        <strong>✅ ชำระแล้ว:</strong> {totalPaid:N2} บาท &nbsp;&nbsp;
+                        <strong>⏳ ค้างชำระ:</strong> {remaining:N2} บาท &nbsp;&nbsp;
+                        <strong>🛒 สินค้าค้างชำระ:</strong> {pendingCharges:N2} บาท
+                    ";
                 }
             }
             catch (Exception ex)
@@ -1102,13 +1146,40 @@ namespace Take_Time_BangPhra.Product
         {
             try
             {
+                // ✅ Validation: Check if guest is selected
+                if (string.IsNullOrEmpty(ddlGuestReservation.SelectedValue) || ddlGuestReservation.SelectedValue == "0")
+                {
+                    throw new Exception("กรุณาเลือกห้องพักที่ต้องการชาร์จ");
+                }
+
+                // ✅ Validation: Check if cart has items
+                if (dtOrder == null || dtOrder.Rows.Count == 0)
+                {
+                    throw new Exception("ไม่มีสินค้าในตะกร้า กรุณาเพิ่มสินค้าก่อนชาร์จเข้าห้อง");
+                }
+
                 int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
                 int? adminId = Session["UserID"] != null ? Convert.ToInt32(Session["UserID"]) : (int?)null;
+                int itemCount = dtOrder.Rows.Count;
 
-                // Validate reservation allows charging
+                // ✅ Validate reservation allows charging
                 _roomChargeService.ValidateRoomChargeAllowed(reservationId);
 
-                // Charge to room
+                // ✅ Validate stock availability for all items
+                foreach (DataRow item in dtOrder.Rows)
+                {
+                    int productId = Convert.ToInt32(item["ID"]);
+                    decimal quantity = Convert.ToDecimal(item["Amount"]);
+                    decimal currentStock = _roomChargeDA.GetProductStock(productId);
+
+                    if (currentStock < quantity)
+                    {
+                        string productName = item["Product_Name"].ToString();
+                        throw new Exception($"สินค้า '{productName}' มีสต๊อกไม่เพียงพอ\\n\\nสต๊อกปัจจุบัน: {currentStock}\\nต้องการ: {quantity}");
+                    }
+                }
+
+                // 🏨 Charge to room
                 long chargeId = _roomChargeService.ChargeToRoom(
                     reservationId,
                     dtOrder,
@@ -1116,27 +1187,34 @@ namespace Take_Time_BangPhra.Product
                     $"POS Sale on {DateTime.Now:yyyy-MM-dd HH:mm}"
                 );
 
-                // Clear cart
+                // ✅ Clear cart
                 dtOrder.Clear();
                 Session["dtOrder"] = dtOrder;
                 GridView1.DataSource = dtOrder;
                 GridView1.DataBind();
                 TextBox2.Text = "0";
 
-                // Reload guest info to show updated balances
+                // ✅ Reload guest info to show updated balances
                 LoadGuestInfo(reservationId);
 
-                // Success message
+                // ✅ Success message with details
                 ClientScript.RegisterStartupScript(this.GetType(), "success",
-                    $"alert('✅ บันทึกรายการชาร์จเข้าห้องเรียบร้อยแล้ว\\n\\nรหัสการจอง: {reservationId}\\nจำนวนรายการ: {dtOrder.Rows.Count} รายการ\\n\\nรายการจะรวมในบิลเช็คเอาท์');",
+                    $"alert('✅ บันทึกรายการชาร์จเข้าห้องเรียบร้อยแล้ว\\n\\n📝 รหัสการจอง: {reservationId}\\n📦 จำนวนรายการ: {itemCount} รายการ\\n\\n💡 รายการจะรวมในบิลเช็คเอาท์');",
                     true);
+
+                // ✅ Log success
+                code.Logs(conn, "Product.ProcessRoomCharge Success",
+                    $"Reservation: {reservationId}, Items: {itemCount}, ChargeID: {chargeId}",
+                    Session["User"]?.ToString());
             }
             catch (Exception ex)
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "error",
-                    $"alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message}');",
+                    $"alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message.Replace("'", "\\'")}');",
                     true);
-                code.Logs(conn, "Product.ProcessRoomCharge Error", ex.Message, Session["User"]?.ToString());
+                code.Logs(conn, "Product.ProcessRoomCharge Error",
+                    $"Error: {ex.Message}, StackTrace: {ex.StackTrace}",
+                    Session["User"]?.ToString());
             }
         }
 

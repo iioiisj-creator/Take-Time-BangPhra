@@ -48,15 +48,11 @@ LEFT JOIN (
 ) PC ON R.ID = PC.Reservation_ID
 
 WHERE
-    -- Status is checked in
-    (R.Status = N'เช็คอินแล้ว')
-    -- OR today is within check-in/check-out range
-    OR (
-        CAST(GETDATE() AS DATE) >= CAST(R.CheckinDate AS DATE)
-        AND CAST(GETDATE() AS DATE) < CAST(R.CheckoutDate AS DATE)
-        AND R.Status <> N'ยกเลิก'
-        AND R.Status <> N'เช็คเอาท์แล้ว'
-    );
+    -- Today must be within check-in/check-out date range
+    CAST(GETDATE() AS DATE) >= CAST(R.CheckinDate AS DATE)
+    AND CAST(GETDATE() AS DATE) <= CAST(R.CheckoutDate AS DATE)
+    -- Exclude cancelled and checked-out reservations
+    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว');
 GO
 
 -- Grant permissions

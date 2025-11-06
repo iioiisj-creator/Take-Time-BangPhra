@@ -218,14 +218,25 @@ box-shadow: 0 0 7px 3px #e5e5e5;}
          <td class="auto-style1" style="vertical-align: middle;">
              เลือกห้องพัก (Room Charge): </td>
          <td class="auto-style2">
-             <asp:DropDownList ID="ddlGuestReservation" runat="server" Width="60%"
+             <asp:DropDownList ID="ddlGuestReservation" runat="server" Width="80%"
                  AutoPostBack="True" OnSelectedIndexChanged="ddlGuestReservation_SelectedIndexChanged"
                  AppendDataBoundItems="true" CssClass="form-control">
                  <asp:ListItem Value="0">--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---</asp:ListItem>
              </asp:DropDownList>
-             &nbsp;
-             <asp:Label ID="lblGuestInfo" runat="server" CssClass="text-info"
-                 style="font-size: 0.95em; color: #666;"></asp:Label>
+             <br />
+             <asp:Label ID="lblActiveGuestCount" runat="server" CssClass="text-muted"
+                 style="font-size: 0.85em; color: #888; margin-top: 5px;"></asp:Label>
+         </td>
+     </tr>
+
+     <!-- 🏨 Room Charge Feature: Guest Info Display -->
+     <tr id="trGuestInfo" runat="server" visible="false">
+         <td class="auto-style1"></td>
+         <td class="auto-style2">
+             <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #8D6E63;">
+                 <asp:Label ID="lblGuestInfo" runat="server" CssClass="text-info"
+                     style="font-size: 0.95em; color: #333; line-height: 1.6;"></asp:Label>
+             </div>
          </td>
      </tr>
 

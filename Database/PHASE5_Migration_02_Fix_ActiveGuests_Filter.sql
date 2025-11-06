@@ -1,39 +1,27 @@
 -- =============================================
--- All-in-one Script: Function + View for Active Guest Reservations
--- Purpose: Display active guest reservations for room charge dropdown
--- Created: 2025-11-06
---
--- This script creates:
---   1. fn_GetReservationRoomNames - Helper function to get room names
---   2. vw_ActiveGuestReservations - View for active guests
+-- PHASE 5 - Migration 02: Fix Active Guest Filter
+-- Purpose: Fix vw_ActiveGuestReservations to only show guests staying TODAY
+-- Issue: Previously showed ALL checked-in guests regardless of dates
+-- Fix: Now shows only guests where today is within check-in/check-out range
+-- Date: 2025-11-06
 -- =============================================
 
--- Step 1: Create helper function to get room names
-IF OBJECT_ID('dbo.fn_GetReservationRoomNames', 'FN') IS NOT NULL
-    DROP FUNCTION dbo.fn_GetReservationRoomNames;
+USE [Taketime];
 GO
 
-CREATE FUNCTION dbo.fn_GetReservationRoomNames(@ReservationID INT)
-RETURNS NVARCHAR(MAX)
-AS
+PRINT 'Starting PHASE 5 Migration 02: Fix Active Guest Filter...';
+GO
+
+-- Drop existing view
+IF OBJECT_ID('vw_ActiveGuestReservations', 'V') IS NOT NULL
 BEGIN
-    DECLARE @RoomNames NVARCHAR(MAX);
-
-    SELECT @RoomNames = STUFF((
-        SELECT ', ' + A.AccomName
-        FROM Reservation_Accommodation RA
-        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-        WHERE RA.Reservation_ID = @ReservationID
-        FOR XML PATH('')
-    ), 1, 2, '');
-
-    RETURN ISNULL(@RoomNames, '');
+    PRINT 'Dropping existing vw_ActiveGuestReservations...';
+    DROP VIEW vw_ActiveGuestReservations;
 END
 GO
 
--- Step 2: Create the view
-IF OBJECT_ID('vw_ActiveGuestReservations', 'V') IS NOT NULL
-    DROP VIEW vw_ActiveGuestReservations;
+-- Recreate view with corrected filter logic
+PRINT 'Creating corrected vw_ActiveGuestReservations...';
 GO
 
 CREATE VIEW vw_ActiveGuestReservations
@@ -56,7 +44,7 @@ SELECT
     -- Get pending product charges from pre-calculated subquery
     ISNULL(PC.PendingTotal, 0) AS PendingCharges,
 
-    -- Formatted display text for dropdown (using + instead of CONCAT, CONVERT instead of FORMAT)
+    -- Formatted display text for dropdown (using simple string concatenation)
     C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
     CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
     CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
@@ -68,7 +56,7 @@ INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
 LEFT JOIN (
     SELECT
         Reservation_ID,
-        SUM(TotalPrice) AS PendingTotal
+        SUM(TotalAmount) AS PendingTotal
     FROM Reservation_Product_Charges
     WHERE Status = 'PENDING'
     GROUP BY Reservation_ID
@@ -86,6 +74,27 @@ GO
 GRANT SELECT ON vw_ActiveGuestReservations TO PUBLIC;
 GO
 
--- Test the function and view (uncomment to test)
--- SELECT dbo.fn_GetReservationRoomNames(1);  -- Replace 1 with real reservation ID
--- SELECT * FROM vw_ActiveGuestReservations;
+-- Test the view
+PRINT 'Testing vw_ActiveGuestReservations...';
+GO
+
+SELECT
+    COUNT(*) AS ActiveGuestCount,
+    MIN(CheckInDate) AS EarliestCheckIn,
+    MAX(CheckOutDate) AS LatestCheckOut
+FROM vw_ActiveGuestReservations;
+GO
+
+PRINT '';
+PRINT '✅ PHASE 5 Migration 02 completed successfully!';
+PRINT '';
+PRINT '📋 Summary of changes:';
+PRINT '   - Fixed filter logic to show only guests staying TODAY';
+PRINT '   - Removed: Status = ''เช็คอินแล้ว'' without date check';
+PRINT '   - Added: Date range validation (Today BETWEEN CheckIn AND CheckOut)';
+PRINT '';
+PRINT '📊 Impact:';
+PRINT '   - Product page dropdown will now show fewer, more relevant guests';
+PRINT '   - Only active guests currently on-site will appear';
+PRINT '';
+GO
