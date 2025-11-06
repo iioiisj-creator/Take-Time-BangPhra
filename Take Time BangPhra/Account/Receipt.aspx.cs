@@ -372,11 +372,9 @@ namespace Take_Time_BangPhra.Account.Report
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
                 string docNum = "";
 
-                docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
-
                 if (command == "edit")
                 {
-
+                    // ✅ EDIT mode: Use original receipt ID, do NOT create new document number
                     dtReceipt = code.DatabaseQuery(conn, "Select * from Account_Receipt left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     id = dtReceipt.Rows[0]["ID"].ToString();
                     if (CheckBox2.Checked == true)
@@ -385,12 +383,13 @@ namespace Take_Time_BangPhra.Account.Report
                     }
                     else
                     {
-                        docNum = id;
+                        docNum = id; // Use original ID
                     }
                 }
                 else
                 {
-
+                    // ✅ CREATE mode: Generate new document number
+                    docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
                 }
                     string RecNumber = docNum;
                 int reservation_id = 0;
