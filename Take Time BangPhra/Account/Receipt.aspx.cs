@@ -449,6 +449,9 @@ namespace Take_Time_BangPhra.Account.Report
                 if (command == "edit")
                 {
                     // ⚠️ Delete in correct order to maintain referential integrity
+                    // But KEEP the UID for re-insertion
+                    string originalUID = dtReceipt.Rows[0]["UID"].ToString();
+
                     // 1. Delete Payment_History first (references Receipt_ID)
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + id + "'");
 
@@ -457,15 +460,34 @@ namespace Take_Time_BangPhra.Account.Report
 
                     // 3. Finally delete Account_Receipt
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + id + "'");
+
+                    // Store UID for re-use
+                    Session["EditReceiptUID"] = originalUID;
                 }
                 else { }
-                if (reservation_id > 0)
+
+                // Get UID: use original UID for edit, or create new one
+                string receiptUID;
+                if (command == "edit" && Session["EditReceiptUID"] != null)
                 {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID) VALUES ('" + docNum + "','" + reservation_id + "','" + Convert.ToDateTime(TextBox8.Text) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'"+CheckBox5.Checked+"','"+ dtcustomer.Rows[0]["ID"].ToString() + "')");
+                    receiptUID = Session["EditReceiptUID"].ToString();
+                }
+                else if (!string.IsNullOrEmpty(uid))
+                {
+                    receiptUID = uid;
                 }
                 else
                 {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ dtcustomer.Rows[0]["ID"].ToString() + "')");
+                    receiptUID = Guid.NewGuid().ToString();
+                }
+
+                if (reservation_id > 0)
+                {
+                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + reservation_id + "','" + Convert.ToDateTime(TextBox8.Text) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'"+CheckBox5.Checked+"','"+ dtcustomer.Rows[0]["ID"].ToString() + "','" + receiptUID + "')");
+                }
+                else
+                {
+                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ dtcustomer.Rows[0]["ID"].ToString() + "','" + receiptUID + "')");
                 }
                 for (int i = 0; i < dtDetail.Rows.Count; i++)
                 {
