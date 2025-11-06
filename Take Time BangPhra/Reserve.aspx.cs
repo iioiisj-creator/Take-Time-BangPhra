@@ -1298,6 +1298,23 @@ namespace Take_Time_BangPhra
 
                                                     createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
+                                                else
+                                                {
+                                                    // 🏨 ไม่สร้างใบเสร็จ แต่รับเงินแล้ว → mark charges as PAID
+                                                    try
+                                                    {
+                                                        MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+                                                        code2.Logs(conn, "Reserve Edit - Manual Payment",
+                                                            $"Marked charges as PAID without receipt for Reservation {id}",
+                                                            Session["User"]?.ToString());
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        code2.Logs(conn, "Reserve Edit - Manual Payment Error",
+                                                            $"Reservation {id}, Error: {ex.Message}",
+                                                            Session["User"]?.ToString());
+                                                    }
+                                                }
                                             }
                                             else
                                             {
@@ -2888,28 +2905,57 @@ namespace Take_Time_BangPhra
             if (dtReserve == null || dtReserve.Rows.Count == 0)
                 return;
 
-            // คำนวณยอดรวมปัจจุบันจาก dtReserve
-            double currentTotal = CalculateTotalFromReserve(dtReserve);
+            // 🏨 คำนวณยอดรวมโดยข้ามสินค้าชาร์จ (ProductType_ID = 3)
+            // เพราะสินค้าชาร์จมีราคาแน่นอน ไม่ควรถูก adjust
+            double currentTotal = 0;
+            double productChargesTotal = 0;
+            foreach (DataRow row in dtReserve.Rows)
+            {
+                double amount = Convert.ToDouble(row["Price_Amount"]);
+                string productTypeId = row["ProductType_ID"].ToString();
+
+                if (productTypeId == "3")
+                {
+                    // สินค้าชาร์จ - เก็บยอดแยก
+                    productChargesTotal += amount;
+                }
+                else
+                {
+                    // ห้องพัก + อุปกรณ์เช่า - ใช้คำนวณ adjustment
+                    currentTotal += amount;
+                }
+            }
+
+            // ลบยอดสินค้าชาร์จออกจาก expectedTotal
+            double expectedTotalExcludingCharges = expectedTotal - productChargesTotal;
 
             // ถ้ายอดตรงกันอยู่แล้ว (ผิดพลาดไม่เกิน 0.5 บาท) ไม่ต้องปรับ
-            if (Math.Abs(currentTotal - expectedTotal) <= 0.5)
+            if (Math.Abs(currentTotal - expectedTotalExcludingCharges) <= 0.5)
                 return;
 
             // คำนวณอัตราส่วนการปรับ
-            double adjustmentRatio = expectedTotal / currentTotal;
+            double adjustmentRatio = expectedTotalExcludingCharges / currentTotal;
 
             // Log การปรับสัดส่วน
             code2.Logs(conn, "Receipt Amount Adjustment",
-                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotal:F2} (ratio: {adjustmentRatio:F4})",
+                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotalExcludingCharges:F2} (ratio: {adjustmentRatio:F4}), Product Charges: {productChargesTotal:F2} (excluded from adjustment)",
                 "SYSTEM");
 
             double adjustedTotal = 0;
-            int lastIndex = dtReserve.Rows.Count - 1;
+            int lastAdjustableIndex = -1;
 
-            // ปรับทุกแถวตามอัตราส่วน
+            // ปรับแถวที่ไม่ใช่สินค้าชาร์จตามอัตราส่วน
             for (int i = 0; i < dtReserve.Rows.Count; i++)
             {
                 DataRow row = dtReserve.Rows[i];
+                string productTypeId = row["ProductType_ID"].ToString();
+
+                // 🏨 ข้ามสินค้าชาร์จ (ProductType_ID = 3) ไม่ adjust
+                if (productTypeId == "3")
+                {
+                    continue;
+                }
+
                 double originalPricePerPiece = Convert.ToDouble(row["Price_PerPeice"]);
                 double originalPriceAmount = Convert.ToDouble(row["Price_Amount"]);
 
@@ -2921,13 +2967,14 @@ namespace Take_Time_BangPhra
                 row["Price_Amount"] = adjustedPriceAmount;
 
                 adjustedTotal += adjustedPriceAmount;
+                lastAdjustableIndex = i; // Track last adjustable row
             }
 
-            // ปรับส่วนต่างจากการปัดเศษให้กับรายการสุดท้าย
-            double difference = TwoDecimalPoints(expectedTotal - adjustedTotal);
-            if (Math.Abs(difference) > 0.01)
+            // ปรับส่วนต่างจากการปัดเศษให้กับรายการสุดท้ายที่สามารถ adjust ได้
+            double difference = TwoDecimalPoints(expectedTotalExcludingCharges - adjustedTotal);
+            if (Math.Abs(difference) > 0.01 && lastAdjustableIndex >= 0)
             {
-                DataRow lastRow = dtReserve.Rows[lastIndex];
+                DataRow lastRow = dtReserve.Rows[lastAdjustableIndex];
                 double lastPriceAmount = Convert.ToDouble(lastRow["Price_Amount"]);
                 lastRow["Price_Amount"] = TwoDecimalPoints(lastPriceAmount + difference);
 
@@ -5412,8 +5459,8 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 try
                 {
                     long chargeId = Convert.ToInt64(e.CommandArgument);
-                    int? adminId = Session["AdminID"] != null ?
-                        Convert.ToInt32(Session["AdminID"]) : (int?)null;
+                    int? adminId = Session["UserID"] != null ?
+                        Convert.ToInt32(Session["UserID"]) : (int?)null;
 
                     // Cancel the charge (returns stock and updates reservation total)
                     _roomChargeService.CancelRoomCharge(chargeId, adminId,

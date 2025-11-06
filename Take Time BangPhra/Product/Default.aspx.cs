@@ -357,8 +357,13 @@ namespace Take_Time_BangPhra.Product
                 return; // Exit method after processing room charge
             }
 
-            // 🏨 Note: If guest is selected but PAY_NOW mode, continue with normal receipt generation
-            // The IMMEDIATE charge will be linked later after receipt is created
+            // 🏨 Store guest info for PAY_NOW mode (will be used after receipt creation)
+            bool isPayNowMode = (ddlGuestReservation.SelectedValue != "0" && rblChargeMode.SelectedValue == "PAY_NOW");
+            int guestReservationId = 0;
+            if (isPayNowMode)
+            {
+                guestReservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
+            }
 
             if (CheckBox1.Checked == true)
             {
@@ -785,9 +790,21 @@ namespace Take_Time_BangPhra.Product
 
                 catch { }
 
-
-               
-            
+                // 🏨 Process IMMEDIATE charge if PAY_NOW mode
+                if (isPayNowMode && guestReservationId > 0)
+                {
+                    try
+                    {
+                        ProcessImmediateCharge(dtOrder, guestReservationId, docNum);
+                    }
+                    catch (Exception ex)
+                    {
+                        code.Logs(conn, "Product.ProcessImmediateCharge Error",
+                            $"Receipt: {docNum}, Reservation: {guestReservationId}, Error: {ex.Message}",
+                            Session["User"]?.ToString());
+                        // Don't fail receipt creation, just log the error
+                    }
+                }
             }
 
             if (GridView1.Rows.Count > 0)
@@ -1120,6 +1137,69 @@ namespace Take_Time_BangPhra.Product
                     $"alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message}');",
                     true);
                 code.Logs(conn, "Product.ProcessRoomCharge Error", ex.Message, Session["User"]?.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Process IMMEDIATE charge when PAY_NOW mode is selected
+        /// This creates charge records linked to the receipt (already paid)
+        /// </summary>
+        private void ProcessImmediateCharge(DataTable dtOrder, int reservationId, string receiptId)
+        {
+            try
+            {
+                if (dtOrder == null || dtOrder.Rows.Count == 0)
+                {
+                    return; // No items to process
+                }
+
+                int? adminId = Session["UserID"] != null ? Convert.ToInt32(Session["UserID"]) : (int?)null;
+
+                // Create IMMEDIATE charge records for each product
+                foreach (DataRow item in dtOrder.Rows)
+                {
+                    int productId = Convert.ToInt32(item["ID"]);
+                    string productName = item["Product_Name"].ToString();
+                    string barcode = item["Barcode"]?.ToString();
+                    int? categoryId = item["Category_ID"] != DBNull.Value
+                        ? Convert.ToInt32(item["Category_ID"])
+                        : (int?)null;
+                    decimal quantity = Convert.ToDecimal(item["Amount"]);
+                    decimal unitPrice = Convert.ToDecimal(item["Sell_Price"]);
+                    decimal total = Convert.ToDecimal(item["Price_Total"]);
+
+                    // Create charge record with IMMEDIATE type and PAID status
+                    long chargeId = _roomChargeDA.CreateRoomCharge(
+                        reservationId,
+                        productId,
+                        productName,
+                        barcode,
+                        categoryId,
+                        quantity,
+                        unitPrice,
+                        total,
+                        "IMMEDIATE", // ChargeType
+                        adminId,
+                        $"POS PAY_NOW - Receipt: {receiptId}"
+                    );
+
+                    // Mark as paid immediately
+                    _roomChargeDA.MarkChargeAsPaid(chargeId, receiptId);
+                }
+
+                // Log success
+                code.Logs(conn,
+                    "Product.ProcessImmediateCharge",
+                    $"Created {dtOrder.Rows.Count} IMMEDIATE charges for Reservation {reservationId}, Receipt {receiptId}",
+                    adminId?.ToString() ?? "SYSTEM");
+            }
+            catch (Exception ex)
+            {
+                code.Logs(conn,
+                    "Product.ProcessImmediateCharge Error",
+                    $"Reservation: {reservationId}, Receipt: {receiptId}, Error: {ex.Message}",
+                    Session["User"]?.ToString());
+                throw; // Re-throw to be caught by caller
             }
         }
 
