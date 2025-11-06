@@ -166,7 +166,7 @@ namespace Take_Time_BangPhra.Account
                 decimal totalVAT = 0;
                 int docCount = 0;
 
-                // Category 1: Reservations with check-in in date range
+                // Category 1: Payments made in date range for reservations that checked-in in date range
                 try
                 {
                     var cat1Data = GetCategory1Revenue(startDate, endDate, status);
@@ -193,7 +193,7 @@ namespace Take_Time_BangPhra.Account
                     System.Diagnostics.Debug.WriteLine($"   ❌ Category 1 failed: {ex.Message}");
                 }
 
-                // Category 2: Reservations with payment in date range but check-in outside
+                // Category 2: Payments made in date range for reservations that checked-in OUTSIDE date range
                 try
                 {
                     var cat2Data = GetCategory2Revenue(startDate, endDate, status);
@@ -362,7 +362,8 @@ namespace Take_Time_BangPhra.Account
 
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
         {
-            // Reservations with check-in in date range
+            // Reservations with PAYMENT DATE in date range AND CHECK-IN DATE in date range
+            // Only count payments made during the search period for reservations that also checked in during the period
             // Use Payment_History to get accurate amounts per payment method
             // Only count Payment_History that links to valid receipts
             string query = @"
@@ -370,7 +371,9 @@ namespace Take_Time_BangPhra.Account
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
-                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                WHERE CAST(ph.PaymentDate AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ph.PaymentDate AS DATE) <= CAST(@EndDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
@@ -389,16 +392,16 @@ namespace Take_Time_BangPhra.Account
 
         private DataTable GetCategory2Revenue(DateTime startDate, DateTime endDate, string status)
         {
-            // Reservations with receipt created in date range but check-in outside
-            // Use Payment_History to get accurate amounts per payment method
+            // Reservations with PAYMENT DATE in date range but check-in outside
+            // Use Payment_History.PaymentDate (not Created_Date) to filter payments made during the period
             // Only count Payment_History that links to valid receipts
             string query = @"
                 SELECT DISTINCT ph.ID as PaymentHistoryID, ph.PaymentMethod, ph.PaymentAmount, ar.ID as ReceiptID
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
-                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
-                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                WHERE CAST(ph.PaymentDate AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ph.PaymentDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND (CAST(r.CheckinDate AS DATE) < CAST(@StartDate AS DATE)
                        OR CAST(r.CheckinDate AS DATE) > CAST(@EndDate AS DATE)
                        OR r.CheckinDate IS NULL)
@@ -469,15 +472,19 @@ namespace Take_Time_BangPhra.Account
 
         /// <summary>
         /// Fallback: ดึงข้อมูล Category 1 จาก Account_Receipt ถ้า Payment_History ไม่มีข้อมูล
+        /// Note: Fallback uses Created_Date because Payment_History.PaymentDate is not available in old system
         /// </summary>
         private DataTable GetCategory1RevenueFallback(DateTime startDate, DateTime endDate, string status)
         {
             // ใช้ Account_Receipt สำหรับระบบเก่าที่ยังไม่มี Payment_History
+            // ใช้ Created_Date เป็นตัวแทน PaymentDate (เพราะไม่มี Payment_History)
             string query = @"
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ar.Reservation_ID > 0";
@@ -494,10 +501,12 @@ namespace Take_Time_BangPhra.Account
 
         /// <summary>
         /// Fallback: ดึงข้อมูล Category 2 จาก Account_Receipt ถ้า Payment_History ไม่มีข้อมูล
+        /// Note: Fallback uses Created_Date because Payment_History.PaymentDate is not available in old system
         /// </summary>
         private DataTable GetCategory2RevenueFallback(DateTime startDate, DateTime endDate, string status)
         {
             // ใช้ Account_Receipt สำหรับระบบเก่าที่ยังไม่มี Payment_History
+            // ใช้ Created_Date เป็นตัวแทน PaymentDate (เพราะไม่มี Payment_History)
             string query = @"
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
