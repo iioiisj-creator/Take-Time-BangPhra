@@ -111,8 +111,8 @@ BEGIN
     PRINT '📊 Creating index: IX_Product_Barcode...';
     CREATE NONCLUSTERED INDEX IX_Product_Barcode
     ON Product(Barcode)
+    INCLUDE (ID, Product_Name, Sell_Price, Amount, Category_ID, CanPreBook)
     WHERE Barcode IS NOT NULL AND Status = 'True';
-    INCLUDE (ID, Product_Name, Sell_Price, Amount, Category_ID, CanPreBook);
     PRINT '✅ Index IX_Product_Barcode created successfully!';
 END
 ELSE
