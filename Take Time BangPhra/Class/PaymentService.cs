@@ -344,7 +344,7 @@ namespace Take_Time_BangPhra
                     { "@status", "FAILED" }
                 };
 
-                _code.DatabaseExecuteSafe(_connectionString,
+                _code.DatabaseInsertSafe(_connectionString,
                     @"UPDATE Payment_Slips
                       SET OCR_Status = @status,
                           OCR_ErrorMessage = @errorMessage,

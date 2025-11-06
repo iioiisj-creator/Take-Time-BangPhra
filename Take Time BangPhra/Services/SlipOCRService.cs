@@ -270,7 +270,7 @@ namespace Take_Time_BangPhra.Services
         {
             try
             {
-                var code2 = new code2();
+                var codeInstance = new code();
                 var conn = _connectionString;
 
                 string query = @"
@@ -293,13 +293,13 @@ namespace Take_Time_BangPhra.Services
                     { "@ErrorMessage", result.ErrorMessage ?? "" }
                 };
 
-                code2.DatabaseExecuteSafe(conn, query, parameters);
+                codeInstance.DatabaseInsertSafe(conn, query, parameters);
             }
             catch (Exception ex)
             {
                 // Log error
-                var code2 = new code2();
-                code2.Logs(_connectionString, "SlipOCRService.SaveOCRResult Error",
+                var codeInstance = new code();
+                codeInstance.Logs(_connectionString, "SlipOCRService.SaveOCRResult Error",
                     $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
             }
         }
@@ -331,7 +331,7 @@ namespace Take_Time_BangPhra.Services
         {
             try
             {
-                var code2 = new code2();
+                var codeInstance = new code();
                 var conn = _connectionString;
 
                 string query = @"
@@ -351,12 +351,12 @@ namespace Take_Time_BangPhra.Services
                     { "@Limit", limit }
                 };
 
-                return code2.DatabaseQuerySafe(conn, query, parameters);
+                return codeInstance.DatabaseQuerySafe(conn, query, parameters);
             }
             catch (Exception ex)
             {
-                var code2 = new code2();
-                code2.Logs(_connectionString, "SlipOCRService.GetPendingOCRSlips Error",
+                var codeInstance = new code();
+                codeInstance.Logs(_connectionString, "SlipOCRService.GetPendingOCRSlips Error",
                     $"Error: {ex.Message}", "SYSTEM");
                 return new DataTable();
             }

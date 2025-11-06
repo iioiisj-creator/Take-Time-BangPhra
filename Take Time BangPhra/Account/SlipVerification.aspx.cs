@@ -8,7 +8,7 @@ namespace Take_Time_BangPhra.Account
 {
     public partial class SlipVerification : Page
     {
-        private code2 codeInstance = new code2();
+        private code codeInstance = new code();
         private string conn = System.Configuration.ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -202,7 +202,7 @@ namespace Take_Time_BangPhra.Account
                 { "@AdminId", adminId }
             };
 
-            codeInstance.DatabaseExecuteSafe(conn, query, parameters);
+            codeInstance.DatabaseInsertSafe(conn, query, parameters);
 
             // Log action
             codeInstance.Logs(conn, "Slip Approved",
@@ -233,7 +233,7 @@ namespace Take_Time_BangPhra.Account
                 { "@Reason", reason }
             };
 
-            codeInstance.DatabaseExecuteSafe(conn, query, parameters);
+            codeInstance.DatabaseInsertSafe(conn, query, parameters);
 
             // Log action
             codeInstance.Logs(conn, "Slip Rejected",
