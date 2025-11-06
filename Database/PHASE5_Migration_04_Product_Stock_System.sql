@@ -69,7 +69,6 @@ SELECT
     P.Barcode,
     P.Category_ID,
     P.Sell_Price,
-    P.Buy_Price,
     P.Status,
     P.CanPreBook,
     ISNULL(PIN.TotalIn, 0) AS TotalStockIn,

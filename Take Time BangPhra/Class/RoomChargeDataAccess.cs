@@ -288,6 +288,7 @@ namespace Take_Time_BangPhra
         /// <summary>
         /// Return product stock by creating Product_In record
         /// Used when cancelling room charges
+        /// Note: Uses Sell_Price as PricePerUnit (Product table has no Buy_Price column)
         /// </summary>
         public void ReturnProductStock(int productId, decimal quantity, string remark = null)
         {
@@ -302,7 +303,7 @@ namespace Take_Time_BangPhra
             _code.DatabaseInsertSafe(_connectionString,
                 @"INSERT INTO Product_In (DateTime_In, Product_ID, Amount, PricePerUnit, Remark)
                   SELECT @dateTime, @productId, @quantity,
-                         ISNULL(Buy_Price, 0), @remark
+                         ISNULL(Sell_Price, 0), @remark
                   FROM Product WHERE ID = @productId",
                 parameters);
         }
