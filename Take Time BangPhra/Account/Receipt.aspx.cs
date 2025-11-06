@@ -1038,13 +1038,72 @@ namespace Take_Time_BangPhra.Account.Report
         {
             if(TextBox9.Text.Length > 0)
             {
-                DataTable dtCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Reservation] inner join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone Where Reservation.ID = "+TextBox9.Text);
+                // ✅ JOIN กับ Address table เพื่อดึงข้อมูลที่อยู่เต็ม
+                DataTable dtCustomer = code.DatabaseQuery(conn, @"SELECT
+                    Customer.ID, Customer.MobilePhone, Customer.Name, Customer.NickName, Customer.ComeFrom,
+                    Customer.Remark, Customer.Status, Customer.FullName, Customer.Address, Customer.Address1,
+                    Customer.Address_ID, Customer.IDNumber, Customer.Email, Customer.Customer_Type_ID,
+                    Customer.Branch_Number, Customer.TaxID,
+                    Customer_Type.Customer_Type, Customer_Type.Customer_Code,
+                    Address.Province, Address.District, Address.SubDistrict, Address.PostalCode, Address.Address_Code
+                    FROM [Reservation]
+                    INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone
+                    LEFT JOIN Customer_Type ON Customer.Customer_Type_ID = Customer_Type.ID
+                    LEFT JOIN Address ON Address.ID = Customer.Address_ID
+                    WHERE Reservation.ID = " + TextBox9.Text);
+
                 if(dtCustomer.Rows.Count > 0)
                 {
+                    // ✅ Populate customer info
                     TextBox10.Text = dtCustomer.Rows[0]["FullName"].ToString();
                     TextBox11.Text = dtCustomer.Rows[0]["Address"].ToString();
                     TextBox12.Text = dtCustomer.Rows[0]["IDNumber"].ToString();
                     TextBox13.Text = dtCustomer.Rows[0]["MobilePhone"].ToString();
+                    TextBox17.Text = dtCustomer.Rows[0]["Email"].ToString();
+                    TextBox18.Text = dtCustomer.Rows[0]["Address1"].ToString();
+
+                    // ✅ Populate address dropdowns and postal code
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(dtCustomer.Rows[0]["PostalCode"].ToString()))
+                        {
+                            TextBox16.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
+
+                            // Populate dropdowns
+                            DropDownList5.ClearSelection();
+                            if (DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()) != null)
+                            {
+                                DropDownList5.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()).Selected = true;
+                            }
+
+                            DropDownList6.ClearSelection();
+                            if (DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()) != null)
+                            {
+                                DropDownList6.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()).Selected = true;
+                            }
+
+                            DropDownList7.ClearSelection();
+                            if (DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()) != null)
+                            {
+                                DropDownList7.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()).Selected = true;
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // ✅ Populate customer type dropdown
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()))
+                        {
+                            DropDownList8.ClearSelection();
+                            if (DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()) != null)
+                            {
+                                DropDownList8.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()).Selected = true;
+                            }
+                        }
+                    }
+                    catch { }
                 }
             }
 
