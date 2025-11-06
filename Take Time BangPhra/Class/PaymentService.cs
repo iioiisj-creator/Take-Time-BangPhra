@@ -320,7 +320,7 @@ namespace Take_Time_BangPhra
                 string tessDataPath = ConfigurationManager.AppSettings["TesseractDataPath"] ??
                     HttpContext.Current.Server.MapPath("~/tessdata");
 
-                var ocrService = new SlipOCRService(tessDataPath, _connectionString);
+                var ocrService = new Take_Time_BangPhra.Services.SlipOCRService(tessDataPath, _connectionString);
                 var ocrResult = ocrService.ProcessSlip(imageFilePath);
 
                 // Save OCR result to database
