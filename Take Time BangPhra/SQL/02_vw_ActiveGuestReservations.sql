@@ -1,37 +1,10 @@
 -- =============================================
--- All-in-one Script: Function + View for Active Guest Reservations
+-- View: vw_ActiveGuestReservations
 -- Purpose: Display active guest reservations for room charge dropdown
 -- Created: 2025-11-06
---
--- This script creates:
---   1. fn_GetReservationRoomNames - Helper function to get room names
---   2. vw_ActiveGuestReservations - View for active guests
+-- Important: Run 01_fn_GetReservationRoomNames.sql first!
 -- =============================================
 
--- Step 1: Create helper function to get room names
-IF OBJECT_ID('dbo.fn_GetReservationRoomNames', 'FN') IS NOT NULL
-    DROP FUNCTION dbo.fn_GetReservationRoomNames;
-GO
-
-CREATE FUNCTION dbo.fn_GetReservationRoomNames(@ReservationID INT)
-RETURNS NVARCHAR(MAX)
-AS
-BEGIN
-    DECLARE @RoomNames NVARCHAR(MAX);
-
-    SELECT @RoomNames = STUFF((
-        SELECT ', ' + A.AccomName
-        FROM Reservation_Accommodation RA
-        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-        WHERE RA.Reservation_ID = @ReservationID
-        FOR XML PATH('')
-    ), 1, 2, '');
-
-    RETURN ISNULL(@RoomNames, '');
-END
-GO
-
--- Step 2: Create the view
 IF OBJECT_ID('vw_ActiveGuestReservations', 'V') IS NOT NULL
     DROP VIEW vw_ActiveGuestReservations;
 GO
@@ -61,7 +34,7 @@ SELECT
         AND RPC.Status = 'PENDING'
     ), 0) AS PendingCharges,
 
-    -- Formatted display text for dropdown (using + instead of CONCAT, CONVERT instead of FORMAT)
+    -- Formatted display text for dropdown (using simple string concatenation)
     C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
     CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
     CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
@@ -85,6 +58,5 @@ GO
 GRANT SELECT ON vw_ActiveGuestReservations TO PUBLIC;
 GO
 
--- Test the function and view (uncomment to test)
--- SELECT dbo.fn_GetReservationRoomNames(1);  -- Replace 1 with real reservation ID
+-- Test the view
 -- SELECT * FROM vw_ActiveGuestReservations;

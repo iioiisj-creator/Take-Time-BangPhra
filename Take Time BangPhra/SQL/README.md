@@ -2,19 +2,27 @@
 
 ## Installation Instructions
 
-### 1. Create Database View
+### Important: Run scripts in order!
 
-Execute the following SQL script in your SQL Server database to create the required view:
+Execute the following SQL scripts **in order** in your SQL Server database:
 
+**Step 1: Create the function**
 ```sql
-SQL/vw_ActiveGuestReservations.sql
+SQL/01_fn_GetReservationRoomNames.sql
+```
+
+**Step 2: Create the view**
+```sql
+SQL/02_vw_ActiveGuestReservations.sql
 ```
 
 **How to run:**
 1. Open SQL Server Management Studio (SSMS)
 2. Connect to your TakeTime database
-3. Open the `vw_ActiveGuestReservations.sql` file
+3. Open `01_fn_GetReservationRoomNames.sql` first
 4. Execute the script (F5 or Execute button)
+5. Then open `02_vw_ActiveGuestReservations.sql`
+6. Execute the script (F5 or Execute button)
 
 ### 2. Verify Installation
 
