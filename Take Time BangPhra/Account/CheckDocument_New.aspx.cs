@@ -256,7 +256,8 @@ namespace Take_Time_BangPhra.Account
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
-                WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
+                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
                   AND ph.Receipt_ID IS NOT NULL
@@ -282,8 +283,11 @@ namespace Take_Time_BangPhra.Account
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
-                  AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate OR r.CheckinDate IS NULL)
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                  AND (CAST(r.CheckinDate AS DATE) < CAST(@StartDate AS DATE)
+                       OR CAST(r.CheckinDate AS DATE) > CAST(@EndDate AS DATE)
+                       OR r.CheckinDate IS NULL)
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
                   AND ph.Receipt_ID IS NOT NULL
@@ -308,7 +312,8 @@ namespace Take_Time_BangPhra.Account
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Account_Receipt_Detail ard ON ar.ID = ard.Receipt_ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
                   AND ard.ProductType_ID = 3
                   AND ar.Status LIKE @Status
                   AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)";
@@ -332,7 +337,8 @@ namespace Take_Time_BangPhra.Account
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 LEFT JOIN Account_Receipt_Detail ard ON ar.ID = ard.Receipt_ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)
                   AND (ard.ProductType_ID IS NULL OR ard.ProductType_ID != 3)";
@@ -357,7 +363,8 @@ namespace Take_Time_BangPhra.Account
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
+                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ar.Reservation_ID > 0";
 
@@ -381,8 +388,11 @@ namespace Take_Time_BangPhra.Account
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
-                  AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate OR r.CheckinDate IS NULL)
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                  AND (CAST(r.CheckinDate AS DATE) < CAST(@StartDate AS DATE)
+                       OR CAST(r.CheckinDate AS DATE) > CAST(@EndDate AS DATE)
+                       OR r.CheckinDate IS NULL)
                   AND ar.Status LIKE @Status
                   AND ar.Reservation_ID > 0
                   AND ar.IsDeposit = 1";
@@ -480,7 +490,8 @@ namespace Take_Time_BangPhra.Account
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                 LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                 ORDER BY ar.ID ASC";
 
