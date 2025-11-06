@@ -426,45 +426,42 @@ namespace Take_Time_BangPhra.Account.Report
                 System.Diagnostics.Debug.WriteLine($"==================================================");
                 System.Diagnostics.Debug.WriteLine($"");
 
+                // ✅ ถ้าเป็น edit mode → ดึงข้อมูลเดิม
                 if (command == "edit")
                 {
-                    // ✅ EDIT mode: Use original receipt ID, do NOT create new document number
                     dtReceipt = code.DatabaseQuery(conn, "Select * from Account_Receipt left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     id = dtReceipt.Rows[0]["ID"].ToString();
-
-                    // 🔍 Debug: ดูค่าทั้งหมดก่อนตัดสินใจ
-                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit - Button3_Click] ===");
-                    System.Diagnostics.Debug.WriteLine($"Original ID from DB: {id}");
-                    System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
-                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text: '{TextBox5.Text}'");
-                    System.Diagnostics.Debug.WriteLine($"TextBox5.ReadOnly: {TextBox5.ReadOnly}");
-
-                    // ✅ ใช้ ReadOnly แทน Enabled → TextBox5.Text จะถูกส่งกลับมาใน postback แม้ว่าจะเป็น ReadOnly
-                    // ✅ ถ้า CheckBox2 ถูก check และ TextBox5 มีค่า → ใช้เลขที่กรอก
-                    // ✅ ถ้าไม่ → ใช้เลขเดิม
-                    if (CheckBox2.Checked == true && !string.IsNullOrWhiteSpace(TextBox5.Text))
-                    {
-                        docNum = TextBox5.Text.Trim();  // ใช้เลขที่กรอก
-                        System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using CUSTOM receipt number: {docNum}");
-                    }
-                    else
-                    {
-                        docNum = id; // Use original ID
-                        System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using ORIGINAL receipt ID: {docNum}");
-                    }
-                    System.Diagnostics.Debug.WriteLine($"=============================");
+                    System.Diagnostics.Debug.WriteLine($"[Edit Mode] Original ID from DB: {id}");
                 }
+
+                // 🔍 Debug: ดูค่าทั้งหมดก่อนตัดสินใจ
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== [Receipt Number Decision] ===");
+                System.Diagnostics.Debug.WriteLine($"Mode: {(command == "edit" ? "EDIT" : "CREATE")}");
+                System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
+                System.Diagnostics.Debug.WriteLine($"TextBox5.Text: '{TextBox5.Text}'");
+                System.Diagnostics.Debug.WriteLine($"TextBox5.ReadOnly: {TextBox5.ReadOnly}");
+
+                // ✅ Priority 1: ถ้า CheckBox2 checked และมีเลขกรอก → ใช้เลขที่กรอก (ทั้ง CREATE และ EDIT mode)
+                if (CheckBox2.Checked == true && !string.IsNullOrWhiteSpace(TextBox5.Text))
+                {
+                    docNum = TextBox5.Text.Trim();
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using CUSTOM receipt number from TextBox5: {docNum}");
+                }
+                // ✅ Priority 2: ถ้าเป็น EDIT mode และไม่ได้กรอกเลข → ใช้เลขเดิม
+                else if (command == "edit")
+                {
+                    docNum = id;
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using ORIGINAL receipt ID (edit mode): {docNum}");
+                }
+                // ✅ Priority 3: ถ้าเป็น CREATE mode และไม่ได้กรอกเลข → สร้างเลขใหม่
                 else
                 {
-                    // ❌ CREATE mode: Generate new document number
-                    System.Diagnostics.Debug.WriteLine($"");
-                    System.Diagnostics.Debug.WriteLine($"⚠️⚠️⚠️ WARNING: Entered CREATE mode (command != 'edit') ⚠️⚠️⚠️");
-                    System.Diagnostics.Debug.WriteLine($"This means command is NULL or not 'edit'");
-                    System.Diagnostics.Debug.WriteLine($"Creating NEW document number...");
                     docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
-                    System.Diagnostics.Debug.WriteLine($"Generated docNum: {docNum}");
-                    System.Diagnostics.Debug.WriteLine($"");
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Generated NEW receipt number (create mode): {docNum}");
                 }
+                System.Diagnostics.Debug.WriteLine($"====================================");
+                System.Diagnostics.Debug.WriteLine($"");
 
                 // 🔍 Final decision
                 System.Diagnostics.Debug.WriteLine($"");
