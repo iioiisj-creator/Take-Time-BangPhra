@@ -127,6 +127,11 @@ namespace Take_Time_BangPhra.Account
 
             // Category 1: Reservations with check-in in date range
             var cat1Data = GetCategory1Revenue(startDate, endDate, status);
+            // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
+            if (cat1Data.Rows.Count == 0)
+            {
+                cat1Data = GetCategory1RevenueFallback(startDate, endDate, status);
+            }
             cat1Cash = GetAmountByPaymentMethod(cat1Data, 2);
             cat1KBANK = GetAmountByPaymentMethod(cat1Data, 1);
             cat1KTB = GetAmountByPaymentMethod(cat1Data, 4);
@@ -134,6 +139,11 @@ namespace Take_Time_BangPhra.Account
 
             // Category 2: Reservations with payment in date range but check-in outside
             var cat2Data = GetCategory2Revenue(startDate, endDate, status);
+            // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
+            if (cat2Data.Rows.Count == 0)
+            {
+                cat2Data = GetCategory2RevenueFallback(startDate, endDate, status);
+            }
             cat2Cash = GetAmountByPaymentMethod(cat2Data, 2);
             cat2KBANK = GetAmountByPaymentMethod(cat2Data, 1);
             cat2KTB = GetAmountByPaymentMethod(cat2Data, 4);
@@ -310,6 +320,56 @@ namespace Take_Time_BangPhra.Account
                   AND ar.Status LIKE @Status
                   AND (ar.Reservation_ID = 0 OR ar.Reservation_ID IS NULL)
                   AND (ard.ProductType_ID IS NULL OR ard.ProductType_ID != 3)";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@StartDate", startDate },
+                { "@EndDate", endDate },
+                { "@Status", status }
+            };
+
+            return codeInstance.DatabaseQuerySafe(conn, query, parameters);
+        }
+
+        /// <summary>
+        /// Fallback: ดึงข้อมูล Category 1 จาก Account_Receipt ถ้า Payment_History ไม่มีข้อมูล
+        /// </summary>
+        private DataTable GetCategory1RevenueFallback(DateTime startDate, DateTime endDate, string status)
+        {
+            // ใช้ Account_Receipt สำหรับระบบเก่าที่ยังไม่มี Payment_History
+            string query = @"
+                SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
+                FROM Account_Receipt ar
+                INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
+                WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
+                  AND ar.Status LIKE @Status
+                  AND ar.Reservation_ID > 0";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@StartDate", startDate },
+                { "@EndDate", endDate },
+                { "@Status", status }
+            };
+
+            return codeInstance.DatabaseQuerySafe(conn, query, parameters);
+        }
+
+        /// <summary>
+        /// Fallback: ดึงข้อมูล Category 2 จาก Account_Receipt ถ้า Payment_History ไม่มีข้อมูล
+        /// </summary>
+        private DataTable GetCategory2RevenueFallback(DateTime startDate, DateTime endDate, string status)
+        {
+            // ใช้ Account_Receipt สำหรับระบบเก่าที่ยังไม่มี Payment_History
+            string query = @"
+                SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
+                FROM Account_Receipt ar
+                INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
+                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
+                  AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate OR r.CheckinDate IS NULL)
+                  AND ar.Status LIKE @Status
+                  AND ar.Reservation_ID > 0
+                  AND ar.IsDeposit = 1";
 
             var parameters = new Dictionary<string, object>
             {
