@@ -26,13 +26,8 @@ SELECT
     -- Get room names using scalar function
     dbo.fn_GetReservationRoomNames(R.ID) AS RoomNames,
 
-    -- Calculate pending product charges
-    ISNULL((
-        SELECT SUM(TotalPrice)
-        FROM Reservation_Product_Charges RPC
-        WHERE RPC.Reservation_ID = R.ID
-        AND RPC.Status = 'PENDING'
-    ), 0) AS PendingCharges,
+    -- Get pending product charges from pre-calculated subquery
+    ISNULL(PC.PendingTotal, 0) AS PendingCharges,
 
     -- Formatted display text for dropdown (using simple string concatenation)
     C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
@@ -41,6 +36,16 @@ SELECT
 
 FROM Reservation R
 INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
+
+-- LEFT JOIN to get pending charges (pre-aggregated)
+LEFT JOIN (
+    SELECT
+        Reservation_ID,
+        SUM(TotalPrice) AS PendingTotal
+    FROM Reservation_Product_Charges
+    WHERE Status = 'PENDING'
+    GROUP BY Reservation_ID
+) PC ON R.ID = PC.Reservation_ID
 
 WHERE
     -- Status is checked in
