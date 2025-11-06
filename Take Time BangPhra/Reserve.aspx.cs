@@ -2931,12 +2931,12 @@ namespace Take_Time_BangPhra
 
                     SendEmail(ConfigurationSettings.AppSettings["SMTP"].ToString(), Convert.ToInt32(ConfigurationSettings.AppSettings["SMTP_Port"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_EnableSsl"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_UseDefaultCredentials"].ToString()), ConfigurationSettings.AppSettings["Email_From"].ToString(), ConfigurationSettings.AppSettings["Email_Password_From"].ToString(), TextBox13.Text, ConfigurationSettings.AppSettings["Email_CC"].ToString(), subject, body, dataall);
                 }
-            }
 
-            // 🏨 Mark product charges as paid
-            if (_roomChargeService != null)
-            {
-                MarkProductChargesAsPaid(Convert.ToInt32(Reservation_ID), ReceiptID);
+                // 🏨 Mark product charges as paid
+                if (_roomChargeService != null)
+                {
+                    MarkProductChargesAsPaid(Convert.ToInt32(Reservation_ID), ReceiptID);
+                }
             }
         }
 
