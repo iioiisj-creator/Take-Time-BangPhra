@@ -426,7 +426,7 @@ namespace Take_Time_BangPhra.Account.Report
                     FROM Customer
                     LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
                     LEFT JOIN Address ON Address.ID = Customer.Address_ID
-                    WHERE ID = " + customerId);
+                    WHERE Customer.ID = " + customerId);
 
                 // ⚠️ Validate that customer exists before proceeding
                 if (dtcustomer.Rows.Count == 0)
