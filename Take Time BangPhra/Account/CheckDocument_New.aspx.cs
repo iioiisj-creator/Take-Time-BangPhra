@@ -88,12 +88,16 @@ namespace Take_Time_BangPhra.Account
 
                 lblDateRange.Text = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
 
-                // Log revenue calculation request
-                loggingService.LogAccountingOperation(
-                    "RevenueCalculationRequest",
-                    $"Date range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}",
-                    true,
-                    GetCurrentUserId());
+                // Log revenue calculation request (gracefully handle if System_Logs doesn't exist)
+                try
+                {
+                    loggingService.LogAccountingOperation(
+                        "RevenueCalculationRequest",
+                        $"Date range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}",
+                        true,
+                        GetCurrentUserId());
+                }
+                catch { /* Ignore logging errors */ }
 
                 // Calculate revenue by category (always use Normal status, never include Cancel)
                 CalculateRevenue(startDate, endDate);
@@ -106,9 +110,15 @@ namespace Take_Time_BangPhra.Account
             }
             catch (Exception ex)
             {
-                loggingService.LogException(ex, LoggingService.LogCategory.Revenue,
-                    "Revenue calculation failed", GetCurrentUserId());
-                ShowError("เกิดข้อผิดพลาด: " + ex.Message);
+                // Log exception (gracefully handle if System_Logs doesn't exist)
+                try
+                {
+                    loggingService.LogException(ex, LoggingService.LogCategory.Revenue,
+                        "Revenue calculation failed", GetCurrentUserId());
+                }
+                catch { /* Ignore logging errors */ }
+
+                ShowError("เกิดข้อผิดพลาด: " + ex.Message + "\n\nDetails: " + ex.StackTrace);
             }
         }
 
@@ -127,10 +137,13 @@ namespace Take_Time_BangPhra.Account
 
             // Category 1: Reservations with check-in in date range
             var cat1Data = GetCategory1Revenue(startDate, endDate, status);
+            System.Diagnostics.Debug.WriteLine($"Category 1 (Payment_History): {cat1Data.Rows.Count} rows");
+
             // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
             if (cat1Data.Rows.Count == 0)
             {
                 cat1Data = GetCategory1RevenueFallback(startDate, endDate, status);
+                System.Diagnostics.Debug.WriteLine($"Category 1 (Fallback Account_Receipt): {cat1Data.Rows.Count} rows");
             }
             cat1Cash = GetAmountByPaymentMethod(cat1Data, 2);
             cat1KBANK = GetAmountByPaymentMethod(cat1Data, 1);
@@ -139,10 +152,13 @@ namespace Take_Time_BangPhra.Account
 
             // Category 2: Reservations with payment in date range but check-in outside
             var cat2Data = GetCategory2Revenue(startDate, endDate, status);
+            System.Diagnostics.Debug.WriteLine($"Category 2 (Payment_History): {cat2Data.Rows.Count} rows");
+
             // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
             if (cat2Data.Rows.Count == 0)
             {
                 cat2Data = GetCategory2RevenueFallback(startDate, endDate, status);
+                System.Diagnostics.Debug.WriteLine($"Category 2 (Fallback Account_Receipt): {cat2Data.Rows.Count} rows");
             }
             cat2Cash = GetAmountByPaymentMethod(cat2Data, 2);
             cat2KBANK = GetAmountByPaymentMethod(cat2Data, 1);
@@ -480,10 +496,29 @@ namespace Take_Time_BangPhra.Account
 
         private void LoadDetails(DateTime startDate, DateTime endDate)
         {
-            // Always show all documents (both Normal and Cancel) in GridView
-            var dt = GetAllReceipts(startDate, endDate, "%");
-            gvDetails.DataSource = dt;
-            gvDetails.DataBind();
+            try
+            {
+                // Always show all documents (both Normal and Cancel) in GridView
+                var dt = GetAllReceipts(startDate, endDate, "%");
+
+                // Debug: Add message to date range label
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    lblDateRange.Text += $" (พบ {dt.Rows.Count} เอกสาร)";
+                }
+                else
+                {
+                    lblDateRange.Text += $" <span style='color: red;'>(⚠️ ไม่พบเอกสาร)</span>";
+                }
+
+                gvDetails.DataSource = dt;
+                gvDetails.DataBind();
+            }
+            catch (Exception ex)
+            {
+                lblDateRange.Text += $" <span style='color: red;'>(Error: {ex.Message})</span>";
+                throw;
+            }
         }
 
         private void ValidateTotal()
