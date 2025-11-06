@@ -397,31 +397,31 @@
                 <div class="slip-card">
                     <h3>📷 สลิปการโอนเงิน</h3>
                     <asp:Label ID="lblSlipCount" runat="server"
-                        style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 10px;"></asp:Label>
+                        style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 8px; font-size: 0.75em;"></asp:Label>
 
                     <asp:Repeater ID="rptPaymentSlips" runat="server">
                         <ItemTemplate>
-                            <div style="margin-bottom: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <div style="margin-bottom: 5px;">
+                            <div style="margin-bottom: 8px; padding: 6px; background: #f5f5f5; border-radius: 4px; font-size: 0.75em;">
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
                                     <strong>📅 วันที่:</strong> <%# Eval("PaymentDate", "{0:dd/MM/yyyy HH:mm}") %>
                                 </div>
-                                <div style="margin-bottom: 5px;">
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
                                     <strong>💰 จำนวน:</strong> <%# Eval("PaymentAmount", "{0:N2}") %> บาท
                                 </div>
-                                <div style="margin-bottom: 5px;">
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
                                     <strong>📝 ประเภท:</strong> <%# Eval("PaymentType") %>
                                 </div>
                                 <div>
                                     <a href='<%# ResolveUrl("~/" + Eval("SlipFileURL").ToString()) %>'
                                        target="_blank"
-                                       style="color: #1976d2; text-decoration: none; font-weight: bold;">
+                                       style="color: #1976d2; text-decoration: none; font-weight: bold; font-size: 0.85em;">
                                         🔗 ดูสลิปการโอนเงิน
                                     </a>
                                 </div>
                             </div>
                         </ItemTemplate>
                         <FooterTemplate>
-                            <div style="color: #999; font-style: italic; margin-top: 10px;">
+                            <div style="color: #999; font-style: italic; margin-top: 8px; font-size: 0.75em;">
                                 <%# (((System.Web.UI.WebControls.Repeater)Container.Parent).Items.Count == 0) ? "ไม่พบสลิปการโอนเงิน" : "" %>
                             </div>
                         </FooterTemplate>
@@ -458,24 +458,50 @@
                 </div>
 
                 <!-- Receipt Section -->
-                <asp:Panel ID="pnlReceipt" runat="server" Visible="false" CssClass="receipt-section">
-                    <div style="text-align: center;">
-                        <h3 style="color: #5d4037; margin: 0; font-size: 0.8em;">🧾 ใบกำกับภาษี</h3>
-                        <p style="color: #666; margin: 2px 0 0 0; font-size: 0.7em;">
-                            มีใบกำกับภาษีให้ดาวน์โหลด
-                        </p>
-                    </div>
-                </asp:Panel>
+                <div class="slip-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%); border: 1px solid #c8e6c9;">
+                    <h3>🧾 ใบกำกับภาษี</h3>
+                    <asp:Label ID="lblReceiptCount" runat="server"
+                        style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 8px; font-size: 0.75em;"></asp:Label>
+
+                    <asp:Repeater ID="rptReceipts" runat="server">
+                        <ItemTemplate>
+                            <div style="margin-bottom: 8px; padding: 6px; background: #fff; border-radius: 4px; font-size: 0.75em; border: 1px solid #c8e6c9;">
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
+                                    <strong>📄 เลขที่:</strong> <%# Eval("ID") %>
+                                </div>
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
+                                    <strong>📅 วันที่:</strong> <%# Eval("Created_Date", "{0:dd/MM/yyyy HH:mm}") %>
+                                </div>
+                                <div style="margin-bottom: 3px; font-size: 0.85em;">
+                                    <strong>💰 ยอดเงิน:</strong> <%# Eval("Total_Amount", "{0:N2}") %> บาท
+                                </div>
+                                <div>
+                                    <a href='<%# GetReceiptPDFUrl(Eval("ID"), Eval("UID"), Eval("Created_Date")) %>'
+                                       target="_blank"
+                                       style="color: #4caf50; text-decoration: none; font-weight: bold; font-size: 0.85em;">
+                                        🔗 ดูใบกำกับภาษี PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </ItemTemplate>
+                        <FooterTemplate>
+                            <div style="color: #999; font-style: italic; margin-top: 8px; font-size: 0.75em;">
+                                <%# (((System.Web.UI.WebControls.Repeater)Container.Parent).Items.Count == 0) ? "ยังไม่มีใบกำกับภาษี" : "" %>
+                            </div>
+                        </FooterTemplate>
+                    </asp:Repeater>
+                </div>
             </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <asp:Button ID="btnViewReceipt" runat="server" Text="📄 ดูใบกำกับภาษี" 
-                CssClass="btn-receipt" OnClick="btnViewReceipt_Click" Visible="false" />
-            <button type="button" class="btn-print" onclick="window.print()">🖨️ พิมพ์หน้านี้</button>
+            <button type="button" class="btn-print" onclick="captureAndDownload()">🖨️ บันทึกหน้านี้เป็นรูป</button>
         </div>
     </div>
+
+    <!-- Include html2canvas library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
         // Add some interactive effects
@@ -493,5 +519,50 @@
                 }, index * 50);
             });
         });
+
+        // Capture and download page as image
+        function captureAndDownload() {
+            const element = document.querySelector('.confirmation-container');
+            const buttons = document.querySelector('.action-buttons');
+
+            // Hide buttons before capture
+            if (buttons) buttons.style.display = 'none';
+
+            // Show loading message
+            const originalText = event.target.textContent;
+            event.target.textContent = '⏳ กำลังสร้างรูป...';
+            event.target.disabled = true;
+
+            html2canvas(element, {
+                scale: 2, // Higher quality
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                // Convert to image and download
+                const link = document.createElement('a');
+                const timestamp = new Date().getTime();
+                link.download = 'การยืนยันการจอง_' + timestamp + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Restore buttons
+                if (buttons) buttons.style.display = 'block';
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+
+                // Show success message
+                alert('✅ บันทึกรูปเรียบร้อยแล้ว!');
+            }).catch(error => {
+                console.error('Error capturing page:', error);
+
+                // Restore buttons
+                if (buttons) buttons.style.display = 'block';
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+
+                alert('❌ เกิดข้อผิดพลาดในการบันทึกรูป กรุณาลองใหม่อีกครั้ง');
+            });
+        }
     </script>
 </asp:Content>

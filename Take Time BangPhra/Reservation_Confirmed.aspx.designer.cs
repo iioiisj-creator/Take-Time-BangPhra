@@ -168,21 +168,21 @@ namespace Take_Time_BangPhra
         protected global::System.Web.UI.WebControls.Label Label14;
 
         /// <summary>
-        /// pnlReceipt control.
+        /// lblReceiptCount control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlReceipt;
+        protected global::System.Web.UI.WebControls.Label lblReceiptCount;
 
         /// <summary>
-        /// btnViewReceipt control.
+        /// rptReceipts control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnViewReceipt;
+        protected global::System.Web.UI.WebControls.Repeater rptReceipts;
     }
 }

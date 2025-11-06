@@ -44,6 +44,9 @@ namespace Take_Time_BangPhra
                 // Load payment slips from Payment_History
                 LoadPaymentSlips(id, check);
 
+                // Load receipts
+                LoadReceipts(id);
+
                 // Set basic information
                 Label1.Text = id;
                 Label2.Text = dtReservationAccommodation.Rows[0]["Name"].ToString();
@@ -116,9 +119,6 @@ namespace Take_Time_BangPhra
                 Label14.Text = dtReservationAccommodation.Rows[0]["Remark"].ToString();
 
                 Label10.Text = "ยืนยันการจองสำเร็จ ✓";
-
-                // Check if receipt exists and show receipt button
-                CheckReceiptAvailability(id);
             }
             catch (Exception ex)
             {
@@ -225,75 +225,72 @@ namespace Take_Time_BangPhra
 
 
 
-        protected void btnViewReceipt_Click(object sender, EventArgs e)
+        private void LoadReceipts(string reservationId)
         {
-            string id = Request.QueryString["id"];
-            string check = Request.QueryString["check"];
-
             try
             {
-                DataTable dtReceipt = code.DatabaseQuery(conn,
-                    $"SELECT UID, Created_Date, ID FROM [Account_Receipt] WHERE Reservation_ID = '{id}' AND Status = 'Normal'");
+                // Query all receipts for this reservation
+                string query = @"
+                    SELECT ID, UID, Created_Date, Total_Amount, Status
+                    FROM Account_Receipt
+                    WHERE Reservation_ID = @ReservationId
+                      AND Status = 'Normal'
+                    ORDER BY Created_Date DESC";
 
-                if (dtReceipt.Rows.Count > 0)
+                var parameters = new Dictionary<string, object>
                 {
-                    string receiptUID = dtReceipt.Rows[0]["UID"].ToString();
-                    DateTime createdDate = Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"]);
+                    { "@ReservationId", reservationId }
+                };
 
-                    string year = createdDate.Year.ToString();
-                    string month = createdDate.Month.ToString("00"); // แปลงเป็น 2 หลัก
-                    string receiptId = dtReceipt.Rows[0]["ID"].ToString();
+                DataTable dtReceipts = code2.DatabaseQuerySafe(conn, query, parameters);
 
-                    // สร้าง path ไปยัง PDF file
-                    string pdfPath = $"/Documents/Receipt/{year}/{month}/{receiptId}_{receiptUID}.pdf";
+                if (dtReceipts.Rows.Count > 0)
+                {
+                    // Show receipt count
+                    lblReceiptCount.Text = $"📄 มีใบกำกับภาษีทั้งหมด {dtReceipts.Rows.Count} ใบ";
+                    lblReceiptCount.Visible = true;
 
-                    // เปิด PDF ในหน้าต่างใหม่หรือแท็บใหม่
-                    string script = $@"
-                <script type='text/javascript'>
-                    window.open('{pdfPath}', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-                </script>";
-                    ClientScript.RegisterStartupScript(this.GetType(), "openPDF", script, false);
+                    // Bind to repeater
+                    rptReceipts.DataSource = dtReceipts;
+                    rptReceipts.DataBind();
+                    rptReceipts.Visible = true;
                 }
                 else
                 {
-                    ClientScript.RegisterStartupScript(this.GetType(), "alert",
-                        "alert('ไม่พบใบกำกับภาษีสำหรับการจองนี้');", true);
+                    // No receipts found
+                    lblReceiptCount.Text = "📄 ยังไม่มีใบกำกับภาษี";
+                    lblReceiptCount.Visible = true;
+                    rptReceipts.Visible = false;
                 }
             }
             catch (Exception ex)
             {
-                ClientScript.RegisterStartupScript(this.GetType(), "alert",
-                    $"alert('เกิดข้อผิดพลาด: {ex.Message}');", true);
+                // Log error
+                lblReceiptCount.Text = "⚠️ ไม่สามารถโหลดใบกำกับภาษีได้";
+                lblReceiptCount.Visible = true;
+                rptReceipts.Visible = false;
+
+                code2.Logs(conn, "LoadReceipts Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
             }
         }
 
-        private void CheckReceiptAvailability(string reservationId)
+        // Helper method for generating receipt PDF URL
+        protected string GetReceiptPDFUrl(object receiptId, object uid, object createdDate)
         {
             try
             {
-                // Check if receipt exists in database
-                DataTable dtReceipt = code.DatabaseQuery(conn,
-                    $"SELECT * FROM [Account_Receipt] WHERE Reservation_ID = '{reservationId}' AND Status = 'Normal'");
+                string id = receiptId?.ToString() ?? "";
+                string receiptUID = uid?.ToString() ?? "";
+                DateTime created = Convert.ToDateTime(createdDate);
 
-                if (dtReceipt.Rows.Count > 0)
-                {
-                    pnlReceipt.Visible = true;
-                    btnViewReceipt.Visible = true;
+                string year = created.Year.ToString();
+                string month = created.Month.ToString("00");
 
-                    // เก็บ UID ของใบกำกับภาษีไว้ใน ViewState เพื่อใช้ใน btnViewReceipt_Click
-                    ViewState["ReceiptUID"] = dtReceipt.Rows[0]["UID"].ToString();
-                }
-                else
-                {
-                    pnlReceipt.Visible = false;
-                    btnViewReceipt.Visible = false;
-                }
+                return $"/Documents/Receipt/{year}/{month}/{id}_{receiptUID}.pdf";
             }
-            catch (Exception ex)
+            catch
             {
-                pnlReceipt.Visible = false;
-                btnViewReceipt.Visible = false;
-                // คุณอาจต้องการ log error นี้
+                return "#";
             }
         }
 
