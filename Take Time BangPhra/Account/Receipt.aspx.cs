@@ -184,7 +184,12 @@ namespace Take_Time_BangPhra.Account.Report
                     GridView1.DataSource = dtReceiptDetail;
                     GridView1.DataBind();
 
-                    TextBox5.Text = id;
+                    // ⚠️ ไม่ set TextBox5.Text = id ถ้า CheckBox2 ถูก check แล้ว (user กำลังแก้ไขเลขที่)
+                    // เพราะจะทำให้ค่าที่ user กรอกหายไปเมื่อ postback
+                    if (!CheckBox2.Checked)
+                    {
+                        TextBox5.Text = id;
+                    }
 
                     TextBox8.Text = Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"].ToString()).ToString("yyyy-MM-dd") ;
                     TextBox9.Text = dtReceipt.Rows[0]["Reservation_ID"].ToString();
@@ -491,6 +496,9 @@ namespace Take_Time_BangPhra.Account.Report
                     receiptUID = Guid.NewGuid().ToString();
                 }
 
+                // ✅ INSERT Account_Receipt with docNum as ID
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserting Account_Receipt with ID={docNum}, UID={receiptUID}");
+
                 if (reservation_id > 0)
                 {
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + reservation_id + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'"+CheckBox5.Checked+"','"+ customerId + "','" + receiptUID + "')");
@@ -499,6 +507,8 @@ namespace Take_Time_BangPhra.Account.Report
                 {
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ customerId + "','" + receiptUID + "')");
                 }
+
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Account_Receipt inserted successfully with ID={docNum}");
                 for (int i = 0; i < dtDetail.Rows.Count; i++)
                 {
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt_Detail] ([Number],[Receipt_ID],[ProductType_ID],[Product_ID],[Product_Data],[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount]) VALUES (" + dtDetail.Rows[i]["Number"].ToString() + ",'" + docNum + "','" + dtDetail.Rows[i]["ProductType_ID"].ToString() + "',0,N'" + dtDetail.Rows[i]["Product_Data"].ToString() + "'," + dtDetail.Rows[i]["Product_Amount"].ToString() + ",N'" + dtDetail.Rows[i]["Product_Unit"].ToString() + "'," + dtDetail.Rows[i]["Price_PerPeice"].ToString() + "," + dtDetail.Rows[i]["Price_Amount"].ToString() + ")");
@@ -742,6 +752,11 @@ namespace Take_Time_BangPhra.Account.Report
                         byte[] bytes = ReportViewer2.LocalReport.Render(
                             "PDF", null, out mimeType, out encoding, out filenameExtension,
                             out streamids, out warnings);
+
+                        // ✅ PDF filename uses docNum (ใช้เลขที่ที่กรอกถ้า CheckBox2 checked)
+                        string pdfFileName = docNum + "_" + uid + ".pdf";
+                        System.Diagnostics.Debug.WriteLine($"[Receipt] Creating PDF: {pdfFileName}");
+
                         if (File.Exists(path + "\\" + Year + "\\" + Month + "\\" + docNum + "_"+uid+".pdf"))
                         {
                             File.Delete(path + "\\" + Year + "\\" + Month + "\\" + docNum + "_" + uid + ".pdf");
