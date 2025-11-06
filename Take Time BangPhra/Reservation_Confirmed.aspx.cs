@@ -147,7 +147,8 @@ namespace Take_Time_BangPhra
                         ph.PaymentType,
                         ph.PaymentMethod,
                         ps.SlipFileURL,
-                        ps.FileName
+                        ps.FileName,
+                        ph.Reservation_ID
                     FROM Payment_History ph
                     LEFT JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
                     WHERE ph.Reservation_ID = @ReservationId
@@ -163,6 +164,24 @@ namespace Take_Time_BangPhra
 
                 if (dtSlips.Rows.Count > 0)
                 {
+                    // 🆕 Generate SlipFileURL for old records that don't have Payment_Slips
+                    foreach (DataRow row in dtSlips.Rows)
+                    {
+                        if (row["SlipFileURL"] == DBNull.Value || string.IsNullOrWhiteSpace(row["SlipFileURL"].ToString()))
+                        {
+                            // Generate pattern: Upload/Slip/{ReservationID}_{Phone}.jpg
+                            string generatedPath = $"Upload/Slip/{reservationId}_{customerPhone}.jpg";
+                            string fullPath = Server.MapPath("~/" + generatedPath);
+
+                            // Check if file exists before setting path
+                            if (File.Exists(fullPath))
+                            {
+                                row["SlipFileURL"] = generatedPath;
+                                row["FileName"] = $"{reservationId}_{customerPhone}.jpg";
+                            }
+                        }
+                    }
+
                     // Show slip count
                     lblSlipCount.Text = $"💳 มีการโอนเงินทั้งหมด {dtSlips.Rows.Count} ครั้ง";
                     lblSlipCount.Visible = true;
