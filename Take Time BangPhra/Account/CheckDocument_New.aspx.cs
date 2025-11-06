@@ -78,15 +78,22 @@ namespace Take_Time_BangPhra.Account
                     int year = Convert.ToInt32(ddlYear.SelectedValue);
                     startDate = new DateTime(year, month, 1);
                     endDate = startDate.AddMonths(1).AddDays(-1);
+
+                    System.Diagnostics.Debug.WriteLine($"🔍 Search Mode: Month/Year - {year}/{month}");
                 }
                 else
                 {
                     // Use date range
                     startDate = Convert.ToDateTime(txtStartDate.Text);
                     endDate = Convert.ToDateTime(txtEndDate.Text);
+
+                    System.Diagnostics.Debug.WriteLine($"🔍 Search Mode: Date Range");
                 }
 
-                lblDateRange.Text = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
+                System.Diagnostics.Debug.WriteLine($"📅 Date Range: {startDate:yyyy-MM-dd HH:mm:ss} to {endDate:yyyy-MM-dd HH:mm:ss}");
+
+                // Show debug info on page
+                lblDateRange.Text = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy} <small style='color: #999;'>(Debug: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd})</small>";
 
                 // Log revenue calculation request (gracefully handle if System_Logs doesn't exist)
                 try
@@ -502,24 +509,115 @@ namespace Take_Time_BangPhra.Account
                 { "@Status", status }
             };
 
-            return codeInstance.DatabaseQuerySafe(conn, query, parameters);
+            System.Diagnostics.Debug.WriteLine($"📋 GetAllReceipts Query:");
+            System.Diagnostics.Debug.WriteLine($"   @StartDate = {startDate:yyyy-MM-dd HH:mm:ss}");
+            System.Diagnostics.Debug.WriteLine($"   @EndDate = {endDate:yyyy-MM-dd HH:mm:ss}");
+            System.Diagnostics.Debug.WriteLine($"   @Status = {status}");
+
+            var result = codeInstance.DatabaseQuerySafe(conn, query, parameters);
+            System.Diagnostics.Debug.WriteLine($"   ✅ Result: {result?.Rows.Count ?? 0} rows");
+
+            // If no results, try a simpler query to see if there's ANY data
+            if (result == null || result.Rows.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"   ⚠️ No results from main query. Running diagnostic queries...");
+
+                // Test 1: Count all receipts (no filters)
+                var allQuery = "SELECT COUNT(*) as Total FROM Account_Receipt";
+                var allResult = codeInstance.DatabaseQuerySafe(conn, allQuery, new Dictionary<string, object>());
+                System.Diagnostics.Debug.WriteLine($"   🔍 Total receipts in database (no filter): {allResult?.Rows[0]["Total"]}");
+
+                // Test 2: Count receipts in date range (any status)
+                var testQuery = "SELECT COUNT(*) as Total FROM Account_Receipt ar WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE) AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)";
+                var testResult = codeInstance.DatabaseQuerySafe(conn, testQuery, parameters);
+                System.Diagnostics.Debug.WriteLine($"   🔍 Total receipts in date range (any status): {testResult?.Rows[0]["Total"]}");
+
+                // Test 3: Count receipts with matching status (any date)
+                var statusQuery = "SELECT COUNT(*) as Total FROM Account_Receipt ar WHERE ar.Status LIKE @Status";
+                var statusParams = new Dictionary<string, object> { { "@Status", status } };
+                var statusResult = codeInstance.DatabaseQuerySafe(conn, statusQuery, statusParams);
+                System.Diagnostics.Debug.WriteLine($"   🔍 Total receipts with status '{status}' (any date): {statusResult?.Rows[0]["Total"]}");
+
+                // Test 4: Get sample receipts without date filter
+                var sampleQuery = "SELECT TOP 5 ID, Created_Date, Status FROM Account_Receipt ORDER BY Created_Date DESC";
+                var sampleResult = codeInstance.DatabaseQuerySafe(conn, sampleQuery, new Dictionary<string, object>());
+                System.Diagnostics.Debug.WriteLine($"   🔍 Sample receipts (latest 5):");
+                if (sampleResult != null)
+                {
+                    foreach (DataRow row in sampleResult.Rows)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"      - ID: {row["ID"]}, Created: {row["Created_Date"]}, Status: {row["Status"]}");
+                    }
+                }
+
+                // Test 5: Try simple query without JOINs
+                var simpleQuery = @"
+                    SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
+                           ar.Total_Amount, ar.Vat, ar.Status
+                    FROM Account_Receipt ar
+                    WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                      AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                      AND ar.Status LIKE @Status
+                    ORDER BY ar.ID ASC";
+                var simpleResult = codeInstance.DatabaseQuerySafe(conn, simpleQuery, parameters);
+                System.Diagnostics.Debug.WriteLine($"   🔍 Simple query (no JOINs): {simpleResult?.Rows.Count ?? 0} rows");
+
+                // If simple query works but main query doesn't, it's a JOIN issue
+                if (simpleResult != null && simpleResult.Rows.Count > 0 && (result == null || result.Rows.Count == 0))
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ⚠️ JOIN is causing the issue! Using simple result instead.");
+                    return simpleResult;
+                }
+            }
+
+            return result;
         }
 
         private void LoadDetails(DateTime startDate, DateTime endDate)
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"📊 LoadDetails called:");
+                System.Diagnostics.Debug.WriteLine($"   Start: {startDate:yyyy-MM-dd HH:mm:ss}");
+                System.Diagnostics.Debug.WriteLine($"   End: {endDate:yyyy-MM-dd HH:mm:ss}");
+
                 // Always show all documents (both Normal and Cancel) in GridView
                 var dt = GetAllReceipts(startDate, endDate, "%");
+
+                System.Diagnostics.Debug.WriteLine($"   Retrieved {dt?.Rows.Count ?? 0} rows from GetAllReceipts");
 
                 // Debug: Add message to date range label
                 if (dt != null && dt.Rows.Count > 0)
                 {
-                    lblDateRange.Text += $" (พบ {dt.Rows.Count} เอกสาร)";
+                    lblDateRange.Text += $" <span style='color: green; font-weight: bold;'>(✓ พบ {dt.Rows.Count} เอกสาร)</span>";
+                    System.Diagnostics.Debug.WriteLine($"   ✅ Showing {dt.Rows.Count} documents in GridView");
                 }
                 else
                 {
-                    lblDateRange.Text += $" <span style='color: red;'>(⚠️ ไม่พบเอกสาร)</span>";
+                    lblDateRange.Text += $" <span style='color: red; font-weight: bold;'>(⚠️ ไม่พบเอกสาร)</span>";
+                    System.Diagnostics.Debug.WriteLine($"   ⚠️ No documents found!");
+
+                    // Get diagnostic info to show on page
+                    string diagInfo = "";
+                    try
+                    {
+                        // Count all receipts
+                        var allQuery = "SELECT COUNT(*) as Total FROM Account_Receipt";
+                        var allResult = codeInstance.DatabaseQuerySafe(conn, allQuery, new Dictionary<string, object>());
+                        int totalReceipts = allResult != null ? Convert.ToInt32(allResult.Rows[0]["Total"]) : 0;
+
+                        // Count in date range
+                        var testQuery = "SELECT COUNT(*) as Total FROM Account_Receipt ar WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE) AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)";
+                        var testParams = new Dictionary<string, object> { { "@StartDate", startDate }, { "@EndDate", endDate } };
+                        var testResult = codeInstance.DatabaseQuerySafe(conn, testQuery, testParams);
+                        int inRange = testResult != null ? Convert.ToInt32(testResult.Rows[0]["Total"]) : 0;
+
+                        diagInfo = $"\n\nข้อมูลเพิ่มเติม:\n- มีเอกสารทั้งหมดในระบบ: {totalReceipts} รายการ\n- มีเอกสารในช่วง {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}: {inRange} รายการ";
+                    }
+                    catch { }
+
+                    // Show helpful message to user
+                    ShowError($"ไม่พบเอกสารในช่วง {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}{diagInfo}\n\nกรุณาตรวจสอบ:\n1. เลือกช่วงวันที่ที่มีเอกสาร\n2. วันที่ที่เลือกถูกต้องหรือไม่\n3. ตรวจสอบ Debug Output สำหรับรายละเอียดเพิ่มเติม");
                 }
 
                 gvDetails.DataSource = dt;
@@ -527,7 +625,10 @@ namespace Take_Time_BangPhra.Account
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"   ❌ Error in LoadDetails: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"   Stack: {ex.StackTrace}");
                 lblDateRange.Text += $" <span style='color: red;'>(Error: {ex.Message})</span>";
+                ShowError($"เกิดข้อผิดพลาดในการโหลดข้อมูล:\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}");
                 throw;
             }
         }
