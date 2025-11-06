@@ -75,7 +75,17 @@ namespace Take_Time_BangPhra.Account.Report
 
                 string command = Request.QueryString["command"];
                 string uid = Request.QueryString["uid"];
-                
+
+                // ✅ เก็บ command และ uid ใน ViewState เพื่อใช้ใน postback ต่อๆ ไป
+                if (!string.IsNullOrEmpty(command))
+                {
+                    ViewState["EditCommand"] = command;
+                }
+                if (!string.IsNullOrEmpty(uid))
+                {
+                    ViewState["EditUID"] = uid;
+                }
+
                 if(command == "edit")
                 {
 
@@ -381,8 +391,20 @@ namespace Take_Time_BangPhra.Account.Report
         {
             if (TextBox6.Text.Length > 0 && DropDownList2.SelectedIndex > 0 && DropDownList4.SelectedIndex > 0)
             {
+                // ✅ อ่าน command และ uid จาก QueryString หรือ ViewState (สำหรับ postback)
                 string command = Request.QueryString["command"];
                 string uid = Request.QueryString["uid"];
+
+                // ถ้า QueryString เป็น null (postback) → ใช้ ViewState
+                if (string.IsNullOrEmpty(command) && ViewState["EditCommand"] != null)
+                {
+                    command = ViewState["EditCommand"].ToString();
+                }
+                if (string.IsNullOrEmpty(uid) && ViewState["EditUID"] != null)
+                {
+                    uid = ViewState["EditUID"].ToString();
+                }
+
                 string id = "";
                 DataTable dtReceipt = new DataTable();
                 string Year = Convert.ToDateTime(TextBox8.Text).Year.ToString();
@@ -390,6 +412,19 @@ namespace Take_Time_BangPhra.Account.Report
                 string Day = Convert.ToDateTime(TextBox8.Text).Day.ToString();
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
                 string docNum = "";
+
+                // 🔍 Debug: ตรวจสอบค่า command ก่อนทำอะไร
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"==================================================");
+                System.Diagnostics.Debug.WriteLine($"=== [Button3_Click START] ===");
+                System.Diagnostics.Debug.WriteLine($"QueryString['command'] = '{Request.QueryString["command"]}'");
+                System.Diagnostics.Debug.WriteLine($"ViewState['EditCommand'] = '{ViewState["EditCommand"]}'");
+                System.Diagnostics.Debug.WriteLine($"→ Final command = '{command}'");
+                System.Diagnostics.Debug.WriteLine($"QueryString['uid'] = '{Request.QueryString["uid"]}'");
+                System.Diagnostics.Debug.WriteLine($"ViewState['EditUID'] = '{ViewState["EditUID"]}'");
+                System.Diagnostics.Debug.WriteLine($"→ Final uid = '{uid}'");
+                System.Diagnostics.Debug.WriteLine($"==================================================");
+                System.Diagnostics.Debug.WriteLine($"");
 
                 if (command == "edit")
                 {
@@ -421,10 +456,24 @@ namespace Take_Time_BangPhra.Account.Report
                 }
                 else
                 {
-                    // ✅ CREATE mode: Generate new document number
+                    // ❌ CREATE mode: Generate new document number
+                    System.Diagnostics.Debug.WriteLine($"");
+                    System.Diagnostics.Debug.WriteLine($"⚠️⚠️⚠️ WARNING: Entered CREATE mode (command != 'edit') ⚠️⚠️⚠️");
+                    System.Diagnostics.Debug.WriteLine($"This means command is NULL or not 'edit'");
+                    System.Diagnostics.Debug.WriteLine($"Creating NEW document number...");
                     docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
+                    System.Diagnostics.Debug.WriteLine($"Generated docNum: {docNum}");
+                    System.Diagnostics.Debug.WriteLine($"");
                 }
-                    string RecNumber = docNum;
+
+                // 🔍 Final decision
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== FINAL DECISION ===");
+                System.Diagnostics.Debug.WriteLine($"📋 docNum that will be used: '{docNum}'");
+                System.Diagnostics.Debug.WriteLine($"======================");
+                System.Diagnostics.Debug.WriteLine($"");
+
+                string RecNumber = docNum;
                 int reservation_id = 0;
 
                 // Upsert customer data (insert or update) - ensures no duplicates and always latest data
