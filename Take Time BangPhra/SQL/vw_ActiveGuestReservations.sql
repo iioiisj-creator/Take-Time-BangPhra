@@ -4,6 +4,30 @@
 -- Created: 2025-11-06
 -- =============================================
 
+-- First, create helper function to get room names
+IF OBJECT_ID('dbo.fn_GetReservationRoomNames', 'FN') IS NOT NULL
+    DROP FUNCTION dbo.fn_GetReservationRoomNames;
+GO
+
+CREATE FUNCTION dbo.fn_GetReservationRoomNames(@ReservationID INT)
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @RoomNames NVARCHAR(MAX);
+
+    SELECT @RoomNames = STUFF((
+        SELECT ', ' + A.AccomName
+        FROM Reservation_Accommodation RA
+        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
+        WHERE RA.Reservation_ID = @ReservationID
+        FOR XML PATH('')
+    ), 1, 2, '');
+
+    RETURN ISNULL(@RoomNames, '');
+END
+GO
+
+-- Now create the view
 IF OBJECT_ID('vw_ActiveGuestReservations', 'V') IS NOT NULL
     DROP VIEW vw_ActiveGuestReservations;
 GO
@@ -22,16 +46,8 @@ SELECT
     R.Deposit AS TotalPaid,
     (R.TotalPrice - ISNULL(R.Deposit, 0)) AS RemainingBalance,
 
-    -- Get room names (concatenated) using correlated subquery
-    ISNULL(
-        STUFF((
-            SELECT ', ' + A.AccomName
-            FROM Reservation_Accommodation RA
-            INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-            WHERE RA.Reservation_ID = R.ID
-            FOR XML PATH('')
-        ), 1, 2, '')
-    , '') AS RoomNames,
+    -- Get room names using scalar function
+    dbo.fn_GetReservationRoomNames(R.ID) AS RoomNames,
 
     -- Calculate pending product charges using correlated subquery
     ISNULL((
@@ -45,15 +61,7 @@ SELECT
     CONCAT(
         C.Name,
         ' (',
-        ISNULL(
-            STUFF((
-                SELECT ', ' + A.AccomName
-                FROM Reservation_Accommodation RA
-                INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-                WHERE RA.Reservation_ID = R.ID
-                FOR XML PATH('')
-            ), 1, 2, '')
-        , ''),
+        dbo.fn_GetReservationRoomNames(R.ID),
         ') - เข้า: ',
         FORMAT(R.CheckinDate, 'dd/MM/yyyy'),
         ' ออก: ',
