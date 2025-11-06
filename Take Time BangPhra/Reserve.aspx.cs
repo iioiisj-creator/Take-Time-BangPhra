@@ -29,6 +29,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using Take_Time_BangPhra.Account.Report;
+using Take_Time_BangPhra.Class;
 using Google.Apis.Gmail.v1.Data;
 
 namespace Take_Time_BangPhra
@@ -1768,7 +1769,7 @@ namespace Take_Time_BangPhra
                                             // Log การพยายามเช็คอินโดยไม่ชำระเงิน
                                             try
                                             {
-                                                var loggingService = new Class.LoggingService(conn);
+                                                var loggingService = new LoggingService(conn);
                                                 loggingService.LogAccountingOperation(
                                                     "CheckInAttemptWithoutPayment",
                                                     $"User attempted to check-in Reservation ID: {id} without payment checkbox. " +
