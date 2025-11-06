@@ -1632,6 +1632,23 @@ namespace Take_Time_BangPhra
 
                                                         createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
+                                                    else
+                                                    {
+                                                        // 🏨 ไม่สร้างใบเสร็จ แต่รับเงินแล้ว → mark charges as PAID
+                                                        try
+                                                        {
+                                                            MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+                                                            code2.Logs(conn, "Reserve RentMore - Manual Payment",
+                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                Session["User"]?.ToString());
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            code2.Logs(conn, "Reserve RentMore - Manual Payment Error",
+                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                Session["User"]?.ToString());
+                                                        }
+                                                    }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                     reservationDA.UpdateReservation(
                                                         Convert.ToInt32(id),
@@ -1754,6 +1771,23 @@ namespace Take_Time_BangPhra
 
                                                     createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
+                                                else
+                                                {
+                                                    // 🏨 ไม่สร้างใบเสร็จ แต่รับเงินแล้ว → mark charges as PAID
+                                                    try
+                                                    {
+                                                        MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+                                                        code2.Logs(conn, "Reserve CheckIn - Manual Payment (No Deposit)",
+                                                            $"Marked charges as PAID without receipt for Reservation {id}",
+                                                            Session["User"]?.ToString());
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
+                                                            $"Reservation {id}, Error: {ex.Message}",
+                                                            Session["User"]?.ToString());
+                                                    }
+                                                }
                                                 // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                 reservationDA.CheckInReservation(Convert.ToInt32(id));
                                             }
@@ -1782,6 +1816,23 @@ namespace Take_Time_BangPhra
 
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
+                                                    else
+                                                    {
+                                                        // 🏨 ไม่สร้างใบเสร็จ แต่รับเงินแล้ว → mark charges as PAID
+                                                        try
+                                                        {
+                                                            MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+                                                            code2.Logs(conn, "Reserve CheckIn - Manual Payment (Exact Deposit)",
+                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                Session["User"]?.ToString());
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
+                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                Session["User"]?.ToString());
+                                                        }
+                                                    }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                     reservationDA.CheckInReservation(Convert.ToInt32(id));
                                                 }
@@ -1797,6 +1848,23 @@ namespace Take_Time_BangPhra
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    }
+                                                    else
+                                                    {
+                                                        // 🏨 ไม่สร้างใบเสร็จ แต่รับเงินแล้ว → mark charges as PAID
+                                                        try
+                                                        {
+                                                            MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+                                                            code2.Logs(conn, "Reserve CheckIn - Manual Payment (With Discount)",
+                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                Session["User"]?.ToString());
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
+                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                Session["User"]?.ToString());
+                                                        }
                                                     }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
                                                     reservationDA.CheckInReservation(Convert.ToInt32(id));
