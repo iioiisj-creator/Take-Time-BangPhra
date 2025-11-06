@@ -1293,6 +1293,9 @@ namespace Take_Time_BangPhra
                                                 IsDeposit = true;
                                                 if (CheckBox4.Checked == false)
                                                 {
+                                                    // 🏨 Add product charges to receipt
+                                                    AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
+
                                                     createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
                                             }
@@ -1607,6 +1610,9 @@ namespace Take_Time_BangPhra
                                                     IsDeposit = false;
                                                     if (CheckBox4.Checked == false)
                                                     {
+                                                        // 🏨 Add product charges to receipt
+                                                        AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
+
                                                         createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
@@ -1726,6 +1732,9 @@ namespace Take_Time_BangPhra
                                                 id = Request.QueryString["id"];
                                                 if (CheckBox4.Checked == false)
                                                 {
+                                                    // 🏨 Add product charges to receipt
+                                                    AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
+
                                                     createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                 }
                                                 // ✅ FIXED: Use parameterized query to prevent SQL Injection
@@ -1751,6 +1760,9 @@ namespace Take_Time_BangPhra
                                                     id = Request.QueryString["id"];
                                                     if (CheckBox4.Checked == false)
                                                     {
+                                                        // 🏨 Add product charges to receipt
+                                                        AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
+
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
@@ -1764,6 +1776,9 @@ namespace Take_Time_BangPhra
                                                     id = Request.QueryString["id"];
                                                     if (CheckBox4.Checked == false)
                                                     {
+                                                        // 🏨 Add product charges to receipt
+                                                        AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
+
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
                                                     }
                                                     // ✅ FIXED: Use parameterized query to prevent SQL Injection
@@ -2833,7 +2848,11 @@ namespace Take_Time_BangPhra
                 }
             }
 
-            
+            // 🏨 Mark product charges as paid
+            if (_roomChargeService != null)
+            {
+                MarkProductChargesAsPaid(Convert.ToInt32(Reservation_ID), ReceiptID);
+            }
         }
 
         private bool ValidateReceiptDetails(DataTable dtReserve, double expectedTotal)
@@ -5442,6 +5461,69 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                         $"ChargeID: {e.CommandArgument}, Error: {ex.Message}",
                         Session["User"]?.ToString() ?? "SYSTEM");
                 }
+            }
+        }
+
+        // 🏨 Add pending product charges to receipt DataTable
+        private void AddProductChargesToReceipt(int reservationId, DataTable dtReserve)
+        {
+            try
+            {
+                // Get all pending charges for this reservation
+                DataTable dtCharges = _roomChargeDA.GetReservationCharges(reservationId, "PENDING");
+
+                if (dtCharges.Rows.Count > 0)
+                {
+                    foreach (DataRow charge in dtCharges.Rows)
+                    {
+                        // Add product charge to receipt with ProductType_ID = 3
+                        dtReserve.Rows.Add(
+                            dtReserve.Rows.Count + 1,  // Number
+                            "",  // Receipt_ID (will be set later)
+                            "3",  // ProductType_ID = 3 for product charges
+                            charge["Product_ID"],
+                            charge["Product_Name"].ToString(),  // Product_Data
+                            charge["Quantity"],  // Product_Amount
+                            "ชิ้น",  // Product_Unit
+                            charge["UnitPrice"],  // Price_PerPeice
+                            charge["TotalAmount"]  // Price_Amount
+                        );
+                    }
+
+                    code2.Logs(conn, "AddProductChargesToReceipt",
+                        $"Added {dtCharges.Rows.Count} product charges to receipt for Reservation {reservationId}",
+                        Session["User"]?.ToString() ?? "SYSTEM");
+                }
+            }
+            catch (Exception ex)
+            {
+                code2.Logs(conn, "AddProductChargesToReceipt Error",
+                    $"Reservation ID: {reservationId}, Error: {ex.Message}",
+                    Session["User"]?.ToString() ?? "SYSTEM");
+                // Don't throw - allow receipt creation to continue without product charges
+            }
+        }
+
+        // 🏨 Mark product charges as paid after receipt is created
+        private void MarkProductChargesAsPaid(int reservationId, string receiptId)
+        {
+            try
+            {
+                int affectedRows = _roomChargeService.MarkAllChargesAsPaid(reservationId, receiptId);
+
+                if (affectedRows > 0)
+                {
+                    code2.Logs(conn, "MarkProductChargesAsPaid",
+                        $"Marked {affectedRows} charges as paid for Reservation {reservationId}, Receipt {receiptId}",
+                        Session["User"]?.ToString() ?? "SYSTEM");
+                }
+            }
+            catch (Exception ex)
+            {
+                code2.Logs(conn, "MarkProductChargesAsPaid Error",
+                    $"Reservation ID: {reservationId}, Receipt ID: {receiptId}, Error: {ex.Message}",
+                    Session["User"]?.ToString() ?? "SYSTEM");
+                // Don't throw - receipt is already created, this is just supplementary
             }
         }
     }
