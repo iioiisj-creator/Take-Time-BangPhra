@@ -202,9 +202,25 @@ namespace Take_Time_BangPhra.Services
         {
             try
             {
+                // Note: Payment_Slips table does NOT have OCR columns
+                // (OCR_Amount, OCR_Status, OCR_Confidence, OCR_RawText, OCR_ErrorMessage, OCR_ProcessedDate)
+                // Just log the result instead of saving to database
+
                 var codeInstance = new code();
                 var conn = _connectionString;
 
+                string logMessage = result.Success
+                    ? $"OCR Success - Amount: {result.Amount:N2}, Confidence: {result.Confidence:N2}%"
+                    : $"OCR Failed - {result.ErrorMessage}";
+
+                codeInstance.Logs(conn, "SlipOCR Result",
+                    $"SlipID: {slipId}, Status: {result.Status}, {logMessage}", "SYSTEM");
+
+                // If you want to store OCR results, you need to:
+                // 1. Run migration to add OCR columns to Payment_Slips table
+                // 2. Uncomment the code below:
+
+                /*
                 string query = @"
                     UPDATE Payment_Slips
                     SET OCR_Amount = @Amount,
@@ -226,6 +242,7 @@ namespace Take_Time_BangPhra.Services
                 };
 
                 codeInstance.DatabaseInsertSafe(conn, query, parameters);
+                */
             }
             catch (Exception ex)
             {
@@ -263,6 +280,8 @@ namespace Take_Time_BangPhra.Services
                 var codeInstance = new code();
                 var conn = _connectionString;
 
+                // Note: Payment_Slips does NOT have OCR_Status column
+                // Get all pending slips instead (VerificationStatus = 'PENDING')
                 string query = @"
                     SELECT TOP (@Limit)
                         ID,
@@ -270,7 +289,7 @@ namespace Take_Time_BangPhra.Services
                         Account_Receipt_ID,
                         Reservation_ID
                     FROM Payment_Slips
-                    WHERE OCR_Status = 'PENDING'
+                    WHERE VerificationStatus = 'PENDING'
                       AND IsActive = 1
                       AND Status = 1
                     ORDER BY UploadedDate ASC";

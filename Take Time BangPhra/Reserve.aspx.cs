@@ -2542,7 +2542,6 @@ namespace Take_Time_BangPhra
                                     UploadedDate,
                                     VerificationStatus,
                                     IsVerified,
-                                    OCR_Status,
                                     Notes,
                                     IsActive,
                                     Status
@@ -2558,7 +2557,6 @@ namespace Take_Time_BangPhra
                                     GETDATE(),
                                     'PENDING',
                                     0,
-                                    'PENDING',
                                     N'อัพโหลดเมื่อจอง',
                                     1,
                                     1
@@ -2663,14 +2661,8 @@ namespace Take_Time_BangPhra
                     { "@status", "FAILED" }
                 };
 
-                code2.DatabaseInsertSafe(conn,
-                    @"UPDATE Payment_Slips
-                      SET OCR_Status = @status,
-                          OCR_ErrorMessage = @errorMessage,
-                          OCR_ProcessedDate = GETDATE()
-                      WHERE ID = @slipId",
-                    errorParams);
-
+                // Note: Payment_Slips table does NOT have OCR columns
+                // Just log the error
                 code2.Logs(conn, "Reserve ProcessSlipOCR Error",
                     $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
             }

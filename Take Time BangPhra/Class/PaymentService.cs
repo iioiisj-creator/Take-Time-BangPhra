@@ -266,7 +266,7 @@ namespace Take_Time_BangPhra
             string fullPath = Path.Combine(uploadPath, uniqueFileName);
             slipFile.SaveAs(fullPath);
 
-            // 5. Insert to database (with OCR_Status = PENDING)
+            // 5. Insert to database
             var parameters = new Dictionary<string, object>
             {
                 { "@reservationId", reservationId },
@@ -276,20 +276,19 @@ namespace Take_Time_BangPhra
                 { "@fileSize", slipFile.ContentLength },
                 { "@uploadedByCustomer", customerPhone },
                 { "@uploadedByAdmin", adminId },
-                { "@verificationStatus", "PENDING" },
-                { "@ocrStatus", "PENDING" }
+                { "@verificationStatus", "PENDING" }
             };
 
             long slipId = _code.DatabaseInsertReturnSafe(_connectionString,
                 @"INSERT INTO Payment_Slips (
                     Reservation_ID, SlipFileURL, FileName, FileType, FileSize,
                     UploadedDate, UploadedBy_CustomerPhone, UploadedBy_ID,
-                    VerificationStatus, IsVerified, OCR_Status
+                    VerificationStatus, IsVerified
                   )
                   VALUES (
                     @reservationId, @slipFileURL, @fileName, @fileType, @fileSize,
                     GETDATE(), @uploadedByCustomer, @uploadedByAdmin,
-                    @verificationStatus, 0, @ocrStatus
+                    @verificationStatus, 0
                   );
                   SELECT SCOPE_IDENTITY();",
                 parameters);
@@ -344,13 +343,10 @@ namespace Take_Time_BangPhra
                     { "@status", "FAILED" }
                 };
 
-                _code.DatabaseInsertSafe(_connectionString,
-                    @"UPDATE Payment_Slips
-                      SET OCR_Status = @status,
-                          OCR_ErrorMessage = @errorMessage,
-                          OCR_ProcessedDate = GETDATE()
-                      WHERE ID = @slipId",
-                    errorParams);
+                // Note: Payment_Slips table does not have OCR columns
+                // Just log the error, don't update non-existent columns
+                _code.Logs(_connectionString, "OCR Processing Failed",
+                    $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
 
                 throw;
             }
