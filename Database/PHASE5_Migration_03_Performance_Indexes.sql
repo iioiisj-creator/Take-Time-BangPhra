@@ -105,13 +105,15 @@ GO
 -- =============================================
 -- 6. Index on Product for POS searches
 -- Used in: Product page barcode and name searches
+-- Note: Product table does NOT have Amount column
+--       Stock is calculated from Product_In - Product_Out
 -- =============================================
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Product_Barcode' AND object_id = OBJECT_ID('Product'))
 BEGIN
     PRINT '📊 Creating index: IX_Product_Barcode...';
     CREATE NONCLUSTERED INDEX IX_Product_Barcode
     ON Product(Barcode)
-    INCLUDE (ID, Product_Name, Sell_Price, Amount, Category_ID, CanPreBook)
+    INCLUDE (ID, Product_Name, Sell_Price, Category_ID, CanPreBook)
     WHERE Barcode IS NOT NULL AND Status = 'True';
     PRINT '✅ Index IX_Product_Barcode created successfully!';
 END

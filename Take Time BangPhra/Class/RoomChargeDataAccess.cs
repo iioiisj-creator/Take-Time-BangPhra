@@ -263,43 +263,52 @@ namespace Take_Time_BangPhra
         #region Stock Management
 
         /// <summary>
-        /// Deduct product stock
+        /// Deduct product stock by creating Product_Out record
+        /// Stock = Product_In - Product_Out (no Amount column in Product table)
         /// </summary>
-        public void DeductProductStock(int productId, decimal quantity)
+        public void DeductProductStock(int productId, decimal quantity, string receiptId = null, string remark = null)
         {
             var parameters = new Dictionary<string, object>
             {
                 { "@productId", productId },
-                { "@quantity", quantity }
+                { "@quantity", quantity },
+                { "@receiptId", receiptId ?? (object)DBNull.Value },
+                { "@remark", remark ?? "Room Charge Stock Deduction" },
+                { "@dateTime", DateTime.Now }
             };
 
             _code.DatabaseInsertSafe(_connectionString,
-                @"UPDATE Product
-                  SET Amount = Amount - @quantity
-                  WHERE ID = @productId",
+                @"INSERT INTO Product_Out (DateTime_Out, Product_ID, Amount, PricePerUnit, Account_Receipt_ID, Remark)
+                  SELECT @dateTime, @productId, @quantity,
+                         ISNULL(Sell_Price, 0), @receiptId, @remark
+                  FROM Product WHERE ID = @productId",
                 parameters);
         }
 
         /// <summary>
-        /// Return product stock
+        /// Return product stock by creating Product_In record
+        /// Used when cancelling room charges
         /// </summary>
-        public void ReturnProductStock(int productId, decimal quantity)
+        public void ReturnProductStock(int productId, decimal quantity, string remark = null)
         {
             var parameters = new Dictionary<string, object>
             {
                 { "@productId", productId },
-                { "@quantity", quantity }
+                { "@quantity", quantity },
+                { "@remark", remark ?? "Room Charge Cancellation - Stock Return" },
+                { "@dateTime", DateTime.Now }
             };
 
             _code.DatabaseInsertSafe(_connectionString,
-                @"UPDATE Product
-                  SET Amount = Amount + @quantity
-                  WHERE ID = @productId",
+                @"INSERT INTO Product_In (DateTime_In, Product_ID, Amount, PricePerUnit, Remark)
+                  SELECT @dateTime, @productId, @quantity,
+                         ISNULL(Buy_Price, 0), @remark
+                  FROM Product WHERE ID = @productId",
                 parameters);
         }
 
         /// <summary>
-        /// Get current product stock
+        /// Get current product stock (calculated from Product_In - Product_Out)
         /// </summary>
         public decimal GetProductStock(int productId)
         {
@@ -309,9 +318,7 @@ namespace Take_Time_BangPhra
             };
 
             var result = _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT ISNULL(Amount, 0) as CurrentStock
-                  FROM Product
-                  WHERE ID = @productId",
+                @"SELECT dbo.fn_GetProductStock(@productId) as CurrentStock",
                 parameters);
 
             if (result.Rows.Count > 0)
@@ -376,15 +383,21 @@ namespace Take_Time_BangPhra
 
         /// <summary>
         /// Get pre-bookable products (for new reservations)
+        /// Stock is calculated from Product_In - Product_Out
         /// </summary>
         public DataTable GetPreBookableProducts()
         {
             return _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT ID, Product_Name, Sell_Price, Amount, Category_ID
+                @"SELECT
+                    ID,
+                    Product_Name,
+                    Sell_Price,
+                    Category_ID,
+                    dbo.fn_GetProductStock(ID) AS CurrentStock
                   FROM Product
                   WHERE Status = 'True'
                   AND CanPreBook = 1
-                  AND Amount > 0
+                  AND dbo.fn_GetProductStock(ID) > 0
                   ORDER BY Product_Name",
                 null);
         }
