@@ -147,47 +147,73 @@ namespace Take_Time_BangPhra.Account
                 string status = "Normal";
 
                 // Initialize totals
-                decimal cashTotal = 0, kbankTotal = 0, ktbTotal = 0, directorTotal = 0;
-                int cashCount = 0, kbankCount = 0, ktbCount = 0, directorCount = 0;
+                decimal cashTotal = 0, kbankTotal = 0, ktbTotal = 0, directorTotal = 0, otherTotal = 0;
+                int cashCount = 0, kbankCount = 0, ktbCount = 0, directorCount = 0, otherCount = 0;
                 decimal totalVAT = 0;
                 int docCount = 0;
+                decimal grandTotal = 0;
 
                 // Get all payments
                 var payments = GetAllPayments(startDate, endDate, status);
 
                 if (payments != null && payments.Rows.Count > 0)
                 {
+                    System.Diagnostics.Debug.WriteLine($"   📊 Processing {payments.Rows.Count} payment records...");
+
                     foreach (DataRow row in payments.Rows)
                     {
-                        string paidType = row["Paid_Type"]?.ToString() ?? "";
+                        string paidHow = row["Paid_How"]?.ToString() ?? ""; // วิธีชำระ
+                        string paidType = row["Paid_Type"]?.ToString() ?? ""; // ประเภทค่าใช้จ่าย
                         decimal amount = row["Total_Amount"] != DBNull.Value ? Convert.ToDecimal(row["Total_Amount"]) : 0;
                         decimal vat = row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]) : 0;
 
-                        // Count payment methods
-                        if (paidType.Contains("เงินสด"))
+                        System.Diagnostics.Debug.WriteLine($"   Record: Paid_How='{paidHow}', Paid_Type='{paidType}', Amount={amount:N2}");
+
+                        // Add to grand total regardless
+                        grandTotal += amount;
+
+                        // Count payment methods based on Paid_How (not Paid_Type!)
+                        bool categorized = false;
+
+                        if (paidHow.Contains("เงินสด") || paidHow.Contains("สด"))
                         {
                             cashTotal += amount;
                             cashCount++;
+                            categorized = true;
                         }
-                        if (paidType.Contains("กสิกร"))
+                        if (paidHow.Contains("กสิกร") || paidHow.Contains("KBANK"))
                         {
                             kbankTotal += amount;
                             kbankCount++;
+                            categorized = true;
                         }
-                        if (paidType.Contains("กรุงไทย"))
+                        if (paidHow.Contains("กรุงไทย") || paidHow.Contains("KTB"))
                         {
                             ktbTotal += amount;
                             ktbCount++;
+                            categorized = true;
                         }
-                        if (paidType.Contains("กรรมการ"))
+                        if (paidHow.Contains("กรรมการ") || paidHow.Contains("Director"))
                         {
                             directorTotal += amount;
                             directorCount++;
+                            categorized = true;
+                        }
+
+                        if (!categorized)
+                        {
+                            otherTotal += amount;
+                            otherCount++;
+                            System.Diagnostics.Debug.WriteLine($"   ⚠️ Uncategorized payment method: '{paidHow}'");
                         }
 
                         totalVAT += vat;
                         docCount++;
                     }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ⚠️ No payment records found!");
                 }
 
                 // Update UI
@@ -203,8 +229,7 @@ namespace Take_Time_BangPhra.Account
                 lblDirectorTotal.Text = directorTotal.ToString("N2");
                 lblDirectorCount.Text = directorCount.ToString();
 
-                decimal grandTotal = cashTotal + kbankTotal + ktbTotal + directorTotal;
-                int totalCount = cashCount + kbankCount + ktbCount + directorCount;
+                int totalCount = cashCount + kbankCount + ktbCount + directorCount + otherCount;
 
                 lblGrandTotal.Text = grandTotal.ToString("N2");
                 lblTotalCount.Text = totalCount.ToString();
@@ -215,6 +240,7 @@ namespace Take_Time_BangPhra.Account
                 System.Diagnostics.Debug.WriteLine($"   🏦 KBANK: {kbankTotal:N2} ({kbankCount})");
                 System.Diagnostics.Debug.WriteLine($"   🏦 KTB: {ktbTotal:N2} ({ktbCount})");
                 System.Diagnostics.Debug.WriteLine($"   👔 Director: {directorTotal:N2} ({directorCount})");
+                System.Diagnostics.Debug.WriteLine($"   ❓ Other: {otherTotal:N2} ({otherCount})");
                 System.Diagnostics.Debug.WriteLine($"   💰 Grand Total: {grandTotal:N2} ({totalCount})");
 
                 // Log expense calculation result
@@ -224,6 +250,7 @@ namespace Take_Time_BangPhra.Account
                                      $"KBANK: {kbankTotal:N2} ({kbankCount})\n" +
                                      $"KTB: {ktbTotal:N2} ({ktbCount})\n" +
                                      $"Director: {directorTotal:N2} ({directorCount})\n" +
+                                     $"Other: {otherTotal:N2} ({otherCount})\n" +
                                      $"Document Count: {docCount}\n" +
                                      $"Total VAT: {totalVAT:N2}";
 
@@ -248,7 +275,7 @@ namespace Take_Time_BangPhra.Account
         {
             // Get all payment vouchers in the date range
             string query = @"
-                SELECT ap.ID, ap.Created_Date, ap.Paid_Type, ap.Total_Amount, ap.Vat,
+                SELECT ap.ID, ap.Created_Date, ap.Paid_How, ap.Paid_Type, ap.Total_Amount, ap.Vat,
                        ap.Status,
                        ISNULL(v.Name, '-') as Vendor_Name,
                        a.Username as Created_By
@@ -383,13 +410,13 @@ namespace Take_Time_BangPhra.Account
                         string docId = row["ID"]?.ToString() ?? "";
                         string date = row["Created_Date"] != DBNull.Value ? Convert.ToDateTime(row["Created_Date"]).ToString("dd/MM/yyyy HH:mm") : "";
                         string vendor = row["Vendor_Name"]?.ToString() ?? "-";
-                        string paidType = row["Paid_Type"]?.ToString() ?? "";
+                        string paidHow = row["Paid_How"]?.ToString() ?? ""; // วิธีชำระ (payment method)
                         string amount = row["Total_Amount"] != DBNull.Value ? Convert.ToDecimal(row["Total_Amount"]).ToString("N2") : "0.00";
                         string vat = row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]).ToString("N2") : "0.00";
                         string status = row["Status"]?.ToString() ?? "";
                         string createdBy = row["Created_By"]?.ToString() ?? "";
 
-                        csv.AppendLine($"{docId},{date},{vendor},{paidType},{amount},{vat},{status},{createdBy}");
+                        csv.AppendLine($"{docId},{date},{vendor},{paidHow},{amount},{vat},{status},{createdBy}");
                     }
                 }
 
@@ -460,7 +487,7 @@ namespace Take_Time_BangPhra.Account
         {
             try
             {
-                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[10].Text; // Status column
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[11].Text; // Status column (index เพิ่มเพราะเพิ่ม Paid_Type column)
                 string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
 
                 System.Diagnostics.Debug.WriteLine($"📄 Opening document: {docNum}, Status: {docStatus}");

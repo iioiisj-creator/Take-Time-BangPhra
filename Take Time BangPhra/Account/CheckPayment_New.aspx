@@ -341,7 +341,8 @@
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />
                     <asp:BoundField DataField="Created_Date" HeaderText="วันที่สร้าง" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
                     <asp:BoundField DataField="Vendor_Name" HeaderText="ผู้รับเงิน/ผู้ขาย" />
-                    <asp:BoundField DataField="Paid_Type" HeaderText="วิธีชำระ" />
+                    <asp:BoundField DataField="Paid_How" HeaderText="วิธีชำระ" />
+                    <asp:BoundField DataField="Paid_Type" HeaderText="ประเภทค่าใช้จ่าย" />
                     <asp:BoundField DataField="Total_Amount" HeaderText="ยอดรวม" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
                     <asp:BoundField DataField="Vat" HeaderText="VAT" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
                     <asp:BoundField DataField="Status" HeaderText="สถานะ" />
