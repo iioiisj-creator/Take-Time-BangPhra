@@ -71,7 +71,6 @@ namespace Take_Time_BangPhra
                 }
                 DropDownList2.DataBind();
 
-                Session["Submit"] = false;
                 Session["UseCoupon"] = "false";
                 try
                 {
@@ -835,13 +834,13 @@ namespace Take_Time_BangPhra
 
         protected async void Button1_Click(object sender, EventArgs e)
         {
-            bool submitcheck = Convert.ToBoolean(Session["Submit"].ToString());
-            if (submitcheck == false)
-            {
-                Session["Submit"] = true;
-                // Tax invoice date should be payment received date (when button is pressed)
-                // NOT the check-in date
-                DateTime docCreatedDate = DateTime.Now;
+            // ✅ Removed Session["Submit"] check - was preventing re-submission after errors
+            // Double-submit prevention should be handled by client-side button disable
+            // or by checking if operation already completed (check Status in DB)
+
+            // Tax invoice date should be payment received date (when button is pressed)
+            // NOT the check-in date
+            DateTime docCreatedDate = DateTime.Now;
 
                 // REMOVED: Code that overwrote docCreatedDate with check-in date
                 // Tax invoices must always use payment date (DateTime.Now), not check-in date
@@ -1986,7 +1985,6 @@ namespace Take_Time_BangPhra
                                         {
                                             code2.Logs(conn, "Reservation Creation Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
                                             ClientScript.RegisterStartupScript(this.GetType(), "myalert", $"alert('เกิดข้อผิดพลาดในการสร้างการจอง: {ex.Message}');", true);
-                                            Session["Submit"] = false;
                                             return;
                                         }
                                         string ID = "";
@@ -2332,8 +2330,6 @@ namespace Take_Time_BangPhra
                 {
                     ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุเบอร์โทรศัพท์ หรือ เลขสาขาให้ครบ5หลัก');", true);
                 }
-            }
-           
         }
 
 
@@ -3876,10 +3872,10 @@ namespace Take_Time_BangPhra
 
         protected void CheckBox1_CheckedChanged(object sender, EventArgs e)
         {
+            // CheckBox1 is for accepting terms and conditions on first-time booking
             if (CheckBox1.Checked == true)
             {
                 Button1.Enabled = true;
-                Session["Submit"] = "False";
             }
             else
             {
