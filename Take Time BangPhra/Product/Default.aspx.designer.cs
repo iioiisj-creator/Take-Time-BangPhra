@@ -24,6 +24,42 @@ namespace Take_Time_BangPhra.Product
         protected global::System.Web.UI.WebControls.TextBox TextBox12;
 
         /// <summary>
+        /// ddlGuestReservation control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlGuestReservation;
+
+        /// <summary>
+        /// lblGuestInfo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblGuestInfo;
+
+        /// <summary>
+        /// trChargeMode control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trChargeMode;
+
+        /// <summary>
+        /// rblChargeMode control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButtonList rblChargeMode;
+
+        /// <summary>
         /// TextBox1 control.
         /// </summary>
         /// <remarks>
