@@ -22,17 +22,38 @@ SELECT
     R.Deposit AS TotalPaid,
     (R.TotalPrice - ISNULL(R.Deposit, 0)) AS RemainingBalance,
 
-    -- Get room names (concatenated)
-    RoomNames.Names AS RoomNames,
+    -- Get room names (concatenated) using correlated subquery
+    ISNULL(
+        STUFF((
+            SELECT ', ' + A.AccomName
+            FROM Reservation_Accommodation RA
+            INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
+            WHERE RA.Reservation_ID = R.ID
+            FOR XML PATH('')
+        ), 1, 2, '')
+    , '') AS RoomNames,
 
-    -- Calculate pending product charges
-    ISNULL(PendingCharges.Total, 0) AS PendingCharges,
+    -- Calculate pending product charges using correlated subquery
+    ISNULL((
+        SELECT SUM(TotalPrice)
+        FROM Reservation_Product_Charges RPC
+        WHERE RPC.Reservation_ID = R.ID
+        AND RPC.Status = 'PENDING'
+    ), 0) AS PendingCharges,
 
     -- Formatted display text for dropdown
     CONCAT(
         C.Name,
         ' (',
-        RoomNames.Names,
+        ISNULL(
+            STUFF((
+                SELECT ', ' + A.AccomName
+                FROM Reservation_Accommodation RA
+                INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
+                WHERE RA.Reservation_ID = R.ID
+                FOR XML PATH('')
+            ), 1, 2, '')
+        , ''),
         ') - เข้า: ',
         FORMAT(R.CheckinDate, 'dd/MM/yyyy'),
         ' ออก: ',
@@ -41,25 +62,6 @@ SELECT
 
 FROM Reservation R
 INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
-
--- Get room names
-CROSS APPLY (
-    SELECT STUFF((
-        SELECT ', ' + A.AccomName
-        FROM Reservation_Accommodation RA
-        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-        WHERE RA.Reservation_ID = R.ID
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS Names
-) AS RoomNames
-
--- Get pending charges total
-OUTER APPLY (
-    SELECT SUM(TotalPrice) AS Total
-    FROM Reservation_Product_Charges
-    WHERE Reservation_ID = R.ID
-    AND Status = 'PENDING'
-) AS PendingCharges
 
 WHERE
     -- Status is checked in
