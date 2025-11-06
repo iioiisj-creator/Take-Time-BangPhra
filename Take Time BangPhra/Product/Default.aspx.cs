@@ -25,8 +25,15 @@ namespace Take_Time_BangPhra.Product
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         private const int PrimaryInterval = 300000; // 5 minutes = 300000 ms
         private const int SecondaryInterval = 60000; // 1 minute = 60000 ms
+
+        // 🏨 Room Charge Feature
+        private RoomChargeService _roomChargeService;
+        private RoomChargeDataAccess _roomChargeDA;
         protected void Page_Load(object sender, EventArgs e)
         {
+            // 🏨 Initialize Room Charge services
+            _roomChargeService = new RoomChargeService(conn);
+            _roomChargeDA = new RoomChargeDataAccess(conn);
 
             try
             {
@@ -78,6 +85,9 @@ namespace Take_Time_BangPhra.Product
                     yourHTMLstring += "];\r\nautocomplete(document.getElementById(\"MainContent_TextBox1\"), Material_Name);</script>";
                     Literal1.Text = yourHTMLstring;
                     CheckData();
+
+                    // 🏨 Load active guests for room charge dropdown
+                    LoadActiveGuests();
                 }
                 else
                 {
@@ -338,6 +348,18 @@ namespace Take_Time_BangPhra.Product
             string docNum = "0";
             double total = 0;
             DataTable dtOrder = (DataTable)Session["dtOrder"];
+
+            // 🏨 Check if Room Charge mode
+            if (ddlGuestReservation.SelectedValue != "0" && rblChargeMode.SelectedValue == "ROOM_CHARGE")
+            {
+                // ROOM CHARGE MODE - Charge to guest room without immediate payment
+                ProcessRoomCharge(dtOrder);
+                return; // Exit method after processing room charge
+            }
+
+            // 🏨 Note: If guest is selected but PAY_NOW mode, continue with normal receipt generation
+            // The IMMEDIATE charge will be linked later after receipt is created
+
             if (CheckBox1.Checked == true)
             {
 
@@ -962,5 +984,145 @@ namespace Take_Time_BangPhra.Product
                 catch { }
             }
         }
+
+        #region 🏨 Room Charge Feature Methods
+
+        /// <summary>
+        /// Load active guest reservations into dropdown
+        /// </summary>
+        private void LoadActiveGuests()
+        {
+            try
+            {
+                var guests = _roomChargeDA.GetActiveGuestReservations();
+
+                if (guests.Rows.Count > 0)
+                {
+                    ddlGuestReservation.DataSource = guests;
+                    ddlGuestReservation.DataTextField = "DisplayText";
+                    ddlGuestReservation.DataValueField = "ReservationID";
+                    ddlGuestReservation.DataBind();
+
+                    // Add default item at top
+                    ddlGuestReservation.Items.Insert(0, new ListItem("--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---", "0"));
+                }
+            }
+            catch (Exception ex)
+            {
+                code.Logs(conn, "Product.LoadActiveGuests Error", ex.Message, Session["User"]?.ToString());
+                // Keep default "--- ไม่ชาร์จเข้าห้อง ---" option
+            }
+        }
+
+        /// <summary>
+        /// Guest selection changed - show/hide charge mode
+        /// </summary>
+        protected void ddlGuestReservation_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (ddlGuestReservation.SelectedValue != "0")
+            {
+                // Guest selected - show charge mode options
+                trChargeMode.Visible = true;
+
+                // Load and display guest info
+                int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
+                LoadGuestInfo(reservationId);
+
+                // Default to Room Charge mode
+                rblChargeMode.SelectedValue = "ROOM_CHARGE";
+
+                // Disable payment method selection when room charge mode is active
+                if (rblChargeMode.SelectedValue == "ROOM_CHARGE")
+                {
+                    DropDownList1.Enabled = false;
+                    DropDownList1.SelectedIndex = 0; // Reset to default
+                }
+                else
+                {
+                    DropDownList1.Enabled = true;
+                }
+            }
+            else
+            {
+                // No guest selected - hide charge mode
+                trChargeMode.Visible = false;
+                DropDownList1.Enabled = true;
+                lblGuestInfo.Text = "";
+            }
+        }
+
+        /// <summary>
+        /// Load and display guest information
+        /// </summary>
+        private void LoadGuestInfo(int reservationId)
+        {
+            try
+            {
+                var dt = _roomChargeDA.GetReservationById(reservationId);
+
+                if (dt.Rows.Count > 0)
+                {
+                    var row = dt.Rows[0];
+                    decimal totalPrice = row["TotalPrice"] != DBNull.Value ? Convert.ToDecimal(row["TotalPrice"]) : 0;
+                    decimal totalPaid = row["TotalPaid"] != DBNull.Value ? Convert.ToDecimal(row["TotalPaid"]) : 0;
+                    decimal remaining = row["RemainingBalance"] != DBNull.Value ? Convert.ToDecimal(row["RemainingBalance"]) : 0;
+                    decimal pendingCharges = row["PendingCharges"] != DBNull.Value ? Convert.ToDecimal(row["PendingCharges"]) : 0;
+
+                    lblGuestInfo.Text = $"💰 ยอดรวม: {totalPrice:N2} บาท | ชำระแล้ว: {totalPaid:N2} บาท | ค้างชำระ: {remaining:N2} บาท | สินค้าค้างชำระ: {pendingCharges:N2} บาท";
+                }
+            }
+            catch (Exception ex)
+            {
+                code.Logs(conn, "Product.LoadGuestInfo Error", ex.Message, Session["User"]?.ToString());
+                lblGuestInfo.Text = "⚠️ ไม่สามารถโหลดข้อมูลผู้เข้าพักได้";
+            }
+        }
+
+        /// <summary>
+        /// Process room charge (new method)
+        /// </summary>
+        private void ProcessRoomCharge(DataTable dtOrder)
+        {
+            try
+            {
+                int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
+                int? adminId = Session["UserID"] != null ? Convert.ToInt32(Session["UserID"]) : (int?)null;
+
+                // Validate reservation allows charging
+                _roomChargeService.ValidateRoomChargeAllowed(reservationId);
+
+                // Charge to room
+                long chargeId = _roomChargeService.ChargeToRoom(
+                    reservationId,
+                    dtOrder,
+                    adminId,
+                    $"POS Sale on {DateTime.Now:yyyy-MM-dd HH:mm}"
+                );
+
+                // Clear cart
+                dtOrder.Clear();
+                Session["dtOrder"] = dtOrder;
+                GridView1.DataSource = dtOrder;
+                GridView1.DataBind();
+                TextBox2.Text = "0";
+
+                // Reload guest info to show updated balances
+                LoadGuestInfo(reservationId);
+
+                // Success message
+                ClientScript.RegisterStartupScript(this.GetType(), "success",
+                    $"alert('✅ บันทึกรายการชาร์จเข้าห้องเรียบร้อยแล้ว\\n\\nรหัสการจอง: {reservationId}\\nจำนวนรายการ: {dtOrder.Rows.Count} รายการ\\n\\nรายการจะรวมในบิลเช็คเอาท์');",
+                    true);
+            }
+            catch (Exception ex)
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "error",
+                    $"alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message}');",
+                    true);
+                code.Logs(conn, "Product.ProcessRoomCharge Error", ex.Message, Session["User"]?.ToString());
+            }
+        }
+
+        #endregion
     }
 }

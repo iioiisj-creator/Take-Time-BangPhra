@@ -212,7 +212,43 @@ box-shadow: 0 0 7px 3px #e5e5e5;}
          </td>
                 
             </tr>
-            
+
+     <!-- 🏨 Room Charge Feature: Guest Selection -->
+     <tr>
+         <td class="auto-style1" style="vertical-align: middle;">
+             เลือกห้องพัก (Room Charge): </td>
+         <td class="auto-style2">
+             <asp:DropDownList ID="ddlGuestReservation" runat="server" Width="60%"
+                 AutoPostBack="True" OnSelectedIndexChanged="ddlGuestReservation_SelectedIndexChanged"
+                 AppendDataBoundItems="true" CssClass="form-control">
+                 <asp:ListItem Value="0">--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---</asp:ListItem>
+             </asp:DropDownList>
+             &nbsp;
+             <asp:Label ID="lblGuestInfo" runat="server" CssClass="text-info"
+                 style="font-size: 0.95em; color: #666;"></asp:Label>
+         </td>
+     </tr>
+
+     <!-- 🏨 Room Charge Feature: Charge Mode Selection (Hidden by default) -->
+     <tr id="trChargeMode" runat="server" visible="false">
+         <td class="auto-style1" style="vertical-align: top; padding-top: 15px;">
+             โหมดการชำระเงิน: </td>
+         <td class="auto-style2">
+             <asp:RadioButtonList ID="rblChargeMode" runat="server" RepeatDirection="Horizontal">
+                 <asp:ListItem Value="ROOM_CHARGE" Selected="True" style="margin-right: 20px;">
+                     <strong>ชาร์จเข้าห้อง</strong> (ชำระทีหลัง)
+                 </asp:ListItem>
+                 <asp:ListItem Value="PAY_NOW">
+                     <strong>ชำระเงินทันที</strong>
+                 </asp:ListItem>
+             </asp:RadioButtonList>
+             <div class="text-muted" style="margin-top: 8px; font-size: 0.9em; color: #888; line-height: 1.6;">
+                 💡 <strong>ชาร์จเข้าห้อง:</strong> ตัดสต๊อก แต่ไม่เก็บเงิน (รวมในบิลเช็คเอาท์)<br />
+                 💡 <strong>ชำระเงินทันที:</strong> ตัดสต๊อกและเก็บเงินเลย + ออกใบเสร็จ
+             </div>
+         </td>
+     </tr>
+
      <tr>
          <td class="auto-style3">
              รหัสหรือชื่อสินค้า: </td>
