@@ -151,126 +151,213 @@ namespace Take_Time_BangPhra.Account
 
         private void CalculateRevenue(DateTime startDate, DateTime endDate)
         {
-            // Always calculate revenue for Normal status only (exclude Cancel)
-            string status = "Normal";
-
-            // Initialize all totals
-            decimal cat1Cash = 0, cat1KBANK = 0, cat1KTB = 0, cat1Director = 0;
-            decimal cat2Cash = 0, cat2KBANK = 0, cat2KTB = 0, cat2Director = 0;
-            decimal cat3Cash = 0, cat3KBANK = 0, cat3KTB = 0, cat3Director = 0;
-            decimal cat4Cash = 0, cat4KBANK = 0, cat4KTB = 0, cat4Director = 0;
-            decimal totalVAT = 0;
-            int docCount = 0;
-
-            // Category 1: Reservations with check-in in date range
-            var cat1Data = GetCategory1Revenue(startDate, endDate, status);
-            System.Diagnostics.Debug.WriteLine($"Category 1 (Payment_History): {cat1Data.Rows.Count} rows");
-
-            // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
-            if (cat1Data.Rows.Count == 0)
+            try
             {
-                cat1Data = GetCategory1RevenueFallback(startDate, endDate, status);
-                System.Diagnostics.Debug.WriteLine($"Category 1 (Fallback Account_Receipt): {cat1Data.Rows.Count} rows");
+                System.Diagnostics.Debug.WriteLine($"💰 CalculateRevenue started");
+
+                // Always calculate revenue for Normal status only (exclude Cancel)
+                string status = "Normal";
+
+                // Initialize all totals
+                decimal cat1Cash = 0, cat1KBANK = 0, cat1KTB = 0, cat1Director = 0;
+                decimal cat2Cash = 0, cat2KBANK = 0, cat2KTB = 0, cat2Director = 0;
+                decimal cat3Cash = 0, cat3KBANK = 0, cat3KTB = 0, cat3Director = 0;
+                decimal cat4Cash = 0, cat4KBANK = 0, cat4KTB = 0, cat4Director = 0;
+                decimal totalVAT = 0;
+                int docCount = 0;
+
+                // Category 1: Reservations with check-in in date range
+                try
+                {
+                    var cat1Data = GetCategory1Revenue(startDate, endDate, status);
+                    System.Diagnostics.Debug.WriteLine($"Category 1 (Payment_History): {cat1Data?.Rows.Count ?? 0} rows");
+
+                    // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
+                    if (cat1Data == null || cat1Data.Rows.Count == 0)
+                    {
+                        cat1Data = GetCategory1RevenueFallback(startDate, endDate, status);
+                        System.Diagnostics.Debug.WriteLine($"Category 1 (Fallback Account_Receipt): {cat1Data?.Rows.Count ?? 0} rows");
+                    }
+
+                    if (cat1Data != null)
+                    {
+                        cat1Cash = GetAmountByPaymentMethod(cat1Data, 2);
+                        cat1KBANK = GetAmountByPaymentMethod(cat1Data, 1);
+                        cat1KTB = GetAmountByPaymentMethod(cat1Data, 4);
+                        cat1Director = GetAmountByPaymentMethod(cat1Data, 3);
+                        System.Diagnostics.Debug.WriteLine($"   Cat1: Cash={cat1Cash:N2}, KBANK={cat1KBANK:N2}, KTB={cat1KTB:N2}, Director={cat1Director:N2}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ Category 1 failed: {ex.Message}");
+                }
+
+                // Category 2: Reservations with payment in date range but check-in outside
+                try
+                {
+                    var cat2Data = GetCategory2Revenue(startDate, endDate, status);
+                    System.Diagnostics.Debug.WriteLine($"Category 2 (Payment_History): {cat2Data?.Rows.Count ?? 0} rows");
+
+                    // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
+                    if (cat2Data == null || cat2Data.Rows.Count == 0)
+                    {
+                        cat2Data = GetCategory2RevenueFallback(startDate, endDate, status);
+                        System.Diagnostics.Debug.WriteLine($"Category 2 (Fallback Account_Receipt): {cat2Data?.Rows.Count ?? 0} rows");
+                    }
+
+                    if (cat2Data != null)
+                    {
+                        cat2Cash = GetAmountByPaymentMethod(cat2Data, 2);
+                        cat2KBANK = GetAmountByPaymentMethod(cat2Data, 1);
+                        cat2KTB = GetAmountByPaymentMethod(cat2Data, 4);
+                        cat2Director = GetAmountByPaymentMethod(cat2Data, 3);
+                        System.Diagnostics.Debug.WriteLine($"   Cat2: Cash={cat2Cash:N2}, KBANK={cat2KBANK:N2}, KTB={cat2KTB:N2}, Director={cat2Director:N2}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ Category 2 failed: {ex.Message}");
+                }
+
+                // Category 3: Product sales
+                try
+                {
+                    var cat3Data = GetCategory3Revenue(startDate, endDate, status);
+                    System.Diagnostics.Debug.WriteLine($"Category 3: {cat3Data?.Rows.Count ?? 0} rows");
+
+                    if (cat3Data != null)
+                    {
+                        cat3Cash = GetAmountByPaymentMethod(cat3Data, 2);
+                        cat3KBANK = GetAmountByPaymentMethod(cat3Data, 1);
+                        cat3KTB = GetAmountByPaymentMethod(cat3Data, 4);
+                        cat3Director = GetAmountByPaymentMethod(cat3Data, 3);
+                        System.Diagnostics.Debug.WriteLine($"   Cat3: Cash={cat3Cash:N2}, KBANK={cat3KBANK:N2}, KTB={cat3KTB:N2}, Director={cat3Director:N2}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ Category 3 failed: {ex.Message}");
+                }
+
+                // Category 4: Others
+                try
+                {
+                    var cat4Data = GetCategory4Revenue(startDate, endDate, status);
+                    System.Diagnostics.Debug.WriteLine($"Category 4: {cat4Data?.Rows.Count ?? 0} rows");
+
+                    if (cat4Data != null)
+                    {
+                        cat4Cash = GetAmountByPaymentMethod(cat4Data, 2);
+                        cat4KBANK = GetAmountByPaymentMethod(cat4Data, 1);
+                        cat4KTB = GetAmountByPaymentMethod(cat4Data, 4);
+                        cat4Director = GetAmountByPaymentMethod(cat4Data, 3);
+                        System.Diagnostics.Debug.WriteLine($"   Cat4: Cash={cat4Cash:N2}, KBANK={cat4KBANK:N2}, KTB={cat4KTB:N2}, Director={cat4Director:N2}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ Category 4 failed: {ex.Message}");
+                }
+
+                // Update UI - Category 1
+                lblCat1Cash.Text = cat1Cash.ToString("N2");
+                lblCat1KBANK.Text = cat1KBANK.ToString("N2");
+                lblCat1KTB.Text = cat1KTB.ToString("N2");
+                lblCat1Director.Text = cat1Director.ToString("N2");
+                lblCat1Total.Text = (cat1Cash + cat1KBANK + cat1KTB + cat1Director).ToString("N2");
+
+                // Update UI - Category 2
+                lblCat2Cash.Text = cat2Cash.ToString("N2");
+                lblCat2KBANK.Text = cat2KBANK.ToString("N2");
+                lblCat2KTB.Text = cat2KTB.ToString("N2");
+                lblCat2Director.Text = cat2Director.ToString("N2");
+                lblCat2Total.Text = (cat2Cash + cat2KBANK + cat2KTB + cat2Director).ToString("N2");
+
+                // Update UI - Category 3
+                lblCat3Cash.Text = cat3Cash.ToString("N2");
+                lblCat3KBANK.Text = cat3KBANK.ToString("N2");
+                lblCat3KTB.Text = cat3KTB.ToString("N2");
+                lblCat3Director.Text = cat3Director.ToString("N2");
+                lblCat3Total.Text = (cat3Cash + cat3KBANK + cat3KTB + cat3Director).ToString("N2");
+
+                // Update UI - Category 4
+                lblCat4Cash.Text = cat4Cash.ToString("N2");
+                lblCat4KBANK.Text = cat4KBANK.ToString("N2");
+                lblCat4KTB.Text = cat4KTB.ToString("N2");
+                lblCat4Director.Text = cat4Director.ToString("N2");
+                lblCat4Total.Text = (cat4Cash + cat4KBANK + cat4KTB + cat4Director).ToString("N2");
+
+                // Update UI - Totals
+                decimal totalCash = cat1Cash + cat2Cash + cat3Cash + cat4Cash;
+                decimal totalKBANK = cat1KBANK + cat2KBANK + cat3KBANK + cat4KBANK;
+                decimal totalKTB = cat1KTB + cat2KTB + cat3KTB + cat4KTB;
+                decimal totalDirector = cat1Director + cat2Director + cat3Director + cat4Director;
+
+                lblTotalCash.Text = totalCash.ToString("N2");
+                lblTotalKBANK.Text = totalKBANK.ToString("N2");
+                lblTotalKTB.Text = totalKTB.ToString("N2");
+                lblTotalDirector.Text = totalDirector.ToString("N2");
+                lblGrandTotal.Text = (totalCash + totalKBANK + totalKTB + totalDirector).ToString("N2");
+
+                System.Diagnostics.Debug.WriteLine($"   💵 Totals: Cash={totalCash:N2}, KBANK={totalKBANK:N2}, KTB={totalKTB:N2}, Director={totalDirector:N2}");
+                System.Diagnostics.Debug.WriteLine($"   💰 Grand Total: {(totalCash + totalKBANK + totalKTB + totalDirector):N2}");
+
+                // Get VAT and document count
+                try
+                {
+                    var allData = GetAllReceipts(startDate, endDate, status);
+                    if (allData != null)
+                    {
+                        foreach (DataRow row in allData.Rows)
+                        {
+                            totalVAT += row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]) : 0;
+                            docCount++;
+                        }
+                    }
+
+                    lblTotalVAT.Text = totalVAT.ToString("N2");
+                    lblDocCount.Text = docCount.ToString();
+
+                    System.Diagnostics.Debug.WriteLine($"   📄 Documents: {docCount}, VAT: {totalVAT:N2}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ⚠️ VAT/DocCount calculation failed: {ex.Message}");
+                    lblTotalVAT.Text = "0.00";
+                    lblDocCount.Text = "0";
+                }
+
+                // Log revenue calculation result (gracefully handle logging errors)
+                try
+                {
+                    decimal grandTotal = totalCash + totalKBANK + totalKTB + totalDirector;
+                    string breakdown = $"Category 1: {(cat1Cash + cat1KBANK + cat1KTB + cat1Director):N2}\n" +
+                                     $"Category 2: {(cat2Cash + cat2KBANK + cat2KTB + cat2Director):N2}\n" +
+                                     $"Category 3: {(cat3Cash + cat3KBANK + cat3KTB + cat3Director):N2}\n" +
+                                     $"Category 4: {(cat4Cash + cat4KBANK + cat4KTB + cat4Director):N2}\n" +
+                                     $"Total Cash: {totalCash:N2}\n" +
+                                     $"Total KBANK: {totalKBANK:N2}\n" +
+                                     $"Total KTB: {totalKTB:N2}\n" +
+                                     $"Total Director: {totalDirector:N2}\n" +
+                                     $"Document Count: {docCount}\n" +
+                                     $"Total VAT: {totalVAT:N2}";
+
+                    loggingService.LogRevenueCalculation(startDate, endDate, grandTotal, breakdown, GetCurrentUserId());
+                }
+                catch (Exception logEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"   ⚠️ Logging failed (ignored): {logEx.Message}");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"✅ CalculateRevenue completed successfully");
             }
-            cat1Cash = GetAmountByPaymentMethod(cat1Data, 2);
-            cat1KBANK = GetAmountByPaymentMethod(cat1Data, 1);
-            cat1KTB = GetAmountByPaymentMethod(cat1Data, 4);
-            cat1Director = GetAmountByPaymentMethod(cat1Data, 3);
-
-            // Category 2: Reservations with payment in date range but check-in outside
-            var cat2Data = GetCategory2Revenue(startDate, endDate, status);
-            System.Diagnostics.Debug.WriteLine($"Category 2 (Payment_History): {cat2Data.Rows.Count} rows");
-
-            // ⚠️ Fallback: ถ้า Payment_History ไม่มีข้อมูล ให้ใช้ Account_Receipt
-            if (cat2Data.Rows.Count == 0)
+            catch (Exception ex)
             {
-                cat2Data = GetCategory2RevenueFallback(startDate, endDate, status);
-                System.Diagnostics.Debug.WriteLine($"Category 2 (Fallback Account_Receipt): {cat2Data.Rows.Count} rows");
+                System.Diagnostics.Debug.WriteLine($"❌ CalculateRevenue FAILED: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"   Stack: {ex.StackTrace}");
+                throw; // Re-throw to be caught by outer try-catch in btnSearch_Click
             }
-            cat2Cash = GetAmountByPaymentMethod(cat2Data, 2);
-            cat2KBANK = GetAmountByPaymentMethod(cat2Data, 1);
-            cat2KTB = GetAmountByPaymentMethod(cat2Data, 4);
-            cat2Director = GetAmountByPaymentMethod(cat2Data, 3);
-
-            // Category 3: Product sales
-            var cat3Data = GetCategory3Revenue(startDate, endDate, status);
-            cat3Cash = GetAmountByPaymentMethod(cat3Data, 2);
-            cat3KBANK = GetAmountByPaymentMethod(cat3Data, 1);
-            cat3KTB = GetAmountByPaymentMethod(cat3Data, 4);
-            cat3Director = GetAmountByPaymentMethod(cat3Data, 3);
-
-            // Category 4: Others
-            var cat4Data = GetCategory4Revenue(startDate, endDate, status);
-            cat4Cash = GetAmountByPaymentMethod(cat4Data, 2);
-            cat4KBANK = GetAmountByPaymentMethod(cat4Data, 1);
-            cat4KTB = GetAmountByPaymentMethod(cat4Data, 4);
-            cat4Director = GetAmountByPaymentMethod(cat4Data, 3);
-
-            // Update UI - Category 1
-            lblCat1Cash.Text = cat1Cash.ToString("N2");
-            lblCat1KBANK.Text = cat1KBANK.ToString("N2");
-            lblCat1KTB.Text = cat1KTB.ToString("N2");
-            lblCat1Director.Text = cat1Director.ToString("N2");
-            lblCat1Total.Text = (cat1Cash + cat1KBANK + cat1KTB + cat1Director).ToString("N2");
-
-            // Update UI - Category 2
-            lblCat2Cash.Text = cat2Cash.ToString("N2");
-            lblCat2KBANK.Text = cat2KBANK.ToString("N2");
-            lblCat2KTB.Text = cat2KTB.ToString("N2");
-            lblCat2Director.Text = cat2Director.ToString("N2");
-            lblCat2Total.Text = (cat2Cash + cat2KBANK + cat2KTB + cat2Director).ToString("N2");
-
-            // Update UI - Category 3
-            lblCat3Cash.Text = cat3Cash.ToString("N2");
-            lblCat3KBANK.Text = cat3KBANK.ToString("N2");
-            lblCat3KTB.Text = cat3KTB.ToString("N2");
-            lblCat3Director.Text = cat3Director.ToString("N2");
-            lblCat3Total.Text = (cat3Cash + cat3KBANK + cat3KTB + cat3Director).ToString("N2");
-
-            // Update UI - Category 4
-            lblCat4Cash.Text = cat4Cash.ToString("N2");
-            lblCat4KBANK.Text = cat4KBANK.ToString("N2");
-            lblCat4KTB.Text = cat4KTB.ToString("N2");
-            lblCat4Director.Text = cat4Director.ToString("N2");
-            lblCat4Total.Text = (cat4Cash + cat4KBANK + cat4KTB + cat4Director).ToString("N2");
-
-            // Update UI - Totals
-            decimal totalCash = cat1Cash + cat2Cash + cat3Cash + cat4Cash;
-            decimal totalKBANK = cat1KBANK + cat2KBANK + cat3KBANK + cat4KBANK;
-            decimal totalKTB = cat1KTB + cat2KTB + cat3KTB + cat4KTB;
-            decimal totalDirector = cat1Director + cat2Director + cat3Director + cat4Director;
-
-            lblTotalCash.Text = totalCash.ToString("N2");
-            lblTotalKBANK.Text = totalKBANK.ToString("N2");
-            lblTotalKTB.Text = totalKTB.ToString("N2");
-            lblTotalDirector.Text = totalDirector.ToString("N2");
-            lblGrandTotal.Text = (totalCash + totalKBANK + totalKTB + totalDirector).ToString("N2");
-
-            // Get VAT and document count
-            var allData = GetAllReceipts(startDate, endDate, status);
-            foreach (DataRow row in allData.Rows)
-            {
-                totalVAT += row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]) : 0;
-                docCount++;
-            }
-
-            lblTotalVAT.Text = totalVAT.ToString("N2");
-            lblDocCount.Text = docCount.ToString();
-
-            // Log revenue calculation result
-            decimal grandTotal = totalCash + totalKBANK + totalKTB + totalDirector;
-            string breakdown = $"Category 1: {(cat1Cash + cat1KBANK + cat1KTB + cat1Director):N2}\n" +
-                             $"Category 2: {(cat2Cash + cat2KBANK + cat2KTB + cat2Director):N2}\n" +
-                             $"Category 3: {(cat3Cash + cat3KBANK + cat3KTB + cat3Director):N2}\n" +
-                             $"Category 4: {(cat4Cash + cat4KBANK + cat4KTB + cat4Director):N2}\n" +
-                             $"Total Cash: {totalCash:N2}\n" +
-                             $"Total KBANK: {totalKBANK:N2}\n" +
-                             $"Total KTB: {totalKTB:N2}\n" +
-                             $"Total Director: {totalDirector:N2}\n" +
-                             $"Document Count: {docCount}\n" +
-                             $"Total VAT: {totalVAT:N2}";
-
-            loggingService.LogRevenueCalculation(startDate, endDate, grandTotal, breakdown, GetCurrentUserId());
         }
 
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
@@ -871,80 +958,144 @@ namespace Take_Time_BangPhra.Account
         {
             try
             {
-                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[13].Text; // Status column (now at index 13)
-                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column (at index 3)
-                string docType = docNum.Remove(3, 9);
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[13].Text; // Status column
+                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
 
-                string docYear = "20" + docNum.Remove(0, 3).Remove(2, 7);
-                string docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 5)).ToString();
+                System.Diagnostics.Debug.WriteLine($"📄 Opening document: {docNum}, Status: {docStatus}");
 
-                if (docType.Length > 3)
+                // Parse document type, year, and month from document number
+                string docType = docNum.Length >= 3 ? docNum.Substring(0, 3) : "";
+                string docYear = "";
+                string docMonth = "";
+
+                // Format: REC2410-0001 or REC241030-0001
+                if (docNum.Length >= 9) // REC2410-0001 format (8 chars before dash)
                 {
-                    docType = docNum.Remove(3, 12);
-                    docYear = "20" + docNum.Remove(0, 3).Remove(2, 10);
-                    docMonth = Convert.ToInt32(docNum.Remove(0, 5).Remove(2, 8)).ToString();
+                    docYear = "20" + docNum.Substring(3, 2); // REC24 → 2024
+                    docMonth = docNum.Substring(5, 2); // REC2410 → 10
                 }
+                else
+                {
+                    throw new Exception($"Invalid document number format: {docNum}");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"   Parsed: Type={docType}, Year={docYear}, Month={docMonth}");
 
                 if (docType == "REC")
                 {
+                    // Get receipt UID from database
                     string path = ConfigurationManager.AppSettings["ReceiptFolderPath"];
-                    string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+                    var uidResult = codeInstance.DatabaseQuery(conn,
+                        "SELECT [UID] FROM [dbo].[Account_Receipt] WHERE ID = '" + docNum + "'");
+
+                    string uid = "";
+                    if (uidResult != null && uidResult.Rows.Count > 0 && uidResult.Rows[0][0] != DBNull.Value)
+                    {
+                        uid = uidResult.Rows[0][0].ToString();
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"   UID from DB: '{uid}'");
+
+                    // Build file paths in priority order
+                    List<string> filesToCheck = new List<string>();
 
                     if (docStatus == "Cancel")
                     {
-                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf"))
+                        // For Cancel status: Try UID version first, then fallback
+                        if (!string.IsNullOrEmpty(uid))
                         {
-                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_{uid}_Cancel.pdf");
+                            filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf");
                         }
-                        else
-                        {
-                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_Cancel.pdf");
-                        }
+                        filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_Cancel.pdf");
                     }
                     else
                     {
-                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf"))
+                        // For Normal status: Try UID version first, then fallback
+                        if (!string.IsNullOrEmpty(uid))
                         {
-                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}_{uid}.pdf");
+                            filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf");
                         }
-                        else
+                        filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}.pdf");
+                    }
+
+                    // Check each file and redirect to the first one that exists
+                    foreach (var filePath in filesToCheck)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"   Checking: {filePath}");
+                        if (File.Exists(filePath))
                         {
-                            Response.Redirect($"/Documents/Receipt/{docYear}/{docMonth}/{docNum}.pdf");
+                            string relativeUrl = filePath.Replace(path, "/Documents/Receipt").Replace("\\", "/");
+                            System.Diagnostics.Debug.WriteLine($"   ✅ Found! Redirecting to: {relativeUrl}");
+                            Response.Redirect(relativeUrl);
+                            return;
                         }
                     }
+
+                    // If no file found, show error
+                    throw new Exception($"ไม่พบไฟล์ PDF สำหรับเอกสาร {docNum}\n\nตรวจสอบแล้ว:\n{string.Join("\n", filesToCheck)}");
                 }
                 else if (docType == "PAY")
                 {
+                    // Get payment UID from database
                     string path = ConfigurationManager.AppSettings["PaymentFolderPath"];
-                    string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString();
+                    var uidResult = codeInstance.DatabaseQuery(conn,
+                        "SELECT [UID] FROM [dbo].[Account_Payment] WHERE ID = '" + docNum + "'");
+
+                    string uid = "";
+                    if (uidResult != null && uidResult.Rows.Count > 0 && uidResult.Rows[0][0] != DBNull.Value)
+                    {
+                        uid = uidResult.Rows[0][0].ToString();
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"   UID from DB: '{uid}'");
+
+                    // Build file paths in priority order
+                    List<string> filesToCheck = new List<string>();
 
                     if (docStatus == "Cancel")
                     {
-                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf"))
+                        // For Cancel status: Try UID version first, then fallback
+                        if (!string.IsNullOrEmpty(uid))
                         {
-                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_{uid}_Cancel.pdf");
+                            filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}_Cancel.pdf");
                         }
-                        else
-                        {
-                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_Cancel.pdf");
-                        }
+                        filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_Cancel.pdf");
                     }
                     else
                     {
-                        if (File.Exists($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf"))
+                        // For Normal status: Try UID version first, then fallback
+                        if (!string.IsNullOrEmpty(uid))
                         {
-                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}_{uid}.pdf");
+                            filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}_{uid}.pdf");
                         }
-                        else
+                        filesToCheck.Add($"{path}\\{docYear}\\{docMonth}\\{docNum}.pdf");
+                    }
+
+                    // Check each file and redirect to the first one that exists
+                    foreach (var filePath in filesToCheck)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"   Checking: {filePath}");
+                        if (File.Exists(filePath))
                         {
-                            Response.Redirect($"/Documents/Payment/{docYear}/{docMonth}/{docNum}.pdf");
+                            string relativeUrl = filePath.Replace(path, "/Documents/Payment").Replace("\\", "/");
+                            System.Diagnostics.Debug.WriteLine($"   ✅ Found! Redirecting to: {relativeUrl}");
+                            Response.Redirect(relativeUrl);
+                            return;
                         }
                     }
+
+                    // If no file found, show error
+                    throw new Exception($"ไม่พบไฟล์ PDF สำหรับเอกสาร {docNum}\n\nตรวจสอบแล้ว:\n{string.Join("\n", filesToCheck)}");
+                }
+                else
+                {
+                    throw new Exception($"ประเภทเอกสารไม่ถูกต้อง: {docType}");
                 }
             }
             catch (Exception ex)
             {
-                ShowError("เปิดเอกสารไม่สำเร็จ: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"   ❌ Error: {ex.Message}");
+                ShowError("เปิดเอกสารไม่สำเร็จ:\n" + ex.Message);
             }
         }
 
