@@ -404,8 +404,15 @@ namespace Take_Time_BangPhra.Account.Report
 
                 if (command == "edit")
                 {
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + id + "'");
+                    // ⚠️ Delete in correct order to maintain referential integrity
+                    // 1. Delete Payment_History first (references Receipt_ID)
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + id + "'");
+
+                    // 2. Delete Account_Receipt_Detail
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + id + "'");
+
+                    // 3. Finally delete Account_Receipt
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + id + "'");
                 }
                 else { }
                 if (reservation_id > 0)

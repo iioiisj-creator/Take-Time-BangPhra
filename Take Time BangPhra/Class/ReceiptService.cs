@@ -458,15 +458,39 @@ namespace Take_Time_BangPhra.Services
         // Helper methods for data retrieval
         private DataTable GetBusinessInfo()
         {
-            return _dbHelper.ExecuteQuery("SELECT * FROM Business_Info LEFT JOIN Customer_Type ON Business_Type_ID = Customer_Type.ID LEFT JOIN Address ON Address.ID = Address_ID");
+            return _dbHelper.ExecuteQuery(@"
+                SELECT
+                    Business_Info.*,
+                    Customer_Type.Customer_Type,
+                    Customer_Type.Customer_Code,
+                    Address.Province AS Province,
+                    Address.District AS District,
+                    Address.SubDistrict AS SubDistrict,
+                    Address.PostalCode AS PostalCode,
+                    Business_Info.Address_ID,
+                    Address.Address_Code
+                FROM Business_Info
+                LEFT JOIN Customer_Type ON Business_Type_ID = Customer_Type.ID
+                LEFT JOIN Address ON Address.ID = Business_Info.Address_ID");
         }
 
         private DataTable GetCustomerForReceipt(string mobilePhone)
         {
-            return _dbHelper.ExecuteQuery($@"SELECT * FROM Customer 
-                                           LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID 
-                                           LEFT JOIN Address ON Address.ID = Address_ID 
-                                           WHERE MobilePhone = '{mobilePhone}'");
+            return _dbHelper.ExecuteQuery($@"
+                SELECT
+                    Customer.*,
+                    Customer_Type.Customer_Type,
+                    Customer_Type.Customer_Code,
+                    Address.Province AS Province,
+                    Address.District AS District,
+                    Address.SubDistrict AS SubDistrict,
+                    Address.PostalCode AS PostalCode,
+                    Customer.Address_ID,
+                    Address.Address_Code
+                FROM Customer
+                LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
+                LEFT JOIN Address ON Address.ID = Customer.Address_ID
+                WHERE MobilePhone = '{mobilePhone}'");
         }
 
         private DataTable GetSignatureData()
