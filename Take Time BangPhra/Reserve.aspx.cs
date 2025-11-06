@@ -2965,9 +2965,22 @@ namespace Take_Time_BangPhra
             }
             string RecNumber = DocNumber;
             DataTable dtbusinessinfo = code.DatabaseQuery(conn, @"SELECT
-                Business_Info.*,
+                -- ⚠️ ระบุ Business_Info columns ทั้งหมด
+                Business_Info.ID AS BusinessInfo_ID,
+                Business_Info.Business_Type_ID,
+                Business_Info.Company_Name,
+                Business_Info.Address AS Business_Address_Legacy,
+                Business_Info.Address_ID,
+                Business_Info.Email,
+                Business_Info.LegalEntity_Number,
+                Business_Info.Branch_Number,
+                Business_Info.Phone_Number,
+                Business_Info.Use_Vat,
+                Business_Info.Status,
+                Business_Info.Address1,
                 Customer_Type.Customer_Type,
                 Customer_Type.Customer_Code,
+                -- ✅ ดึงข้อมูลที่อยู่จาก Address table
                 Address.Province AS Province,
                 Address.District AS District,
                 Address.SubDistrict AS SubDistrict,
@@ -2981,15 +2994,36 @@ namespace Take_Time_BangPhra
             DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
             string uid = dtReceipt.Rows[0]["UID"].ToString();
             DataTable dtcustomer = code.DatabaseQuery(conn, @"SELECT
-                Customer.*,
+                -- ⚠️ ระบุ Customer columns ทั้งหมด ยกเว้น Province, District, Subdistrict, Postcode (legacy columns)
+                Customer.ID,
+                Customer.MobilePhone,
+                Customer.Name,
+                Customer.NickName,
+                Customer.ComeFrom,
+                Customer.Remark,
+                Customer.Status,
+                Customer.FullName,
+                Customer.Address,
+                Customer.Address1,
+                Customer.Address_ID,
+                Customer.IDNumber,
+                Customer.Email,
+                Customer.Customer_Type_ID,
+                Customer.Branch_Number,
+                Customer.TaxID,
+                Customer.LastUpdated,
+                Customer.LastUpdatedBy_ID,
+                Customer.CreatedDate,
+                Customer.CreatedBy_ID,
+                Customer.IsActive,
                 Customer_Type.Customer_Type,
                 Customer_Type.Customer_Code,
+                -- ✅ ดึงข้อมูลที่อยู่จาก Address table (ไม่ใช่จาก Customer legacy columns)
                 Address.Province AS Province,
                 Address.District AS District,
                 Address.SubDistrict AS SubDistrict,
                 Address.PostalCode AS PostalCode,
-                Address.Address_Code,
-                Customer.Address_ID
+                Address.Address_Code
                 FROM Customer
                 LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
                 LEFT JOIN Address ON Address.ID = Customer.Address_ID
@@ -3391,15 +3425,36 @@ namespace Take_Time_BangPhra
 
             TextBox1.Text = TextBox1.Text.Replace(" ", "").Replace("-", "");
             DataTable dtCustomer = code.DatabaseQuery(conn, @"SELECT
-                Customer.*,
+                -- ⚠️ ระบุ Customer columns ทั้งหมด ยกเว้น Province, District, Subdistrict, Postcode (legacy columns)
+                Customer.ID,
+                Customer.MobilePhone,
+                Customer.Name,
+                Customer.NickName,
+                Customer.ComeFrom,
+                Customer.Remark,
+                Customer.Status,
+                Customer.FullName,
+                Customer.Address,
+                Customer.Address1,
+                Customer.Address_ID,
+                Customer.IDNumber,
+                Customer.Email,
+                Customer.Customer_Type_ID,
+                Customer.Branch_Number,
+                Customer.TaxID,
+                Customer.LastUpdated,
+                Customer.LastUpdatedBy_ID,
+                Customer.CreatedDate,
+                Customer.CreatedBy_ID,
+                Customer.IsActive,
                 Customer_Type.Customer_Type,
                 Customer_Type.Customer_Code,
+                -- ✅ ดึงข้อมูลที่อยู่จาก Address table (ไม่ใช่จาก Customer legacy columns)
                 Address.Province AS Province,
                 Address.District AS District,
                 Address.SubDistrict AS SubDistrict,
                 Address.PostalCode AS PostalCode,
-                Address.Address_Code,
-                Customer.Address_ID
+                Address.Address_Code
                 FROM [Customer]
                 LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
                 LEFT JOIN Address ON Address.ID = Customer.Address_ID

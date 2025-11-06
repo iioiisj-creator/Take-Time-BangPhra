@@ -94,7 +94,28 @@ namespace Take_Time_BangPhra
             return _code.DatabaseQuerySafe(_connectionString,
                 @"SELECT
                     Reservation.*,
-                    Customer.*,
+                    -- ⚠️ ระบุ Customer columns ทั้งหมด ยกเว้น Province, District, Subdistrict, Postcode (เพื่อไม่ให้ซ้ำกับ Address table)
+                    Customer.ID AS Customer_ID,
+                    Customer.MobilePhone,
+                    Customer.Name,
+                    Customer.NickName,
+                    Customer.ComeFrom,
+                    Customer.Remark AS Customer_Remark,
+                    Customer.Status AS Customer_Status,
+                    Customer.FullName,
+                    Customer.Address AS Customer_Address_Legacy,
+                    Customer.Address1,
+                    Customer.Address_ID,
+                    Customer.IDNumber,
+                    Customer.Email,
+                    Customer.Customer_Type_ID,
+                    Customer.Branch_Number,
+                    Customer.TaxID,
+                    Customer.LastUpdated,
+                    Customer.LastUpdatedBy_ID,
+                    Customer.CreatedDate AS Customer_CreatedDate,
+                    Customer.CreatedBy_ID,
+                    Customer.IsActive,
                     Customer_Type.Customer_Type,
                     Customer_Type.Customer_Code,
                     Account_Receipt.ID AS Receipt_ID,
@@ -103,13 +124,12 @@ namespace Take_Time_BangPhra
                     Account_Receipt.UseDeposit,
                     Account_Receipt.Status AS Receipt_Status,
                     Account_Receipt.Paid_Type,
-                    -- ✅ ระบุ Address columns ชัดเจนเพื่อให้แสดงชื่อจริง ไม่ใช่รหัส
+                    -- ✅ ระบุ Address columns จาก Address table (ไม่ใช่จาก Customer legacy columns)
                     Address.Province AS Province,
                     Address.District AS District,
                     Address.SubDistrict AS SubDistrict,
                     Address.PostalCode AS PostalCode,
-                    Address.Address_Code,
-                    Customer.Address_ID
+                    Address.Address_Code
                   FROM [Reservation]
                   INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone
                   LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
