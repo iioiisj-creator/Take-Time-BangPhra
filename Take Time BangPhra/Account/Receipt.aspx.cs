@@ -377,13 +377,18 @@ namespace Take_Time_BangPhra.Account.Report
                     // ✅ EDIT mode: Use original receipt ID, do NOT create new document number
                     dtReceipt = code.DatabaseQuery(conn, "Select * from Account_Receipt left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     id = dtReceipt.Rows[0]["ID"].ToString();
-                    if (CheckBox2.Checked == true)
+
+                    // ✅ ถ้า CheckBox2 ถูก check และ TextBox5 มีค่า → ใช้เลขที่ที่กรอก
+                    // ✅ ถ้าไม่ → ใช้เลขเดิม
+                    if (CheckBox2.Checked == true && !string.IsNullOrWhiteSpace(TextBox5.Text))
                     {
-                        docNum = TextBox5.Text;
+                        docNum = TextBox5.Text.Trim();  // ใช้เลขที่กรอก (ตัดช่องว่าง)
+                        System.Diagnostics.Debug.WriteLine($"[Receipt Edit] Using custom receipt number: {docNum}");
                     }
                     else
                     {
                         docNum = id; // Use original ID
+                        System.Diagnostics.Debug.WriteLine($"[Receipt Edit] Using original receipt ID: {docNum} (CheckBox2.Checked={CheckBox2.Checked}, TextBox5='{TextBox5.Text}')");
                     }
                 }
                 else
