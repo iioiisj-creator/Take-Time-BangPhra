@@ -312,15 +312,57 @@ namespace Take_Time_BangPhra.Services
             _dbHelper.ExecuteInsert(query);
 
             // Insert receipt detail
-            string detailQuery = $@"INSERT INTO [dbo].[Account_Receipt_Detail] 
-                              ([Number], [Receipt_ID], [ProductType_ID], [Product_ID], 
-                               [Product_Data], [Product_Amount], [Product_Unit], 
-                               [Price_PerPeice], [Price_Amount]) 
-                              VALUES ('1', '{receiptId}', 1, 7, 
-                              N'ค่ามัดจำที่พักของหมายเลขการจอง {reservationId} [{receiptId}]', 
+            string detailQuery = $@"INSERT INTO [dbo].[Account_Receipt_Detail]
+                              ([Number], [Receipt_ID], [ProductType_ID], [Product_ID],
+                               [Product_Data], [Product_Amount], [Product_Unit],
+                               [Price_PerPeice], [Price_Amount])
+                              VALUES ('1', '{receiptId}', 1, 7,
+                              N'ค่ามัดจำที่พักของหมายเลขการจอง {reservationId} [{receiptId}]',
                               '1', N'ครั้ง', {totalAmount}, {totalAmount})";
 
             _dbHelper.ExecuteInsert(detailQuery);
+
+            // 🔧 FIX: Create Payment_History record
+            try
+            {
+                // Get remaining balance
+                var balanceQuery = $@"
+                    SELECT
+                        r.TotalPrice,
+                        ISNULL(SUM(ph.PaymentAmount), 0) as TotalPaid
+                    FROM Reservation r
+                    LEFT JOIN Payment_History ph ON r.ID = ph.Reservation_ID AND ph.Status = 'COMPLETED'
+                    WHERE r.ID = '{reservationId}'
+                    GROUP BY r.TotalPrice";
+
+                var balanceResult = _dbHelper.ExecuteQuery(balanceQuery);
+                double remainingBalance = 0;
+
+                if (balanceResult.Rows.Count > 0)
+                {
+                    double totalPrice = Convert.ToDouble(balanceResult.Rows[0]["TotalPrice"]);
+                    double totalPaid = Convert.ToDouble(balanceResult.Rows[0]["TotalPaid"]);
+                    remainingBalance = totalPrice - totalPaid - totalAmount; // After this payment
+                }
+
+                string paymentHistoryQuery = $@"
+                    INSERT INTO [dbo].[Payment_History] (
+                        Reservation_ID, PaymentDate, PaymentAmount, PaymentType, PaymentMethod,
+                        Receipt_ID, RemainingBalance, Status
+                    )
+                    VALUES (
+                        '{reservationId}', '{docDate:yyyy-MM-dd}', {totalAmount}, 'DEPOSIT', N'{paidType}',
+                        '{receiptId}', {remainingBalance}, 'COMPLETED'
+                    )";
+
+                _dbHelper.ExecuteInsert(paymentHistoryQuery);
+                System.Diagnostics.Trace.TraceInformation($"✅ Created Payment_History for Deposit Receipt {receiptId}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to create Payment_History for Receipt {receiptId}: {ex.Message}");
+                // Continue - Receipt is already created, Payment_History is supplementary
+            }
         }
 
         private void CreateRegularReceipt(string receiptId, string reservationId, DateTime docDate,
@@ -345,19 +387,61 @@ namespace Take_Time_BangPhra.Services
                 double productAmount = Convert.ToDouble(dtReserve.Rows[i]["Product_Amount"]);
                 double calculatedAmount = CalculateTwoDecimalPoints(pricePerPiece * productAmount);
 
-                string detailQuery = $@"INSERT INTO [dbo].[Account_Receipt_Detail] 
-                                      ([Number], [Receipt_ID], [ProductType_ID], [Product_ID], 
-                                       [Product_Data], [Product_Amount], [Product_Unit], 
-                                       [Price_PerPeice], [Price_Amount]) 
-                                      VALUES ('{dtReserve.Rows[i]["Number"]}', '{receiptId}', 
-                                      {dtReserve.Rows[i]["ProductType_ID"]}, 
-                                      {dtReserve.Rows[i]["Product_ID"]}, 
-                                      N'{dtReserve.Rows[i]["Product_Data"]}', 
-                                      {dtReserve.Rows[i]["Product_Amount"]}, 
-                                      N'{dtReserve.Rows[i]["Product_Unit"]}', 
+                string detailQuery = $@"INSERT INTO [dbo].[Account_Receipt_Detail]
+                                      ([Number], [Receipt_ID], [ProductType_ID], [Product_ID],
+                                       [Product_Data], [Product_Amount], [Product_Unit],
+                                       [Price_PerPeice], [Price_Amount])
+                                      VALUES ('{dtReserve.Rows[i]["Number"]}', '{receiptId}',
+                                      {dtReserve.Rows[i]["ProductType_ID"]},
+                                      {dtReserve.Rows[i]["Product_ID"]},
+                                      N'{dtReserve.Rows[i]["Product_Data"]}',
+                                      {dtReserve.Rows[i]["Product_Amount"]},
+                                      N'{dtReserve.Rows[i]["Product_Unit"]}',
                                       {pricePerPiece}, {calculatedAmount})";
 
                 _dbHelper.ExecuteInsert(detailQuery);
+            }
+
+            // 🔧 FIX: Create Payment_History record
+            try
+            {
+                // Get remaining balance
+                var balanceQuery = $@"
+                    SELECT
+                        r.TotalPrice,
+                        ISNULL(SUM(ph.PaymentAmount), 0) as TotalPaid
+                    FROM Reservation r
+                    LEFT JOIN Payment_History ph ON r.ID = ph.Reservation_ID AND ph.Status = 'COMPLETED'
+                    WHERE r.ID = '{reservationId}'
+                    GROUP BY r.TotalPrice";
+
+                var balanceResult = _dbHelper.ExecuteQuery(balanceQuery);
+                double remainingBalance = 0;
+
+                if (balanceResult.Rows.Count > 0)
+                {
+                    double totalPrice = Convert.ToDouble(balanceResult.Rows[0]["TotalPrice"]);
+                    double totalPaid = Convert.ToDouble(balanceResult.Rows[0]["TotalPaid"]);
+                    remainingBalance = totalPrice - totalPaid - totalAmount; // After this payment
+                }
+
+                string paymentHistoryQuery = $@"
+                    INSERT INTO [dbo].[Payment_History] (
+                        Reservation_ID, PaymentDate, PaymentAmount, PaymentType, PaymentMethod,
+                        Receipt_ID, RemainingBalance, Status
+                    )
+                    VALUES (
+                        '{reservationId}', '{docDate:yyyy-MM-dd}', {totalAmount}, 'PAYMENT', N'{paidType}',
+                        '{receiptId}', {remainingBalance}, 'COMPLETED'
+                    )";
+
+                _dbHelper.ExecuteInsert(paymentHistoryQuery);
+                System.Diagnostics.Trace.TraceInformation($"✅ Created Payment_History for Regular Receipt {receiptId}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to create Payment_History for Receipt {receiptId}: {ex.Message}");
+                // Continue - Receipt is already created, Payment_History is supplementary
             }
         }
 

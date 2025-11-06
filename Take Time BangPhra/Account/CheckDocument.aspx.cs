@@ -288,7 +288,38 @@ namespace Take_Time_BangPhra.Account
                 {
                     string path = System.Configuration.ConfigurationSettings.AppSettings["ReceiptFolderPath"].ToString() + "\\" + docYear + "\\" + docMonth;
 
-                    // Delete Payment_History records that reference this receipt first
+                    // 🔧 FIX: Update Reservation.Deposit before deleting Payment_History
+                    try
+                    {
+                        // Get payment amount and reservation ID from Payment_History
+                        var paymentData = code.DatabaseQuery(conn,
+                            "SELECT ph.PaymentAmount, ph.Reservation_ID " +
+                            "FROM [dbo].[Payment_History] ph " +
+                            "WHERE ph.Receipt_ID = '" + docNum + "'");
+
+                        if (paymentData != null && paymentData.Rows.Count > 0)
+                        {
+                            foreach (DataRow row in paymentData.Rows)
+                            {
+                                decimal amount = row["PaymentAmount"] != DBNull.Value ? Convert.ToDecimal(row["PaymentAmount"]) : 0;
+                                int reservationId = row["Reservation_ID"] != DBNull.Value ? Convert.ToInt32(row["Reservation_ID"]) : 0;
+
+                                if (amount > 0 && reservationId > 0)
+                                {
+                                    // Reduce Reservation.Deposit by payment amount
+                                    code.DatabaseInsert(conn,
+                                        $"UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {amount} WHERE ID = {reservationId}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Continue with deletion even if update fails (data consistency issue but prevents stuck state)
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Error updating Reservation.Deposit: {ex.Message}");
+                    }
+
+                    // Delete Payment_History records that reference this receipt
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + docNum + "'");
 
                     // Delete receipt details

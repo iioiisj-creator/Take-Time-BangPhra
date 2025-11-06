@@ -180,7 +180,25 @@ namespace Take_Time_BangPhra.Services
         {
             try
             {
-                // Exact same logic as original
+                // 🔧 FIX: Cancel Payment_History records first
+                try
+                {
+                    _dbHelper.ExecuteInsert($@"
+                        UPDATE [dbo].[Payment_History]
+                        SET Status = 'CANCELLED',
+                            Notes = N'ยกเลิกจากการยกเลิกการจอง (คืนเงิน) ID: {reservationId}'
+                        WHERE Reservation_ID = {reservationId}
+                        AND Status = 'COMPLETED'");
+
+                    System.Diagnostics.Trace.TraceInformation($"✅ Cancelled Payment_History for Reservation {reservationId}");
+                }
+                catch (Exception phEx)
+                {
+                    System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
+                    // Continue - this is non-critical
+                }
+
+                // Update reservation status
                 _dbHelper.ExecuteInsert($"UPDATE [dbo].[Reservation] SET TotalPrice = 0, Deposit = 0 , [Status] = N'ยกเลิกคืนเงิน' WHERE ID = {reservationId}");
                 _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {reservationId}");
                 _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {reservationId}");
@@ -198,7 +216,25 @@ namespace Take_Time_BangPhra.Services
         {
             try
             {
-                // Exact same logic as original
+                // 🔧 FIX: Cancel Payment_History records first
+                try
+                {
+                    _dbHelper.ExecuteInsert($@"
+                        UPDATE [dbo].[Payment_History]
+                        SET Status = 'CANCELLED',
+                            Notes = N'ยกเลิกจากการยกเลิกการจอง (ไม่คืนเงิน) ID: {reservationId}'
+                        WHERE Reservation_ID = {reservationId}
+                        AND Status = 'COMPLETED'");
+
+                    System.Diagnostics.Trace.TraceInformation($"✅ Cancelled Payment_History for Reservation {reservationId}");
+                }
+                catch (Exception phEx)
+                {
+                    System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
+                    // Continue - this is non-critical
+                }
+
+                // Update reservation status (Deposit is NOT reset to 0 - customer doesn't get refund)
                 _dbHelper.ExecuteInsert($"UPDATE [dbo].[Reservation] SET TotalPrice = 0, [Status] = N'ยกเลิกไม่คืนเงิน' WHERE ID = {reservationId}");
                 _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {reservationId}");
                 _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {reservationId}");

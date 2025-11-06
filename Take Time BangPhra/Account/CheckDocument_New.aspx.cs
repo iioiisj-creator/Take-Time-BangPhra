@@ -932,7 +932,40 @@ namespace Take_Time_BangPhra.Account
                 {
                     string path = ConfigurationManager.AppSettings["ReceiptFolderPath"] + "\\" + docYear + "\\" + docMonth;
 
-                    // Delete Payment_History records first
+                    // 🔧 FIX: Update Reservation.Deposit before deleting Payment_History
+                    try
+                    {
+                        // Get payment amount and reservation ID from Payment_History
+                        var paymentData = codeInstance.DatabaseQuery(conn,
+                            "SELECT ph.PaymentAmount, ph.Reservation_ID " +
+                            "FROM [dbo].[Payment_History] ph " +
+                            "WHERE ph.Receipt_ID = '" + docNum + "'");
+
+                        if (paymentData != null && paymentData.Rows.Count > 0)
+                        {
+                            foreach (DataRow row in paymentData.Rows)
+                            {
+                                decimal amount = row["PaymentAmount"] != DBNull.Value ? Convert.ToDecimal(row["PaymentAmount"]) : 0;
+                                int reservationId = row["Reservation_ID"] != DBNull.Value ? Convert.ToInt32(row["Reservation_ID"]) : 0;
+
+                                if (amount > 0 && reservationId > 0)
+                                {
+                                    // Reduce Reservation.Deposit by payment amount
+                                    codeInstance.DatabaseInsert(conn,
+                                        $"UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {amount} WHERE ID = {reservationId}");
+
+                                    System.Diagnostics.Debug.WriteLine($"✅ Updated Reservation {reservationId}: Reduced Deposit by {amount:N2}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Error updating Reservation.Deposit: {ex.Message}");
+                        // Continue with deletion even if update fails (data consistency issue but prevents stuck state)
+                    }
+
+                    // Delete Payment_History records
                     codeInstance.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + docNum + "'");
 
                     // Delete receipt details

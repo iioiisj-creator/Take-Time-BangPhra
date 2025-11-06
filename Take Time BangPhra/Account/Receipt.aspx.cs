@@ -536,6 +536,37 @@ namespace Take_Time_BangPhra.Account.Report
                     // But KEEP the UID for re-insertion
                     string originalUID = dtReceipt.Rows[0]["UID"].ToString();
 
+                    // 🔧 FIX: Update Reservation.Deposit before deleting Payment_History
+                    try
+                    {
+                        // Get payment amount and reservation ID from Payment_History
+                        var paymentData = code.DatabaseQuery(conn,
+                            "SELECT ph.PaymentAmount, ph.Reservation_ID " +
+                            "FROM [dbo].[Payment_History] ph " +
+                            "WHERE ph.Receipt_ID = '" + id + "'");
+
+                        if (paymentData != null && paymentData.Rows.Count > 0)
+                        {
+                            foreach (DataRow row in paymentData.Rows)
+                            {
+                                decimal amount = row["PaymentAmount"] != DBNull.Value ? Convert.ToDecimal(row["PaymentAmount"]) : 0;
+                                int reservationId = row["Reservation_ID"] != DBNull.Value ? Convert.ToInt32(row["Reservation_ID"]) : 0;
+
+                                if (amount > 0 && reservationId > 0)
+                                {
+                                    // Reduce Reservation.Deposit by payment amount
+                                    code.DatabaseInsert(conn,
+                                        $"UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {amount} WHERE ID = {reservationId}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Continue with deletion even if update fails
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Error updating Reservation.Deposit: {ex.Message}");
+                    }
+
                     // 1. Delete Payment_History first (references Receipt_ID)
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + id + "'");
 

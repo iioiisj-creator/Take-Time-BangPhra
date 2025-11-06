@@ -381,6 +381,29 @@ namespace Take_Time_BangPhra
         private async Task CancelReservation(string reservationId, bool refund)
         {
             string status = refund ? "ยกเลิกคืนเงิน" : "ยกเลิกไม่คืนเงิน";
+
+            // 🔧 FIX: Cancel Payment_History records first
+            try
+            {
+                string cancelNote = refund ? $"ยกเลิกจากการยกเลิกการจอง (คืนเงิน) ID: {reservationId}" :
+                                            $"ยกเลิกจากการยกเลิกการจอง (ไม่คืนเงิน) ID: {reservationId}";
+
+                DatabaseInsert(conn,
+                    @"UPDATE [dbo].[Payment_History]
+                      SET Status = 'CANCELLED', Notes = @Notes
+                      WHERE Reservation_ID = @ReservationId AND Status = 'COMPLETED'",
+                    new SqlParameter("@Notes", cancelNote),
+                    new SqlParameter("@ReservationId", reservationId));
+
+                System.Diagnostics.Debug.WriteLine($"✅ Cancelled Payment_History for Reservation {reservationId}");
+            }
+            catch (Exception phEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
+                // Continue - this is non-critical
+            }
+
+            // Update reservation status
             string updateCmd = refund ?
                 "UPDATE [dbo].[Reservation] SET TotalPrice = 0, Deposit = 0, [Status] = @Status WHERE ID = @ReservationId" :
                 "UPDATE [dbo].[Reservation] SET TotalPrice = 0, [Status] = @Status WHERE ID = @ReservationId";
