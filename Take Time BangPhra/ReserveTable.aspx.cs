@@ -491,14 +491,23 @@ namespace Take_Time_BangPhra
 
             for (int i = 0; i < dtRec.Rows.Count; i++)
             {
+                string receiptId = dtRec.Rows[i]["ID"].ToString();
+
+                // ✅ 1. Delete Payment_History records for this receipt
+                DatabaseInsert(conn,
+                    "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = @ReceiptId",
+                    new SqlParameter("@ReceiptId", receiptId));
+
+                // ✅ 2. Update receipt status to Cancel
                 DatabaseInsert(conn,
                     "UPDATE [dbo].[Account_Receipt] SET [Status] = 'Cancel' WHERE ID = @ReceiptId",
-                    new SqlParameter("@ReceiptId", dtRec.Rows[i]["ID"]));
+                    new SqlParameter("@ReceiptId", receiptId));
 
+                // ✅ 3. Stamp "Cancel" on PDF
                 string uid = dtRec.Rows[i]["UID"].ToString();
                 DateTime createdDate = Convert.ToDateTime(dtRec.Rows[i]["Created_Date"]);
 
-                ProcessReceiptFile(path, Imagespath, dtRec.Rows[i]["ID"].ToString(), uid, createdDate);
+                ProcessReceiptFile(path, Imagespath, receiptId, uid, createdDate);
             }
         }
 
