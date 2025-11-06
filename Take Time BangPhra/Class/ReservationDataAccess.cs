@@ -92,10 +92,28 @@ namespace Take_Time_BangPhra
             };
 
             return _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT * FROM [Reservation]
+                @"SELECT
+                    Reservation.*,
+                    Customer.*,
+                    Customer_Type.Customer_Type,
+                    Customer_Type.Customer_Code,
+                    Account_Receipt.ID AS Receipt_ID,
+                    Account_Receipt.Receipt_Code,
+                    Account_Receipt.Amount AS Receipt_Amount,
+                    Account_Receipt.IsDeposit,
+                    Account_Receipt.UseDeposit,
+                    Account_Receipt.Status AS Receipt_Status,
+                    -- ✅ ระบุ Address columns ชัดเจนเพื่อให้แสดงชื่อจริง ไม่ใช่รหัส
+                    Address.Province AS Province,
+                    Address.District AS District,
+                    Address.SubDistrict AS SubDistrict,
+                    Address.PostalCode AS PostalCode,
+                    Address.Address_Code,
+                    Customer.Address_ID
+                  FROM [Reservation]
                   INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone
                   LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
-                  LEFT JOIN Address ON Address.ID = Address_ID
+                  LEFT JOIN Address ON Address.ID = Customer.Address_ID
                   LEFT JOIN Account_Receipt ON Account_Receipt.Reservation_ID = Reservation.ID
                   WHERE Reservation.ID = @reservationId AND Customer_MobilePhone = @phoneNumber",
                 parameters);

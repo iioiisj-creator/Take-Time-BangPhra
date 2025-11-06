@@ -2964,12 +2964,36 @@ namespace Take_Time_BangPhra
 
             }
             string RecNumber = DocNumber;
-            DataTable dtbusinessinfo = code.DatabaseQuery(conn, "Select * from Business_Info left join Customer_Type on Business_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID");
+            DataTable dtbusinessinfo = code.DatabaseQuery(conn, @"SELECT
+                Business_Info.*,
+                Customer_Type.Customer_Type,
+                Customer_Type.Customer_Code,
+                Address.Province AS Province,
+                Address.District AS District,
+                Address.SubDistrict AS SubDistrict,
+                Address.PostalCode AS PostalCode,
+                Address.Address_Code
+                FROM Business_Info
+                LEFT JOIN Customer_Type ON Business_Type_ID = Customer_Type.ID
+                LEFT JOIN Address ON Address.ID = Business_Info.Address_ID");
 
             DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + RecNumber + "' order by Number ASC");
             DataTable dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
             string uid = dtReceipt.Rows[0]["UID"].ToString();
-            DataTable dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + dtReceipt.Rows[0]["Customer_MobilePhone"].ToString() + "'");
+            DataTable dtcustomer = code.DatabaseQuery(conn, @"SELECT
+                Customer.*,
+                Customer_Type.Customer_Type,
+                Customer_Type.Customer_Code,
+                Address.Province AS Province,
+                Address.District AS District,
+                Address.SubDistrict AS SubDistrict,
+                Address.PostalCode AS PostalCode,
+                Address.Address_Code,
+                Customer.Address_ID
+                FROM Customer
+                LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
+                LEFT JOIN Address ON Address.ID = Customer.Address_ID
+                WHERE MobilePhone = '" + dtReceipt.Rows[0]["Customer_MobilePhone"].ToString() + "'");
 
             DataTable dtCustomerReport = new DataTable();
             dtCustomerReport = dtcustomer.Copy();
@@ -3366,7 +3390,20 @@ namespace Take_Time_BangPhra
 
 
             TextBox1.Text = TextBox1.Text.Replace(" ", "").Replace("-", "");
-            DataTable dtCustomer = code.DatabaseQuery(conn, "SELECT * FROM [Customer] left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + TextBox1.Text + "'");
+            DataTable dtCustomer = code.DatabaseQuery(conn, @"SELECT
+                Customer.*,
+                Customer_Type.Customer_Type,
+                Customer_Type.Customer_Code,
+                Address.Province AS Province,
+                Address.District AS District,
+                Address.SubDistrict AS SubDistrict,
+                Address.PostalCode AS PostalCode,
+                Address.Address_Code,
+                Customer.Address_ID
+                FROM [Customer]
+                LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
+                LEFT JOIN Address ON Address.ID = Customer.Address_ID
+                WHERE MobilePhone = '" + TextBox1.Text + "'");
             
             if (dtCustomer.Rows.Count >= 1)
             {
