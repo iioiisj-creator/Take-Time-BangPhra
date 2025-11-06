@@ -531,8 +531,11 @@ namespace Take_Time_BangPhra.Account
                 return 0;
             }
 
+            System.Diagnostics.Debug.WriteLine($"   🔍 GetAmountByPaymentMethod: ID={paymentMethodID}, Name='{paymentMethodName}', Rows={dt?.Rows.Count ?? 0}");
+
             decimal total = 0;
             HashSet<string> processedPayments = new HashSet<string>(); // Track processed payments to avoid duplicates
+            int matchCount = 0;
 
             foreach (DataRow row in dt.Rows)
             {
@@ -543,6 +546,11 @@ namespace Take_Time_BangPhra.Account
                     string paymentHistoryID = row["PaymentHistoryID"]?.ToString() ?? "";
                     string paymentMethod = row["PaymentMethod"]?.ToString() ?? "";
 
+                    if (matchCount < 3) // Log first 3 rows for debugging
+                    {
+                        System.Diagnostics.Debug.WriteLine($"      Row PaymentMethod='{paymentMethod}', Looking for='{paymentMethodName}', Match={paymentMethod.Contains(paymentMethodName)}");
+                    }
+
                     // Avoid counting same Payment_History row multiple times
                     if (!string.IsNullOrEmpty(paymentHistoryID) &&
                         !processedPayments.Contains(paymentHistoryID) &&
@@ -552,6 +560,7 @@ namespace Take_Time_BangPhra.Account
                             Convert.ToDecimal(row["PaymentAmount"]) : 0;
                         total += amount;
                         processedPayments.Add(paymentHistoryID);
+                        matchCount++;
                     }
                 }
                 else
@@ -561,6 +570,11 @@ namespace Take_Time_BangPhra.Account
                     string paidType = row["Paid_Type"]?.ToString() ?? "";
                     decimal receiptAmount = row["Total_Amount"] != DBNull.Value ?
                         Convert.ToDecimal(row["Total_Amount"]) : 0;
+
+                    if (matchCount < 3) // Log first 3 rows for debugging
+                    {
+                        System.Diagnostics.Debug.WriteLine($"      Row Paid_Type='{paidType}', Looking for='{paymentMethodName}', Match={paidType.Contains(paymentMethodName)}");
+                    }
 
                     // Check if this payment method is in the Paid_Type using simple string matching
                     if (!string.IsNullOrEmpty(paidType) && paidType.Contains(paymentMethodName))
@@ -574,10 +588,13 @@ namespace Take_Time_BangPhra.Account
                             decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
                             total += amountForThisMethod;
                             processedPayments.Add(uniqueKey);
+                            matchCount++;
                         }
                     }
                 }
             }
+
+            System.Diagnostics.Debug.WriteLine($"      ✅ Matched {matchCount} rows, Total={total:N2}");
             return total;
         }
 
@@ -1156,15 +1173,18 @@ namespace Take_Time_BangPhra.Account
         /// <summary>
         /// Get payment method name in Thai by legacy ID (hard-coded, no table lookup)
         /// Legacy mapping: 1=KBANK, 2=CASH, 3=DIRECTOR, 4=KTB
+        /// Returns keyword to search (flexible matching)
         /// </summary>
         private string GetPaymentMethodNameByLegacyId(int legacyId)
         {
+            // Use keywords that are likely to be in the Paid_Type string
+            // Changed from exact match to keyword match for better flexibility
             switch (legacyId)
             {
-                case 1: return "โอนกสิกร"; // KBANK
-                case 2: return "เงินสด"; // CASH
-                case 3: return "เงินกรรมการ"; // DIRECTOR
-                case 4: return "โอนกรุงไทย"; // KTB
+                case 1: return "กสิกร"; // KBANK - keyword match (works for "โอนกสิกร", "โอน กสิกร", "โอนเงิน กสิกร" etc.)
+                case 2: return "เงินสด"; // CASH - exact match
+                case 3: return "กรรมการ"; // DIRECTOR - keyword match (works for "เงินกรรมการ", "เงิน กรรมการ" etc.)
+                case 4: return "กรุงไทย"; // KTB - keyword match (works for "โอนกรุงไทย", "โอน กรุงไทย" etc.)
                 default: return "";
             }
         }
