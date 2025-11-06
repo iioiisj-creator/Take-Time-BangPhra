@@ -15,7 +15,6 @@ namespace Take_Time_BangPhra.Account
     {
         private readonly string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         private code codeInstance = new code();
-        private PaymentMethodService paymentMethodService;
         private LoggingService loggingService;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -23,7 +22,6 @@ namespace Take_Time_BangPhra.Account
             try
             {
                 // Initialize services
-                paymentMethodService = new PaymentMethodService(conn);
                 loggingService = new LoggingService(conn);
 
                 if (Session["permission"]?.ToString() == "True" &&
@@ -438,7 +436,8 @@ namespace Take_Time_BangPhra.Account
 
         private decimal GetAmountByPaymentMethod(DataTable dt, int paymentMethodID)
         {
-            // Get payment method name using PaymentMethodService
+            // Legacy payment method mapping (hard-coded, no table lookup needed)
+            // 1 = KBANK (โอนกสิกร), 2 = CASH (เงินสด), 3 = DIRECTOR (เงินกรรมการ), 4 = KTB (โอนกรุงไทย)
             string paymentMethodName = GetPaymentMethodNameByLegacyId(paymentMethodID);
             if (string.IsNullOrEmpty(paymentMethodName))
             {
@@ -476,24 +475,18 @@ namespace Take_Time_BangPhra.Account
                     decimal receiptAmount = row["Total_Amount"] != DBNull.Value ?
                         Convert.ToDecimal(row["Total_Amount"]) : 0;
 
-                    // Check if this payment method is in the Paid_Type using PaymentMethodService
-                    if (!string.IsNullOrEmpty(paidType))
+                    // Check if this payment method is in the Paid_Type using simple string matching
+                    if (!string.IsNullOrEmpty(paidType) && paidType.Contains(paymentMethodName))
                     {
-                        var paymentMethodIds = paymentMethodService.ParsePaymentMethodsFromPaidType(paidType);
-                        var targetMethodId = GetPaymentMethodIdByLegacyId(paymentMethodID);
-
-                        if (targetMethodId.HasValue && paymentMethodIds.Contains(targetMethodId.Value))
+                        // Only count this receipt once per payment method
+                        string uniqueKey = $"{receiptId}_{paymentMethodName}";
+                        if (!processedPayments.Contains(uniqueKey))
                         {
-                            // Only count this receipt once per payment method
-                            string uniqueKey = $"{receiptId}_{paymentMethodName}";
-                            if (!processedPayments.Contains(uniqueKey))
-                            {
-                                // If multiple payment methods, split the amount evenly
-                                int methodCount = paymentMethodIds.Count;
-                                decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
-                                total += amountForThisMethod;
-                                processedPayments.Add(uniqueKey);
-                            }
+                            // If multiple payment methods (comma-separated), split the amount evenly
+                            int methodCount = paidType.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                            decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
+                            total += amountForThisMethod;
+                            processedPayments.Add(uniqueKey);
                         }
                     }
                 }
@@ -1010,31 +1003,19 @@ namespace Take_Time_BangPhra.Account
         }
 
         /// <summary>
-        /// Get payment method ID by code (KBANK, CASH, DIRECTOR, KTB)
-        /// </summary>
-        private int? GetPaymentMethodIdByLegacyId(int legacyId)
-        {
-            switch (legacyId)
-            {
-                case 1: return paymentMethodService.GetPaymentMethodByCode("KBANK")?.ID;
-                case 2: return paymentMethodService.GetPaymentMethodByCode("CASH")?.ID;
-                case 3: return paymentMethodService.GetPaymentMethodByCode("DIRECTOR")?.ID;
-                case 4: return paymentMethodService.GetPaymentMethodByCode("KTB")?.ID;
-                default: return null;
-            }
-        }
-
-        /// <summary>
-        /// Get payment method name in Thai by legacy ID
+        /// Get payment method name in Thai by legacy ID (hard-coded, no table lookup)
+        /// Legacy mapping: 1=KBANK, 2=CASH, 3=DIRECTOR, 4=KTB
         /// </summary>
         private string GetPaymentMethodNameByLegacyId(int legacyId)
         {
-            var paymentMethodId = GetPaymentMethodIdByLegacyId(legacyId);
-            if (paymentMethodId.HasValue)
+            switch (legacyId)
             {
-                return paymentMethodService.GetPaymentMethodNameTH(paymentMethodId.Value);
+                case 1: return "โอนกสิกร"; // KBANK
+                case 2: return "เงินสด"; // CASH
+                case 3: return "เงินกรรมการ"; // DIRECTOR
+                case 4: return "โอนกรุงไทย"; // KTB
+                default: return "";
             }
-            return "";
         }
     }
 }
