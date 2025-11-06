@@ -393,9 +393,9 @@
 
             <!-- Right Column -->
             <div class="right-column">
-                <!-- Slip Image -->
+                <!-- Slip Image & Receipts -->
                 <div class="slip-card">
-                    <h3>📷 สลิปการโอนเงิน</h3>
+                    <h3>📷 สลิปการโอนเงิน & ใบกำกับภาษี</h3>
                     <asp:Label ID="lblSlipCount" runat="server"
                         style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 8px; font-size: 0.75em;"></asp:Label>
 
@@ -428,6 +428,26 @@
                     </asp:Repeater>
 
                     <asp:Image ID="Image1" runat="server" CssClass="slip-image" Visible="false" />
+
+                    <!-- Receipt Links Section -->
+                    <asp:Panel ID="pnlReceiptLinks" runat="server" Visible="false"
+                        style="margin-top: 10px; padding: 8px; background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%); border-radius: 4px; border: 1px solid #c8e6c9;">
+                        <div style="font-size: 0.75em; color: #2e7d32; font-weight: bold; margin-bottom: 5px;">
+                            🧾 ใบกำกับภาษี
+                        </div>
+                        <asp:Repeater ID="rptReceipts" runat="server">
+                            <ItemTemplate>
+                                <div style="margin: 3px 0;">
+                                    <a href='<%# GetReceiptPDFUrl(Eval("ID"), Eval("UID"), Eval("Created_Date")) %>'
+                                       target="_blank"
+                                       style="color: #4caf50; text-decoration: none; font-weight: bold; font-size: 0.8em;">
+                                        📄 <%# Eval("ID") %> (<%# Eval("Total_Amount", "{0:N2}") %> บาท)
+                                    </a>
+                                </div>
+                            </ItemTemplate>
+                        </asp:Repeater>
+                    </asp:Panel>
+
                     <p style="color: #666; margin: 5px 0 0 0; font-size: 0.7em;">
                         <em>หลักฐานการชำระเงิน</em>
                     </p>
@@ -455,41 +475,6 @@
                     <div class="content-box" style="background: #fff3e0; border-left: 2px solid #ff9800;">
                         <asp:Label ID="Label14" runat="server" style="white-space: pre-line;"></asp:Label>
                     </div>
-                </div>
-
-                <!-- Receipt Section -->
-                <div class="slip-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%); border: 1px solid #c8e6c9;">
-                    <h3>🧾 ใบกำกับภาษี</h3>
-                    <asp:Label ID="lblReceiptCount" runat="server"
-                        style="display: block; color: #4caf50; font-weight: bold; margin-bottom: 8px; font-size: 0.75em;"></asp:Label>
-
-                    <asp:Repeater ID="rptReceipts" runat="server">
-                        <ItemTemplate>
-                            <div style="margin-bottom: 8px; padding: 6px; background: #fff; border-radius: 4px; font-size: 0.75em; border: 1px solid #c8e6c9;">
-                                <div style="margin-bottom: 3px; font-size: 0.85em;">
-                                    <strong>📄 เลขที่:</strong> <%# Eval("ID") %>
-                                </div>
-                                <div style="margin-bottom: 3px; font-size: 0.85em;">
-                                    <strong>📅 วันที่:</strong> <%# Eval("Created_Date", "{0:dd/MM/yyyy HH:mm}") %>
-                                </div>
-                                <div style="margin-bottom: 3px; font-size: 0.85em;">
-                                    <strong>💰 ยอดเงิน:</strong> <%# Eval("Total_Amount", "{0:N2}") %> บาท
-                                </div>
-                                <div>
-                                    <a href='<%# GetReceiptPDFUrl(Eval("ID"), Eval("UID"), Eval("Created_Date")) %>'
-                                       target="_blank"
-                                       style="color: #4caf50; text-decoration: none; font-weight: bold; font-size: 0.85em;">
-                                        🔗 ดูใบกำกับภาษี PDF
-                                    </a>
-                                </div>
-                            </div>
-                        </ItemTemplate>
-                        <FooterTemplate>
-                            <div style="color: #999; font-style: italic; margin-top: 8px; font-size: 0.75em;">
-                                <%# (((System.Web.UI.WebControls.Repeater)Container.Parent).Items.Count == 0) ? "ยังไม่มีใบกำกับภาษี" : "" %>
-                            </div>
-                        </FooterTemplate>
-                    </asp:Repeater>
                 </div>
             </div>
         </div>

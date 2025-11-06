@@ -246,29 +246,23 @@ namespace Take_Time_BangPhra
 
                 if (dtReceipts.Rows.Count > 0)
                 {
-                    // Show receipt count
-                    lblReceiptCount.Text = $"📄 มีใบกำกับภาษีทั้งหมด {dtReceipts.Rows.Count} ใบ";
-                    lblReceiptCount.Visible = true;
+                    // Show receipt links panel
+                    pnlReceiptLinks.Visible = true;
 
                     // Bind to repeater
                     rptReceipts.DataSource = dtReceipts;
                     rptReceipts.DataBind();
-                    rptReceipts.Visible = true;
                 }
                 else
                 {
-                    // No receipts found
-                    lblReceiptCount.Text = "📄 ยังไม่มีใบกำกับภาษี";
-                    lblReceiptCount.Visible = true;
-                    rptReceipts.Visible = false;
+                    // No receipts found - hide panel
+                    pnlReceiptLinks.Visible = false;
                 }
             }
             catch (Exception ex)
             {
-                // Log error
-                lblReceiptCount.Text = "⚠️ ไม่สามารถโหลดใบกำกับภาษีได้";
-                lblReceiptCount.Visible = true;
-                rptReceipts.Visible = false;
+                // Log error and hide panel
+                pnlReceiptLinks.Visible = false;
 
                 code2.Logs(conn, "LoadReceipts Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
             }

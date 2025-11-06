@@ -257,8 +257,16 @@ namespace Take_Time_BangPhra.Account
                 LEFT JOIN Admin a ON ap.Created_By_ID = a.ID
                 WHERE CAST(ap.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(ap.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
-                  AND ap.Status LIKE @Status
-                ORDER BY ap.ID ASC";
+                  AND ap.Status LIKE @Status";
+
+            // Admin permission check: Hide employee-related expenses
+            if (Session["User"]?.ToString() == "Admin")
+            {
+                query += " AND (v.Vendor_Group IS NULL OR v.Vendor_Group != N'01-พนักงานประจำ')";
+                System.Diagnostics.Debug.WriteLine($"   🔒 Admin mode: Hiding employee expenses");
+            }
+
+            query += " ORDER BY ap.ID ASC";
 
             var parameters = new Dictionary<string, object>
             {
@@ -268,6 +276,7 @@ namespace Take_Time_BangPhra.Account
             };
 
             System.Diagnostics.Debug.WriteLine($"📋 GetAllPayments Query:");
+            System.Diagnostics.Debug.WriteLine($"   User: {Session["User"]?.ToString() ?? "Unknown"}");
             System.Diagnostics.Debug.WriteLine($"   @StartDate = {startDate:yyyy-MM-dd HH:mm:ss}");
             System.Diagnostics.Debug.WriteLine($"   @EndDate = {endDate:yyyy-MM-dd HH:mm:ss}");
             System.Diagnostics.Debug.WriteLine($"   @Status = {status}");
