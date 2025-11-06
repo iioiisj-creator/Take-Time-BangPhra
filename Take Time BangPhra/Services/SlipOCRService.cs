@@ -6,13 +6,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Tesseract;
 
 namespace Take_Time_BangPhra.Services
 {
     /// <summary>
     /// OCR Service for extracting payment amount from slip images
-    /// Supports Thai bank slips from mobile apps, ATM, and branch transfers
+    /// NOTE: This is a placeholder implementation without Tesseract OCR
+    /// To enable OCR, install Tesseract NuGet package and implement PerformOCR method
     /// </summary>
     public class SlipOCRService
     {
@@ -35,7 +35,7 @@ namespace Take_Time_BangPhra.Services
             public double Confidence { get; set; }
             public string RawText { get; set; }
             public string ErrorMessage { get; set; }
-            public string Status { get; set; } // SUCCESS, FAILED, MANUAL_REVIEW
+            public string Status { get; set; } // SUCCESS, FAILED, MANUAL_REVIEW, SKIPPED
 
             public OCRResult()
             {
@@ -44,16 +44,28 @@ namespace Take_Time_BangPhra.Services
                 Confidence = 0;
                 RawText = "";
                 ErrorMessage = "";
-                Status = "FAILED";
+                Status = "SKIPPED";
             }
         }
 
         /// <summary>
         /// Process slip image and extract payment amount
+        /// PLACEHOLDER: Returns SKIPPED status (OCR disabled)
         /// </summary>
         public OCRResult ProcessSlip(string imageFilePath)
         {
-            var result = new OCRResult();
+            var result = new OCRResult
+            {
+                Status = "SKIPPED",
+                ErrorMessage = "OCR not enabled - Tesseract not installed",
+                Success = false
+            };
+
+            // TODO: Implement OCR when Tesseract is installed
+            // For now, skip OCR processing
+            return result;
+
+            /* TESSERACT IMPLEMENTATION (commented out until package installed):
 
             try
             {
@@ -92,7 +104,7 @@ namespace Take_Time_BangPhra.Services
                     }
                     else
                     {
-                        result.Status = "MANUAL_REVIEW"; // Low confidence
+                        result.Status = "MANUAL_REVIEW";
                         result.ErrorMessage = "ความมั่นใจต่ำ ต้องตรวจสอบด้วยตนเอง";
                     }
                 }
@@ -109,89 +121,11 @@ namespace Take_Time_BangPhra.Services
             }
 
             return result;
+            */
         }
 
         /// <summary>
-        /// Perform OCR using Tesseract with Thai + English languages
-        /// </summary>
-        private string PerformOCR(string imageFilePath)
-        {
-            try
-            {
-                // Preprocess image for better OCR results
-                using (var preprocessedImage = PreprocessImage(imageFilePath))
-                {
-                    using (var engine = new TesseractEngine(_tessDataPath, "tha+eng", EngineMode.Default))
-                    {
-                        // Configure for better accuracy
-                        engine.SetVariable("tessedit_char_whitelist", "0123456789.,฿บาทBahtTHB ");
-
-                        using (var img = PixConverter.ToPix(preprocessedImage))
-                        {
-                            using (var page = engine.Process(img))
-                            {
-                                return page.GetText();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"OCR processing failed: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Preprocess image for better OCR accuracy
-        /// - Convert to grayscale
-        /// - Increase contrast
-        /// - Resize if too small
-        /// </summary>
-        private Bitmap PreprocessImage(string imageFilePath)
-        {
-            using (var original = new Bitmap(imageFilePath))
-            {
-                // Create new bitmap
-                var processed = new Bitmap(original.Width, original.Height);
-
-                using (var g = Graphics.FromImage(processed))
-                {
-                    // High quality rendering
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                    g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                    g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-
-                    // Draw original
-                    g.DrawImage(original, 0, 0, original.Width, original.Height);
-                }
-
-                // Convert to grayscale and increase contrast
-                for (int y = 0; y < processed.Height; y++)
-                {
-                    for (int x = 0; x < processed.Width; x++)
-                    {
-                        Color pixel = processed.GetPixel(x, y);
-
-                        // Grayscale
-                        int gray = (int)(pixel.R * 0.3 + pixel.G * 0.59 + pixel.B * 0.11);
-
-                        // Increase contrast (simple thresholding)
-                        gray = gray > 128 ? 255 : 0;
-
-                        Color newColor = Color.FromArgb(gray, gray, gray);
-                        processed.SetPixel(x, y, newColor);
-                    }
-                }
-
-                return processed;
-            }
-        }
-
-        /// <summary>
-        /// Extract amount from OCR text using multiple patterns
-        /// Supports various Thai bank slip formats
+        /// Extract amount from OCR text using regex patterns
         /// </summary>
         private (decimal? Amount, double Confidence) ExtractAmountFromText(string text)
         {
@@ -249,9 +183,7 @@ namespace Take_Time_BangPhra.Services
             // Get highest priority amount
             var bestMatch = foundAmounts.OrderByDescending(x => x.Priority).First();
 
-            // Calculate confidence based on:
-            // - Pattern priority (70-90%)
-            // - Number of matches (if multiple patterns found same amount: +10%)
+            // Calculate confidence
             double confidence = bestMatch.Priority;
 
             var duplicateMatches = foundAmounts.Count(x => x.Amount == bestMatch.Amount);
@@ -306,17 +238,14 @@ namespace Take_Time_BangPhra.Services
 
         /// <summary>
         /// Verify if OCR amount matches declared amount
-        /// Returns true if amounts match within tolerance
         /// </summary>
         public bool VerifyAmount(decimal ocrAmount, decimal declaredAmount, decimal tolerancePercent = 0)
         {
             if (tolerancePercent == 0)
             {
-                // Exact match required
                 return ocrAmount == declaredAmount;
             }
 
-            // Allow tolerance
             decimal tolerance = declaredAmount * (tolerancePercent / 100);
             decimal lowerBound = declaredAmount - tolerance;
             decimal upperBound = declaredAmount + tolerance;
