@@ -103,7 +103,7 @@ namespace Take_Time_BangPhra
                     Customer.Remark AS Customer_Remark,
                     Customer.Status AS Customer_Status,
                     Customer.FullName,
-                    Customer.Address AS Customer_Address_Legacy,
+                    Customer.Address,
                     Customer.Address1,
                     Customer.Address_ID,
                     Customer.IDNumber,

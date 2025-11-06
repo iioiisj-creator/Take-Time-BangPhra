@@ -2969,7 +2969,7 @@ namespace Take_Time_BangPhra
                 Business_Info.ID AS BusinessInfo_ID,
                 Business_Info.Business_Type_ID,
                 Business_Info.Company_Name,
-                Business_Info.Address AS Business_Address_Legacy,
+                Business_Info.Address,
                 Business_Info.Address_ID,
                 Business_Info.Email,
                 Business_Info.LegalEntity_Number,
