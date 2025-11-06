@@ -189,16 +189,18 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Reservations with check-in in date range
-            // Fixed: Use Payment_History to get accurate amounts per payment method
+            // Use Payment_History to get accurate amounts per payment method
+            // Only count Payment_History that links to valid receipts
             string query = @"
-                SELECT ph.PaymentMethod, ph.PaymentAmount
+                SELECT DISTINCT ph.ID as PaymentHistoryID, ph.PaymentMethod, ph.PaymentAmount, ar.ID as ReceiptID
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
                 WHERE r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
-                  AND ph.Receipt_ID IS NOT NULL";
+                  AND ph.Receipt_ID IS NOT NULL
+                  AND ar.Reservation_ID > 0";
 
             var parameters = new Dictionary<string, object>
             {
@@ -213,17 +215,19 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory2Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Reservations with receipt created in date range but check-in outside
-            // Fixed: Use Payment_History to get accurate amounts per payment method
+            // Use Payment_History to get accurate amounts per payment method
+            // Only count Payment_History that links to valid receipts
             string query = @"
-                SELECT ph.PaymentMethod, ph.PaymentAmount
+                SELECT DISTINCT ph.ID as PaymentHistoryID, ph.PaymentMethod, ph.PaymentAmount, ar.ID as ReceiptID
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
                 WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
-                  AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate)
+                  AND (r.CheckinDate < @StartDate OR r.CheckinDate > @EndDate OR r.CheckinDate IS NULL)
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
-                  AND ph.Receipt_ID IS NOT NULL";
+                  AND ph.Receipt_ID IS NOT NULL
+                  AND ar.Reservation_ID > 0";
 
             var parameters = new Dictionary<string, object>
             {
@@ -297,20 +301,26 @@ namespace Take_Time_BangPhra.Account
             }
 
             decimal total = 0;
-            HashSet<string> processedReceipts = new HashSet<string>(); // Track processed receipts to avoid duplicates
+            HashSet<string> processedPayments = new HashSet<string>(); // Track processed payments to avoid duplicates
 
             foreach (DataRow row in dt.Rows)
             {
-                // Check if this is Payment_History data (has PaymentMethod column)
-                if (dt.Columns.Contains("PaymentMethod"))
+                // Check if this is Payment_History data (has PaymentHistoryID column)
+                if (dt.Columns.Contains("PaymentHistoryID"))
                 {
                     // Category 1-2: Use Payment_History data (already split by payment method)
+                    string paymentHistoryID = row["PaymentHistoryID"]?.ToString() ?? "";
                     string paymentMethod = row["PaymentMethod"]?.ToString() ?? "";
-                    if (paymentMethod.Contains(paymentMethodName))
+
+                    // Avoid counting same Payment_History row multiple times
+                    if (!string.IsNullOrEmpty(paymentHistoryID) &&
+                        !processedPayments.Contains(paymentHistoryID) &&
+                        paymentMethod.Contains(paymentMethodName))
                     {
                         decimal amount = row["PaymentAmount"] != DBNull.Value ?
                             Convert.ToDecimal(row["PaymentAmount"]) : 0;
                         total += amount;
+                        processedPayments.Add(paymentHistoryID);
                     }
                 }
                 else
@@ -330,12 +340,12 @@ namespace Take_Time_BangPhra.Account
 
                         // Only count this receipt once per payment method
                         string uniqueKey = $"{receiptId}_{paymentMethodName}";
-                        if (!processedReceipts.Contains(uniqueKey))
+                        if (!processedPayments.Contains(uniqueKey))
                         {
                             // If multiple payment methods, split the amount evenly
                             decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
                             total += amountForThisMethod;
-                            processedReceipts.Add(uniqueKey);
+                            processedPayments.Add(uniqueKey);
                         }
                     }
                 }
@@ -345,6 +355,10 @@ namespace Take_Time_BangPhra.Account
 
         private DataTable GetAllReceipts(DateTime startDate, DateTime endDate, string status)
         {
+            // Fixed: Include receipts from all 4 categories to match revenue calculation
+            // - Category 1: Reservation check-in in date range
+            // - Category 2: Receipt created in date range (check-in outside)
+            // - Category 3-4: Receipt created in date range (non-reservation)
             string query = @"
                 SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
                        ar.Total_Amount, ar.Vat, ar.IsDeposit, ar.UseDeposit,
@@ -357,8 +371,11 @@ namespace Take_Time_BangPhra.Account
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                 LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
-                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
-                  AND ar.Status LIKE @Status
+                WHERE ar.Status LIKE @Status
+                  AND (
+                      (ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate)
+                      OR (r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate AND ar.Reservation_ID > 0)
+                  )
                 ORDER BY ar.ID ASC";
 
             var parameters = new Dictionary<string, object>
