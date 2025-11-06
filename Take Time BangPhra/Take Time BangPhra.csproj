@@ -632,6 +632,7 @@
     <Compile Include="Class\ReservationDataAccess.cs" />
     <Compile Include="Class\ReservationService.cs" />
     <Compile Include="Class\TelegramService.cs" />
+    <Compile Include="Services\SlipOCRService.cs" />
     <Compile Include="Code.cs" />
     <Compile Include="Contact.aspx.cs">
       <DependentUpon>Contact.aspx</DependentUpon>
