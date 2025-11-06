@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Account
 {
@@ -13,11 +15,17 @@ namespace Take_Time_BangPhra.Account
     {
         private readonly string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
         private code codeInstance = new code();
+        private PaymentMethodService paymentMethodService;
+        private LoggingService loggingService;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             try
             {
+                // Initialize services
+                paymentMethodService = new PaymentMethodService(conn);
+                loggingService = new LoggingService(conn);
+
                 if (Session["permission"]?.ToString() == "True" &&
                     (Session["User"]?.ToString() == "Owner" || Session["User"]?.ToString() == "Admin"))
                 {
@@ -31,8 +39,10 @@ namespace Take_Time_BangPhra.Account
                     Response.Redirect("/Default");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                loggingService?.LogException(ex, LoggingService.LogCategory.Accounting,
+                    "Page load failed", GetCurrentUserId());
                 Response.Redirect("/Default");
             }
         }
@@ -78,6 +88,13 @@ namespace Take_Time_BangPhra.Account
 
                 lblDateRange.Text = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
 
+                // Log revenue calculation request
+                loggingService.LogAccountingOperation(
+                    "RevenueCalculationRequest",
+                    $"Date range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}",
+                    true,
+                    GetCurrentUserId());
+
                 // Calculate revenue by category (always use Normal status, never include Cancel)
                 CalculateRevenue(startDate, endDate);
 
@@ -89,6 +106,8 @@ namespace Take_Time_BangPhra.Account
             }
             catch (Exception ex)
             {
+                loggingService.LogException(ex, LoggingService.LogCategory.Revenue,
+                    "Revenue calculation failed", GetCurrentUserId());
                 ShowError("เกิดข้อผิดพลาด: " + ex.Message);
             }
         }
@@ -184,6 +203,21 @@ namespace Take_Time_BangPhra.Account
 
             lblTotalVAT.Text = totalVAT.ToString("N2");
             lblDocCount.Text = docCount.ToString();
+
+            // Log revenue calculation result
+            decimal grandTotal = totalCash + totalKBANK + totalKTB + totalDirector;
+            string breakdown = $"Category 1: {(cat1Cash + cat1KBANK + cat1KTB + cat1Director):N2}\n" +
+                             $"Category 2: {(cat2Cash + cat2KBANK + cat2KTB + cat2Director):N2}\n" +
+                             $"Category 3: {(cat3Cash + cat3KBANK + cat3KTB + cat3Director):N2}\n" +
+                             $"Category 4: {(cat4Cash + cat4KBANK + cat4KTB + cat4Director):N2}\n" +
+                             $"Total Cash: {totalCash:N2}\n" +
+                             $"Total KBANK: {totalKBANK:N2}\n" +
+                             $"Total KTB: {totalKTB:N2}\n" +
+                             $"Total Director: {totalDirector:N2}\n" +
+                             $"Document Count: {docCount}\n" +
+                             $"Total VAT: {totalVAT:N2}";
+
+            loggingService.LogRevenueCalculation(startDate, endDate, grandTotal, breakdown, GetCurrentUserId());
         }
 
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
@@ -289,15 +323,11 @@ namespace Take_Time_BangPhra.Account
 
         private decimal GetAmountByPaymentMethod(DataTable dt, int paymentMethodID)
         {
-            // Map payment method IDs to their Thai names
-            string paymentMethodName = "";
-            switch (paymentMethodID)
+            // Get payment method name using PaymentMethodService
+            string paymentMethodName = GetPaymentMethodNameByLegacyId(paymentMethodID);
+            if (string.IsNullOrEmpty(paymentMethodName))
             {
-                case 1: paymentMethodName = "เงินโอน บัญชี ธ.กสิกรไทย"; break;  // KBANK transfer
-                case 2: paymentMethodName = "เงินสด"; break;     // Cash
-                case 3: paymentMethodName = "กรรมการ"; break; // Director money
-                case 4: paymentMethodName = "เงินโอน บัญชี ธ.กรุงไทย"; break;  // KTB transfer
-                default: return 0;
+                return 0;
             }
 
             decimal total = 0;
@@ -331,21 +361,24 @@ namespace Take_Time_BangPhra.Account
                     decimal receiptAmount = row["Total_Amount"] != DBNull.Value ?
                         Convert.ToDecimal(row["Total_Amount"]) : 0;
 
-                    // Check if this payment method is in the Paid_Type
-                    if (!string.IsNullOrEmpty(paidType) && paidType.Contains(paymentMethodName))
+                    // Check if this payment method is in the Paid_Type using PaymentMethodService
+                    if (!string.IsNullOrEmpty(paidType))
                     {
-                        // Count how many payment methods are in this receipt
-                        string[] paymentMethods = paidType.Split(new[] { ',', '/' }, StringSplitOptions.RemoveEmptyEntries);
-                        int methodCount = paymentMethods.Length;
+                        var paymentMethodIds = paymentMethodService.ParsePaymentMethodsFromPaidType(paidType);
+                        var targetMethodId = GetPaymentMethodIdByLegacyId(paymentMethodID);
 
-                        // Only count this receipt once per payment method
-                        string uniqueKey = $"{receiptId}_{paymentMethodName}";
-                        if (!processedPayments.Contains(uniqueKey))
+                        if (targetMethodId.HasValue && paymentMethodIds.Contains(targetMethodId.Value))
                         {
-                            // If multiple payment methods, split the amount evenly
-                            decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
-                            total += amountForThisMethod;
-                            processedPayments.Add(uniqueKey);
+                            // Only count this receipt once per payment method
+                            string uniqueKey = $"{receiptId}_{paymentMethodName}";
+                            if (!processedPayments.Contains(uniqueKey))
+                            {
+                                // If multiple payment methods, split the amount evenly
+                                int methodCount = paymentMethodIds.Count;
+                                decimal amountForThisMethod = methodCount > 1 ? receiptAmount / methodCount : receiptAmount;
+                                total += amountForThisMethod;
+                                processedPayments.Add(uniqueKey);
+                            }
                         }
                     }
                 }
@@ -699,6 +732,50 @@ namespace Take_Time_BangPhra.Account
         private void ShowError(string message)
         {
             ScriptManager.RegisterStartupScript(this, GetType(), "error", $"alert('{message}');", true);
+        }
+
+        /// <summary>
+        /// Get current user ID from session
+        /// </summary>
+        private int? GetCurrentUserId()
+        {
+            try
+            {
+                if (Session["UserID"] != null)
+                {
+                    return Convert.ToInt32(Session["UserID"]);
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>
+        /// Get payment method ID by code (KBANK, CASH, DIRECTOR, KTB)
+        /// </summary>
+        private int? GetPaymentMethodIdByLegacyId(int legacyId)
+        {
+            switch (legacyId)
+            {
+                case 1: return paymentMethodService.GetPaymentMethodByCode("KBANK")?.ID;
+                case 2: return paymentMethodService.GetPaymentMethodByCode("CASH")?.ID;
+                case 3: return paymentMethodService.GetPaymentMethodByCode("DIRECTOR")?.ID;
+                case 4: return paymentMethodService.GetPaymentMethodByCode("KTB")?.ID;
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// Get payment method name in Thai by legacy ID
+        /// </summary>
+        private string GetPaymentMethodNameByLegacyId(int legacyId)
+        {
+            var paymentMethodId = GetPaymentMethodIdByLegacyId(legacyId);
+            if (paymentMethodId.HasValue)
+            {
+                return paymentMethodService.GetPaymentMethodNameTH(paymentMethodId.Value);
+            }
+            return "";
         }
     }
 }
