@@ -40,8 +40,16 @@ namespace Take_Time_BangPhra
         _Default code = new _Default();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
+        // 🏨 Room Charge Feature
+        private RoomChargeService _roomChargeService;
+        private RoomChargeDataAccess _roomChargeDA;
+
         protected void Page_Load(object sender, EventArgs e)
         {
+            // 🏨 Initialize Room Charge Services
+            _roomChargeService = new RoomChargeService(conn);
+            _roomChargeDA = new RoomChargeDataAccess(conn);
+
             this.MaintainScrollPositionOnPostBack = true;
             string date = Request.QueryString["date"];
             string accom = Request.QueryString["accom"];
@@ -202,6 +210,9 @@ namespace Take_Time_BangPhra
 
                 // 🆕 Show payment history
                 LoadPaymentHistory();
+
+                // 🏨 Show product charges
+                LoadProductCharges();
             }
             else if(command == "edit")
             {
@@ -214,6 +225,9 @@ namespace Take_Time_BangPhra
 
                 // 🆕 Show payment history
                 LoadPaymentHistory();
+
+                // 🏨 Show product charges
+                LoadProductCharges();
             }
             else if(command == "rentmore")
             {
@@ -228,6 +242,9 @@ namespace Take_Time_BangPhra
 
                 // 🆕 Show payment history
                 LoadPaymentHistory();
+
+                // 🏨 Show product charges
+                LoadProductCharges();
             }
             else if(command == "reserve")
             {
@@ -5308,6 +5325,123 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
 
                 divPaymentHistory.Visible = false;
                 Image1.Visible = true;
+            }
+        }
+
+        // 🏨 Load Product Charges for CheckIn/Edit/RentMore modes
+        private void LoadProductCharges()
+        {
+            try
+            {
+                string reservationId = Request.QueryString["id"];
+                if (string.IsNullOrEmpty(reservationId))
+                {
+                    divProductCharges.Visible = false;
+                    return;
+                }
+
+                int resId = Convert.ToInt32(reservationId);
+                DataTable dtCharges = _roomChargeDA.GetReservationCharges(resId);
+
+                if (dtCharges.Rows.Count > 0)
+                {
+                    divProductCharges.Visible = true;
+                    gvProductCharges.DataSource = dtCharges;
+                    gvProductCharges.DataBind();
+
+                    // Calculate and display summary
+                    decimal totalPending = _roomChargeDA.GetTotalPendingCharges(resId);
+                    decimal totalPaid = 0;
+                    decimal totalCancelled = 0;
+
+                    foreach (DataRow row in dtCharges.Rows)
+                    {
+                        string status = row["Status"].ToString();
+                        decimal amount = Convert.ToDecimal(row["TotalAmount"]);
+
+                        if (status == "PAID")
+                            totalPaid += amount;
+                        else if (status == "CANCELLED")
+                            totalCancelled += amount;
+                    }
+
+                    lblProductChargesSummary.Text = string.Format(
+                        "📊 สรุป: <strong>รอชำระ {0:N2} บาท</strong> | ชำระแล้ว {1:N2} บาท | ยกเลิก {2:N2} บาท | รวมทั้งหมด {3} รายการ",
+                        totalPending, totalPaid, totalCancelled, dtCharges.Rows.Count);
+                }
+                else
+                {
+                    divProductCharges.Visible = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't break the page
+                code2.Logs(conn, "LoadProductCharges Error",
+                    $"Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
+                    "SYSTEM");
+
+                divProductCharges.Visible = false;
+            }
+        }
+
+        // 🏨 Handle Product Charge Delete Command
+        protected void gvProductCharges_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (e.CommandName == "DeleteCharge")
+            {
+                try
+                {
+                    long chargeId = Convert.ToInt64(e.CommandArgument);
+                    int? adminId = Session["AdminID"] != null ?
+                        Convert.ToInt32(Session["AdminID"]) : (int?)null;
+
+                    // Cancel the charge (returns stock and updates reservation total)
+                    _roomChargeService.CancelRoomCharge(chargeId, adminId,
+                        "ลบโดยผู้ใช้จากหน้า Reserve");
+
+                    // Reload the charges display
+                    LoadProductCharges();
+
+                    // Reload reservation data to update totals
+                    string command = Request.QueryString["command"];
+                    string id = Request.QueryString["id"];
+                    string check = Request.QueryString["check"];
+
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        // 🔒 SECURE: Using parameterized query
+                        var parameters = new Dictionary<string, object>
+                        {
+                            { "@id", id },
+                            { "@phone", check }
+                        };
+
+                        DataTable dtReservation = code2.DatabaseQuerySafe(conn,
+                            "SELECT * FROM [Reservation] WHERE ID = @id AND Customer_MobilePhone = @phone",
+                            parameters);
+
+                        if (dtReservation.Rows.Count > 0)
+                        {
+                            // Update displayed total price
+                            TextBox4.Text = dtReservation.Rows[0]["TotalPrice"].ToString();
+                        }
+                    }
+
+                    // Show success message
+                    ClientScript.RegisterStartupScript(this.GetType(), "success",
+                        "alert('✅ ลบรายการเรียบร้อย\\n\\n✅ สต๊อกสินค้าถูกคืนแล้ว\\n✅ ยอดรวมถูกปรับลดแล้ว');", true);
+                }
+                catch (Exception ex)
+                {
+                    // Show error message
+                    ClientScript.RegisterStartupScript(this.GetType(), "error",
+                        $"alert('❌ เกิดข้อผิดพลาด: {ex.Message.Replace("'", "\\'")}');", true);
+
+                    code2.Logs(conn, "gvProductCharges_RowCommand Error",
+                        $"ChargeID: {e.CommandArgument}, Error: {ex.Message}",
+                        Session["User"]?.ToString() ?? "SYSTEM");
+                }
             }
         }
     }
