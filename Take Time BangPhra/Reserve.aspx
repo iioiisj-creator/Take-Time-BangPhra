@@ -544,7 +544,107 @@
                 </div>
             </asp:Panel>
         </div>
-        
+
+        <!-- 🏨 Product Charges Section (for existing reservations) -->
+        <div class="form-panel" id="divProductCharges" runat="server" visible="false">
+            <h3 class="section-header">📦 รายการสินค้าที่ชาร์จเข้าห้อง / Product Charges</h3>
+
+            <div style="margin-bottom: 15px;">
+                <asp:Label ID="lblProductChargesSummary" runat="server" CssClass="price-display"
+                    style="background-color: #FFF3CD; padding: 10px; border-radius: 5px; display: inline-block; border: 1px solid #FFC107;"></asp:Label>
+            </div>
+
+            <style>
+                .product-charges-grid {
+                    width: 100%;
+                    border-collapse: collapse;
+                    background: white;
+                    border: 1px solid #D7CCC8;
+                    margin: 10px 0;
+                }
+                .product-charges-grid th {
+                    background-color: #8D6E63;
+                    color: white;
+                    font-weight: bold;
+                    padding: 12px;
+                    text-align: center;
+                    border: 1px solid #6D4C41;
+                }
+                .product-charges-grid td {
+                    padding: 10px;
+                    border: 1px solid #D7CCC8;
+                    text-align: center;
+                }
+                .product-charges-grid tr:nth-child(even) {
+                    background-color: #F5F5F5;
+                }
+                .product-charges-grid tr:hover {
+                    background-color: #EFEBE9;
+                }
+                .status-badge {
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    color: white;
+                    font-size: 12px;
+                    font-weight: bold;
+                    display: inline-block;
+                }
+                .status-pending {
+                    background-color: #FF9800;
+                }
+                .status-paid {
+                    background-color: #4CAF50;
+                }
+                .status-cancelled {
+                    background-color: #9E9E9E;
+                }
+            </style>
+
+            <asp:GridView ID="gvProductCharges" runat="server" CssClass="product-charges-grid ExampleFont"
+                AutoGenerateColumns="False" EmptyDataText="ไม่มีรายการสินค้าที่ชาร์จเข้าห้อง"
+                OnRowCommand="gvProductCharges_RowCommand">
+                <Columns>
+                    <asp:BoundField DataField="ChargedDate" HeaderText="วันที่"
+                        DataFormatString="{0:dd/MM/yyyy HH:mm}" ItemStyle-Width="15%" />
+                    <asp:BoundField DataField="Product_Name" HeaderText="รายการสินค้า"
+                        ItemStyle-HorizontalAlign="Left" ItemStyle-Width="30%" />
+                    <asp:BoundField DataField="Quantity" HeaderText="จำนวน"
+                        DataFormatString="{0:N2}" ItemStyle-Width="10%" />
+                    <asp:BoundField DataField="UnitPrice" HeaderText="ราคา/หน่วย"
+                        DataFormatString="{0:N2} บาท" ItemStyle-Width="12%" />
+                    <asp:BoundField DataField="TotalAmount" HeaderText="รวม"
+                        DataFormatString="{0:N2} บาท" ItemStyle-Width="12%"
+                        ItemStyle-Font-Bold="true" />
+                    <asp:TemplateField HeaderText="สถานะ" ItemStyle-Width="12%">
+                        <ItemTemplate>
+                            <span class='status-badge <%# "status-" + Eval("Status").ToString().ToLower() %>'>
+                                <%# Eval("Status").ToString() == "PENDING" ? "รอชำระ" :
+                                    Eval("Status").ToString() == "PAID" ? "ชำระแล้ว" : "ยกเลิก" %>
+                            </span>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="จัดการ" ItemStyle-Width="9%">
+                        <ItemTemplate>
+                            <asp:Button ID="btnDeleteCharge" runat="server"
+                                Text="ลบ" CssClass="reservation-button"
+                                style="background-color: #f44336; padding: 6px 12px;"
+                                CommandName="DeleteCharge"
+                                CommandArgument='<%# Eval("ID") %>'
+                                Visible='<%# Eval("Status").ToString() == "PENDING" %>'
+                                OnClientClick="return confirm('⚠️ ต้องการลบรายการนี้?\n\n✅ สต๊อกสินค้าจะถูกคืน\n✅ ยอดรวมจะถูกลด\n\nคลิก OK เพื่อยืนยัน');" />
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+            </asp:GridView>
+
+            <div style="margin-top: 10px; padding: 10px; background-color: #E3F2FD; border-radius: 5px; border-left: 4px solid #2196F3;">
+                <strong>💡 คำอธิบาย:</strong><br />
+                • <strong>รอชำระ:</strong> รายการที่ยังไม่ได้ชำระเงิน (สามารถลบได้)<br />
+                • <strong>ชำระแล้ว:</strong> รายการที่ชำระเงินแล้ว (ไม่สามารถลบได้)<br />
+                • การลบรายการจะ<strong>คืนสต๊อกสินค้า</strong>และ<strong>ลดยอดรวม</strong>โดยอัตโนมัติ
+            </div>
+        </div>
+
         <div class="form-panel">
             <h3 class="section-header">Payment Information</h3>
             <div class="form-row" style="background-color: #EFEBE9; padding: 8px 0;">
