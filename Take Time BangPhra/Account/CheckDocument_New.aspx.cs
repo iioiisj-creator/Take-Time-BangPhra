@@ -355,10 +355,10 @@ namespace Take_Time_BangPhra.Account
 
         private DataTable GetAllReceipts(DateTime startDate, DateTime endDate, string status)
         {
-            // Fixed: Include receipts from all 4 categories to match revenue calculation
-            // - Category 1: Reservation check-in in date range
-            // - Category 2: Receipt created in date range (check-in outside)
-            // - Category 3-4: Receipt created in date range (non-reservation)
+            // Show receipts created in the date range only
+            // Note: This may not match revenue totals because:
+            // - Category 1 includes receipts where CheckinDate is in range (even if Created_Date is outside)
+            // - This detail list only shows receipts where Created_Date is in range
             string query = @"
                 SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
                        ar.Total_Amount, ar.Vat, ar.IsDeposit, ar.UseDeposit,
@@ -371,11 +371,8 @@ namespace Take_Time_BangPhra.Account
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                 LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
-                WHERE ar.Status LIKE @Status
-                  AND (
-                      (ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate)
-                      OR (r.CheckinDate >= @StartDate AND r.CheckinDate <= @EndDate AND ar.Reservation_ID > 0)
-                  )
+                WHERE ar.Created_Date >= @StartDate AND ar.Created_Date <= @EndDate
+                  AND ar.Status LIKE @Status
                 ORDER BY ar.ID ASC";
 
             var parameters = new Dictionary<string, object>
