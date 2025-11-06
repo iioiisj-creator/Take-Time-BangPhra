@@ -2306,25 +2306,38 @@ namespace Take_Time_BangPhra
 
         public void uploadSlip(string ID)
         {
-           
+
             try
             {
-                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                // 🆕 Get PaymentHistoryId first for unique filename
+                long? paymentHistoryId = null;
+                if (Session["PaymentHistoryId"] != null)
+                {
+                    paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
+                }
+
+                // Generate unique filename pattern: {ReservationID}_{Phone}_{PaymentHistoryId}.jpg
+                string uniqueSuffix = paymentHistoryId.HasValue ? $"_{paymentHistoryId.Value}" : "";
+                string tempFilename = TextBox1.Text + ".jpg";
+                string finalFilename = ID + "_" + TextBox1.Text + uniqueSuffix + ".jpg";
+
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename))
                 {
                     try
                     {
                         if (Convert.ToInt32(ID) > 0)
                         {
-                            if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg"))
-                            {
-                                File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
-                            }
-                            File.Move(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg", AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                            // Move temp file to final unique filename (no deletion needed - unique names)
+                            File.Move(
+                                AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
+                                AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
                         }
                     }
                     catch
                     {
-                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg", AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                        File.Move(
+                            AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
+                            AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
                     }
 
                 }
@@ -2332,33 +2345,29 @@ namespace Take_Time_BangPhra
                 {
                     if (FileUpload1.HasFile)
                     {
-                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                        // Clean up temp file if exists
+                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename))
                         {
-                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg");
-                        }
-                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg"))
-                        {
-                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg");
+                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename);
                         }
 
+                        // Save with unique filename (no need to check/delete final file - it's unique)
                         string FileSaveWithPath = "";
-                        string filename = ID + "_" + TextBox1.Text + ".jpg";
-                        FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename.Replace("/", "").Replace("\\", "").Replace("'", ""));
+                        FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + finalFilename.Replace("/", "").Replace("\\", "").Replace("'", ""));
                         FileUpload1.SaveAs(FileSaveWithPath);
                     }
                 }
 
                 // 🆕 Record Payment_Slip if file exists and Payment_History was created
-                if (Session["PaymentHistoryId"] != null && Convert.ToInt32(ID) > 0)
+                if (paymentHistoryId.HasValue && Convert.ToInt32(ID) > 0)
                 {
-                    string slipPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + ID + "_" + TextBox1.Text + ".jpg";
+                    string slipPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename;
                     if (File.Exists(slipPath))
                     {
                         try
                         {
-                            long paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
-                            string slipFileURL = "Upload/Slip/" + ID + "_" + TextBox1.Text + ".jpg";
-                            string fileName = ID + "_" + TextBox1.Text + ".jpg";
+                            string slipFileURL = "Upload/Slip/" + finalFilename;
+                            string fileName = finalFilename;
                             FileInfo fileInfo = new FileInfo(slipPath);
                             long fileSize = fileInfo.Length;
                             int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;

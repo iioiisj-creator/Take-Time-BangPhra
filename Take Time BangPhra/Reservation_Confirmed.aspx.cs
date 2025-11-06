@@ -165,11 +165,13 @@ namespace Take_Time_BangPhra
                 if (dtSlips.Rows.Count > 0)
                 {
                     // 🆕 Generate SlipFileURL for old records that don't have Payment_Slips
+                    // Note: New records use pattern {ReservationID}_{Phone}_{PaymentHistoryId}.jpg (already in DB)
+                    //       Old records use pattern {ReservationID}_{Phone}.jpg (generated here)
                     foreach (DataRow row in dtSlips.Rows)
                     {
                         if (row["SlipFileURL"] == DBNull.Value || string.IsNullOrWhiteSpace(row["SlipFileURL"].ToString()))
                         {
-                            // Generate pattern: Upload/Slip/{ReservationID}_{Phone}.jpg
+                            // Generate OLD pattern for backward compatibility: Upload/Slip/{ReservationID}_{Phone}.jpg
                             string generatedPath = $"Upload/Slip/{reservationId}_{customerPhone}.jpg";
                             string fullPath = Server.MapPath("~/" + generatedPath);
 
