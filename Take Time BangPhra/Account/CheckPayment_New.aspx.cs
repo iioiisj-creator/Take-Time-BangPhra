@@ -128,7 +128,7 @@ namespace Take_Time_BangPhra.Account
                 // Log exception
                 try
                 {
-                    loggingService.LogException(ex, LoggingService.LogCategory.Expense,
+                    loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
                         "Expense calculation failed", GetCurrentUserId());
                 }
                 catch { /* Ignore logging errors */ }
