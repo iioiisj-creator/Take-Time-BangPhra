@@ -345,7 +345,6 @@
                     <asp:BoundField DataField="Total_Amount" HeaderText="ยอดรวม" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
                     <asp:BoundField DataField="Vat" HeaderText="VAT" DataFormatString="{0:N2}" ItemStyle-CssClass="amount-cell" />
                     <asp:BoundField DataField="Status" HeaderText="สถานะ" />
-                    <asp:BoundField DataField="Remark" HeaderText="หมายเหตุ" />
                     <asp:BoundField DataField="Created_By" HeaderText="ผู้สร้าง" />
                 </Columns>
             </asp:GridView>

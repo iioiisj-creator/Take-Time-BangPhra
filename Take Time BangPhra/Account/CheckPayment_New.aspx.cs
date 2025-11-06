@@ -249,9 +249,11 @@ namespace Take_Time_BangPhra.Account
             // Get all payment vouchers in the date range
             string query = @"
                 SELECT ap.ID, ap.Created_Date, ap.Paid_Type, ap.Total_Amount, ap.Vat,
-                       ap.Status, ap.Remark, ap.Vendor_Name,
+                       ap.Status,
+                       ISNULL(v.Name, '-') as Vendor_Name,
                        a.Username as Created_By
                 FROM Account_Payment ap
+                LEFT JOIN Vendor v ON ap.Vendor_ID = v.ID
                 LEFT JOIN Admin a ON ap.Created_By_ID = a.ID
                 WHERE CAST(ap.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(ap.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
@@ -363,7 +365,7 @@ namespace Take_Time_BangPhra.Account
                 // Detail records
                 var dt = GetAllPayments(startDate, endDate, "%");
                 csv.AppendLine("รายละเอียดเอกสาร");
-                csv.AppendLine("เลขที่เอกสาร,วันที่,ผู้รับเงิน,วิธีชำระ,ยอดรวม,VAT,สถานะ,หมายเหตุ,ผู้สร้าง");
+                csv.AppendLine("เลขที่เอกสาร,วันที่,ผู้รับเงิน,วิธีชำระ,ยอดรวม,VAT,สถานะ,ผู้สร้าง");
 
                 if (dt != null)
                 {
@@ -376,10 +378,9 @@ namespace Take_Time_BangPhra.Account
                         string amount = row["Total_Amount"] != DBNull.Value ? Convert.ToDecimal(row["Total_Amount"]).ToString("N2") : "0.00";
                         string vat = row["Vat"] != DBNull.Value ? Convert.ToDecimal(row["Vat"]).ToString("N2") : "0.00";
                         string status = row["Status"]?.ToString() ?? "";
-                        string remark = row["Remark"]?.ToString() ?? "";
                         string createdBy = row["Created_By"]?.ToString() ?? "";
 
-                        csv.AppendLine($"{docId},{date},{vendor},{paidType},{amount},{vat},{status},{remark},{createdBy}");
+                        csv.AppendLine($"{docId},{date},{vendor},{paidType},{amount},{vat},{status},{createdBy}");
                     }
                 }
 
@@ -450,7 +451,7 @@ namespace Take_Time_BangPhra.Account
         {
             try
             {
-                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[9].Text; // Status column
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[10].Text; // Status column
                 string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
 
                 System.Diagnostics.Debug.WriteLine($"📄 Opening document: {docNum}, Status: {docStatus}");

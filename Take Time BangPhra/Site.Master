@@ -404,25 +404,31 @@
                                     <!-- Financial Section - Owner Only -->
 <li class="dropdown-header">การเงิน</li>
 <li><a runat="server" href="~/Voucher">
-    <i class="fas fa-ticket-alt"></i> 
+    <i class="fas fa-ticket-alt"></i>
     <asp:Label ID="Label5" runat="server" Text="ขาย Voucher"></asp:Label>
 </a></li>
 <li><a runat="server" href="~/Account/PaymentVoucher">
-    <i class="fas fa-file-invoice-dollar"></i> 
-    <asp:Label ID="Label7" runat="server" Text="ใบสำคัญจ่าย"></asp:Label>
+    <i class="fas fa-file-invoice-dollar"></i>
+    <asp:Label ID="Label7" runat="server" Text="ใบสำคัญจ่าย (สร้าง)"></asp:Label>
 </a></li>
 <li><a runat="server" href="~/Account/Receipt">
-    <i class="fas fa-receipt"></i> 
-    <asp:Label ID="Label9" runat="server" Text="ใบเสร็จรับเงิน"></asp:Label>
+    <i class="fas fa-receipt"></i>
+    <asp:Label ID="Label9" runat="server" Text="ใบเสร็จรับเงิน (สร้าง)"></asp:Label>
 </a></li>
 <li><a runat="server" href="~/Admin/PaymentAffiliate">
-    <i class="fas fa-money-bill-wave"></i> 
+    <i class="fas fa-money-bill-wave"></i>
     <asp:Label ID="Label11" runat="server" Text="จ่ายเงิน Affiliate"></asp:Label>
 </a></li>
- <li><a runat="server" href="~/Account/CheckDocument_New">
-     <i class="fas fa-chart-line"></i>
-     <asp:Label ID="Label8" runat="server" Text="สรุปรายได้ตามหมวด"></asp:Label>
- </a></li>
+<li role="separator" class="divider"></li>
+<li class="dropdown-header">ระบบบัญชี</li>
+<li><a runat="server" href="~/Account/CheckDocument_New">
+    <i class="fas fa-file-invoice"></i>
+    <asp:Label ID="Label8" runat="server" Text="ใบเสร็จรับเงิน (จัดการ)"></asp:Label>
+</a></li>
+<li><a runat="server" href="~/Account/CheckPayment_New">
+    <i class="fas fa-file-invoice-dollar"></i>
+    <asp:Label ID="Label12" runat="server" Text="ใบสำคัญจ่าย (จัดการ)"></asp:Label>
+</a></li>
 <li role="separator" class="divider"></li>
 
                                     <!-- Owner Only Sections -->
