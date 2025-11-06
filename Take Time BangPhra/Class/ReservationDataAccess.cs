@@ -102,6 +102,7 @@ namespace Take_Time_BangPhra
                     Account_Receipt.IsDeposit,
                     Account_Receipt.UseDeposit,
                     Account_Receipt.Status AS Receipt_Status,
+                    Account_Receipt.Paid_Type,
                     -- ✅ ระบุ Address columns ชัดเจนเพื่อให้แสดงชื่อจริง ไม่ใช่รหัส
                     Address.Province AS Province,
                     Address.District AS District,
