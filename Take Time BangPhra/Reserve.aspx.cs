@@ -44,11 +44,17 @@ namespace Take_Time_BangPhra
         private RoomChargeService _roomChargeService;
         private RoomChargeDataAccess _roomChargeDA;
 
+        // 💰 Payment Feature
+        private PaymentDataAccess _paymentDA;
+
         protected void Page_Load(object sender, EventArgs e)
         {
             // 🏨 Initialize Room Charge Services
             _roomChargeService = new RoomChargeService(conn);
             _roomChargeDA = new RoomChargeDataAccess(conn);
+
+            // 💰 Initialize Payment Services
+            _paymentDA = new PaymentDataAccess(conn);
 
             this.MaintainScrollPositionOnPostBack = true;
             string date = Request.QueryString["date"];
@@ -674,7 +680,19 @@ namespace Take_Time_BangPhra
                         }
                     }
                     TextBox4.Text = dtCustomer.Rows[0]["TotalPrice"].ToString();
-                    TextBox5.Text = dtCustomer.Rows[0]["Deposit"].ToString();
+
+                    // 💰 Get actual total paid amount from Payment_History instead of Deposit column
+                    decimal totalPaid = 0;
+                    try
+                    {
+                        totalPaid = _paymentDA.GetTotalPaidAmount(Convert.ToInt32(id));
+                    }
+                    catch
+                    {
+                        // Fallback to Deposit if Payment_History not available
+                        totalPaid = Convert.ToDecimal(dtCustomer.Rows[0]["Deposit"] ?? "0");
+                    }
+                    TextBox5.Text = totalPaid.ToString();
 
 
                     Image1.ImageUrl = "./Upload/Slip/" + id + "_" + check + ".jpg";
@@ -682,7 +700,8 @@ namespace Take_Time_BangPhra
                     TextBox6.Text = dtCustomer.Rows[0]["Remark"].ToString();
 
                     Label7.Visible = true;
-                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + (Convert.ToInt32(TextBox4.Text) - Convert.ToInt32(TextBox5.Text)).ToString() + " บาท";
+                    decimal remainingAmount = Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text);
+                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + remainingAmount.ToString("N2") + " บาท";
 
                     string paidType = dtCustomer.Rows[0]["Paid_Type"].ToString();
                     try
@@ -3916,11 +3935,11 @@ namespace Take_Time_BangPhra
                 {
                     try
                     {
-                        int total = Convert.ToInt32(TextBox4.Text);
-                        int deposit = Convert.ToInt32(TextBox5.Text);
-                        int remaining = total - deposit;
+                        decimal total = Convert.ToDecimal(TextBox4.Text);
+                        decimal totalPaid = Convert.ToDecimal(TextBox5.Text);
+                        decimal remaining = total - totalPaid;
 
-                        TextBox10.Text = remaining.ToString();
+                        TextBox10.Text = remaining.ToString("0.00");
                         TextBox10.ReadOnly = true;
                         TextBox10.Enabled = false;  // Also disable to prevent any editing
                     }
