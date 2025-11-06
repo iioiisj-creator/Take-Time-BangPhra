@@ -412,7 +412,7 @@
                                     <strong>📝 ประเภท:</strong> <%# Eval("PaymentType") %>
                                 </div>
                                 <div>
-                                    <a href='<%# ResolveUrl("~/") + Eval("SlipFileURL") %>'
+                                    <a href='<%# ResolveUrl("~/" + Eval("SlipFileURL").ToString()) %>'
                                        target="_blank"
                                        style="color: #1976d2; text-decoration: none; font-weight: bold;">
                                         🔗 ดูสลิปการโอนเงิน
