@@ -184,12 +184,26 @@ namespace Take_Time_BangPhra.Account.Report
                     GridView1.DataSource = dtReceiptDetail;
                     GridView1.DataBind();
 
+                    // 🔍 Debug Page_Load
+                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit - Page_Load] ===");
+                    System.Diagnostics.Debug.WriteLine($"ID from DB: {id}");
+                    System.Diagnostics.Debug.WriteLine($"IsPostBack: {IsPostBack}");
+                    System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text (before): '{TextBox5.Text}'");
+
                     // ⚠️ ไม่ set TextBox5.Text = id ถ้า CheckBox2 ถูก check แล้ว (user กำลังแก้ไขเลขที่)
                     // เพราะจะทำให้ค่าที่ user กรอกหายไปเมื่อ postback
                     if (!CheckBox2.Checked)
                     {
                         TextBox5.Text = id;
+                        System.Diagnostics.Debug.WriteLine($"✏️ Set TextBox5.Text = {id}");
                     }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"✅ Keep TextBox5.Text = '{TextBox5.Text}' (CheckBox2 is checked)");
+                    }
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text (after): '{TextBox5.Text}'");
+                    System.Diagnostics.Debug.WriteLine($"=============================");
 
                     TextBox8.Text = Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"].ToString()).ToString("yyyy-MM-dd") ;
                     TextBox9.Text = dtReceipt.Rows[0]["Reservation_ID"].ToString();
@@ -383,18 +397,27 @@ namespace Take_Time_BangPhra.Account.Report
                     dtReceipt = code.DatabaseQuery(conn, "Select * from Account_Receipt left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     id = dtReceipt.Rows[0]["ID"].ToString();
 
-                    // ✅ ถ้า CheckBox2 ถูก check และ TextBox5 มีค่า → ใช้เลขที่ที่กรอก
+                    // 🔍 Debug: ดูค่าทั้งหมดก่อนตัดสินใจ
+                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit - Button3_Click] ===");
+                    System.Diagnostics.Debug.WriteLine($"Original ID from DB: {id}");
+                    System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text: '{TextBox5.Text}'");
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.ReadOnly: {TextBox5.ReadOnly}");
+
+                    // ✅ ใช้ ReadOnly แทน Enabled → TextBox5.Text จะถูกส่งกลับมาใน postback แม้ว่าจะเป็น ReadOnly
+                    // ✅ ถ้า CheckBox2 ถูก check และ TextBox5 มีค่า → ใช้เลขที่กรอก
                     // ✅ ถ้าไม่ → ใช้เลขเดิม
                     if (CheckBox2.Checked == true && !string.IsNullOrWhiteSpace(TextBox5.Text))
                     {
-                        docNum = TextBox5.Text.Trim();  // ใช้เลขที่กรอก (ตัดช่องว่าง)
-                        System.Diagnostics.Debug.WriteLine($"[Receipt Edit] Using custom receipt number: {docNum}");
+                        docNum = TextBox5.Text.Trim();  // ใช้เลขที่กรอก
+                        System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using CUSTOM receipt number: {docNum}");
                     }
                     else
                     {
                         docNum = id; // Use original ID
-                        System.Diagnostics.Debug.WriteLine($"[Receipt Edit] Using original receipt ID: {docNum} (CheckBox2.Checked={CheckBox2.Checked}, TextBox5='{TextBox5.Text}')");
+                        System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using ORIGINAL receipt ID: {docNum}");
                     }
+                    System.Diagnostics.Debug.WriteLine($"=============================");
                 }
                 else
                 {
@@ -1031,11 +1054,16 @@ namespace Take_Time_BangPhra.Account.Report
         {
             if(CheckBox2.Checked == true)
             {
-                TextBox5.Enabled = true;
+                // ✅ ใช้ ReadOnly แทน Enabled เพราะ ReadOnly TextBox ยังส่งค่ากลับมาใน postback
+                TextBox5.ReadOnly = false;
+                TextBox5.BackColor = System.Drawing.Color.White;
+                System.Diagnostics.Debug.WriteLine($"[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=false (editable)");
             }
             else
             {
-                TextBox5.Enabled = false;
+                TextBox5.ReadOnly = true;
+                TextBox5.BackColor = System.Drawing.Color.LightGray;
+                System.Diagnostics.Debug.WriteLine($"[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=true (readonly)");
             }
         }
 

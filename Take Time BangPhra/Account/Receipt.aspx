@@ -31,7 +31,7 @@
             <tr>
                  <td class="modal-sm" style="width: 20%; text-align: right">เลขที่:</td>
                 <td>
-                    &nbsp;<asp:TextBox ID="TextBox5" runat="server" Width="30%" Enabled="False" ></asp:TextBox>
+                    &nbsp;<asp:TextBox ID="TextBox5" runat="server" Width="30%" ReadOnly="True" BackColor="LightGray" ></asp:TextBox>
                     <asp:CheckBox ID="CheckBox2" Text="Edit" runat="server" AutoPostBack="True" OnCheckedChanged="CheckBox2_CheckedChanged" />
                  </td>
             </tr>
