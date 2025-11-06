@@ -2363,7 +2363,7 @@ namespace Take_Time_BangPhra
                             long fileSize = fileInfo.Length;
                             int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
 
-                            // Insert Payment_Slip record
+                            // Insert Payment_Slip record with OCR support
                             string insertSlipQuery = @"
                                 INSERT INTO [dbo].[Payment_Slips] (
                                     Account_Receipt_ID,
@@ -2375,7 +2375,11 @@ namespace Take_Time_BangPhra
                                     UploadedBy_ID,
                                     UploadedBy_CustomerPhone,
                                     UploadedDate,
+                                    VerificationStatus,
+                                    IsVerified,
+                                    OCR_Status,
                                     Notes,
+                                    IsActive,
                                     Status
                                 ) OUTPUT INSERTED.ID VALUES (
                                     0,
@@ -2387,7 +2391,11 @@ namespace Take_Time_BangPhra
                                     @AdminId,
                                     @CustomerPhone,
                                     GETDATE(),
+                                    'PENDING',
+                                    0,
+                                    'PENDING',
                                     N'อัพโหลดเมื่อจอง',
+                                    1,
                                     1
                                 )";
 
@@ -2420,6 +2428,18 @@ namespace Take_Time_BangPhra
 
                                 code2.DatabaseInsertSafe(conn, updatePaymentQuery, updateParams);
                                 System.Diagnostics.Debug.WriteLine($"Created Payment_Slip ID: {paymentSlipId}, linked to Payment_History ID: {paymentHistoryId}");
+
+                                // 🆕 Process OCR for uploaded slip
+                                try
+                                {
+                                    ProcessSlipOCR(paymentSlipId, slipPath);
+                                }
+                                catch (Exception ocrEx)
+                                {
+                                    code2.Logs(conn, "Reserve OCR Processing Error",
+                                        $"SlipID: {paymentSlipId}, Error: {ocrEx.Message}", "SYSTEM");
+                                    // Don't fail the upload if OCR fails
+                                }
                             }
 
                             // Clear session after successful save
@@ -2434,6 +2454,61 @@ namespace Take_Time_BangPhra
                 }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Process OCR for uploaded slip
+        /// </summary>
+        private void ProcessSlipOCR(long slipId, string imageFilePath)
+        {
+            try
+            {
+                // Check if OCR is enabled
+                bool ocrEnabled = ConfigurationManager.AppSettings["OCR_Enabled"] == "true";
+                if (!ocrEnabled)
+                {
+                    return;
+                }
+
+                // Get tesseract data path from web.config
+                string tessDataPath = ConfigurationManager.AppSettings["TesseractDataPath"] ??
+                    Server.MapPath("~/tessdata");
+
+                var ocrService = new Take_Time_BangPhra.Services.SlipOCRService(tessDataPath, conn);
+                var ocrResult = ocrService.ProcessSlip(imageFilePath);
+
+                // Save OCR result to database
+                ocrService.SaveOCRResult(slipId, ocrResult);
+
+                // Log result for monitoring
+                string logMessage = ocrResult.Success
+                    ? $"OCR Success - Amount: {ocrResult.Amount:N2}, Confidence: {ocrResult.Confidence:N2}%"
+                    : $"OCR Failed - {ocrResult.ErrorMessage}";
+
+                code2.Logs(conn, "Reserve OCR Processing",
+                    $"SlipID: {slipId}, {logMessage}", "SYSTEM");
+            }
+            catch (Exception ex)
+            {
+                // Update slip with error status
+                var errorParams = new Dictionary<string, object>
+                {
+                    { "@slipId", slipId },
+                    { "@errorMessage", ex.Message },
+                    { "@status", "FAILED" }
+                };
+
+                code2.DatabaseInsertSafe(conn,
+                    @"UPDATE Payment_Slips
+                      SET OCR_Status = @status,
+                          OCR_ErrorMessage = @errorMessage,
+                          OCR_ProcessedDate = GETDATE()
+                      WHERE ID = @slipId",
+                    errorParams);
+
+                code2.Logs(conn, "Reserve ProcessSlipOCR Error",
+                    $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
+            }
         }
 
         public string cleantext(string input)
