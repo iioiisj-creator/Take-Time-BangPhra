@@ -106,7 +106,7 @@ namespace Take_Time_BangPhra
                         {
                             AccomName += $": ({dtReservation_Accom.Rows[j]["Amount"]}คน)";
                         }
-                        AccomName += "<br/>";
+                        AccomName += "\r\n";
 
                         if (Convert.ToInt32(dtReservation_Accom.Rows[j]["OrderID"]) < orderID)
                         {

@@ -12,6 +12,12 @@
         .print-only { display: none; }
         .no-print { display: block; }
         .hidden { display: none; }
+
+        /* แสดงห้องพักคนละบรรทัด */
+        .room-list {
+            white-space: pre-line;
+            vertical-align: top;
+        }
         
         @media print {
             @page {
@@ -38,6 +44,10 @@
             }
             .mydatagrid td {
                 height: 74px !important;
+            }
+            /* แสดงห้องพักคนละบรรทัดตอน print */
+            .room-list {
+                white-space: pre-line !important;
             }
             /* ปรับความกว้างคอลัมน์สำหรับ print */
             .mydatagrid th:nth-child(1), .mydatagrid td:nth-child(1) { width: 3%; }
@@ -88,6 +98,12 @@
             .mydatagrid th, .mydatagrid td {
                 padding: 4px 2px !important;
                 font-size: 10px;
+            }
+
+            /* แสดงห้องพักคนละบรรทัดบนมือถือ */
+            .room-list {
+                white-space: pre-line !important;
+                font-size: 9px;
             }
 
             /* ปรับปุ่มให้เล็กแต่กดได้ */
@@ -170,8 +186,9 @@
                                 <asp:BoundField DataField="Name" HeaderText="ชื่อผู้จอง" 
                                     HeaderStyle-Width="12%" HeaderStyle-CssClass="header-center" />
 
-                                <asp:BoundField DataField="AccomName" HeaderText="รายชื่อห้องพัก" 
-                                    HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center" />
+                                <asp:BoundField DataField="AccomName" HeaderText="รายชื่อห้องพัก"
+                                    HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="room-list" HtmlEncode="false" />
 
                                 <asp:BoundField DataField="StayDays" HeaderText="จำนวนคืน" 
                                     HeaderStyle-Width="5%" HeaderStyle-CssClass="header-center" 
