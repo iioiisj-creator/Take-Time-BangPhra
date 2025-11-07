@@ -2069,8 +2069,19 @@ namespace Take_Time_BangPhra
                                             catch { }
                                         }
 
-                                        Response.Redirect("/ReserveTable",false);
-                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                        // ✅ Reload page to show uploaded slip image (don't redirect to ReserveTable yet)
+                                        // This allows user to see the uploaded slip before completing checkin
+                                        if (FileUpload1.HasFile && CheckBox2.Checked)
+                                        {
+                                            // Reload the same checkin page to show the slip
+                                            Response.Redirect($"./Reserve?command=checkin&id={id}&check={TextBox1.Text}", false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                        }
+                                        else
+                                        {
+                                            Response.Redirect("/ReserveTable",false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                        }
                                     }
                                     else if (command == "reserve")
                                     {
@@ -3881,18 +3892,116 @@ namespace Take_Time_BangPhra
             {
                 if (FileUpload1.HasFile)
                 {
-                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg"))
+                    try
                     {
-                        File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + TextBox1.Text + ".jpg");
-                    }
+                        string id = Request.QueryString["id"] ?? "0";
+                        string phone = TextBox1.Text.Trim();
 
-                    string FileSaveWithPath = "";
-                    string filename = TextBox1.Text + ".jpg";
-                    FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename);
-                    FileUpload1.SaveAs(FileSaveWithPath);
-                    
-                    Image1.ImageUrl = "\\Upload\\Slip\\" + filename;
-                    Image1.DataBind();
+                        // 🆕 Generate UNIQUE filename with timestamp
+                        // Pattern: {ReservationID}_{Phone}_{Timestamp}.jpg
+                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        long? paymentHistoryId = null;
+
+                        // Try to get PaymentHistoryId if available
+                        if (Session["PaymentHistoryId"] != null)
+                        {
+                            paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
+                        }
+
+                        // Use PaymentHistoryId if available, otherwise use timestamp
+                        string uniqueSuffix = paymentHistoryId.HasValue ?
+                            $"_{paymentHistoryId.Value}" :
+                            $"_{timestamp}";
+
+                        string filename = id + "_" + phone + uniqueSuffix + ".jpg";
+
+                        // ❌ DON'T delete old files - keep all uploaded slips
+                        // Each upload creates a unique filename
+
+                        // Save file with unique filename
+                        string FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename.Replace("/", "").Replace("\\", "").Replace("'", ""));
+                        FileUpload1.SaveAs(FileSaveWithPath);
+
+                        // ✅ Show uploaded image immediately
+                        Image1.ImageUrl = "./Upload/Slip/" + filename;
+                        Image1.Visible = true;
+                        Image1.DataBind();
+
+                        // 🆕 Record in Payment_Slips table for tracking
+                        if (Convert.ToInt32(id) > 0)
+                        {
+                            try
+                            {
+                                FileInfo fileInfo = new FileInfo(FileSaveWithPath);
+                                long fileSize = fileInfo.Length;
+                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                string insertSlipQuery = @"
+                                    INSERT INTO [dbo].[Payment_Slips] (
+                                        Account_Receipt_ID,
+                                        Reservation_ID,
+                                        SlipFileURL,
+                                        FileName,
+                                        FileType,
+                                        FileSize,
+                                        UploadedBy_ID,
+                                        UploadedBy_CustomerPhone,
+                                        UploadedDate,
+                                        VerificationStatus,
+                                        IsVerified,
+                                        Notes,
+                                        IsActive,
+                                        Status
+                                    ) VALUES (
+                                        0,
+                                        @ReservationId,
+                                        @SlipFileURL,
+                                        @FileName,
+                                        'image/jpeg',
+                                        @FileSize,
+                                        @AdminId,
+                                        @CustomerPhone,
+                                        GETDATE(),
+                                        'PENDING',
+                                        0,
+                                        N'อัพโหลดจากปุ่ม Button3',
+                                        1,
+                                        1
+                                    )";
+
+                                var slipParams = new Dictionary<string, object>
+                                {
+                                    { "@ReservationId", Convert.ToInt32(id) },
+                                    { "@SlipFileURL", "Upload/Slip/" + filename },
+                                    { "@FileName", filename },
+                                    { "@FileSize", (int)fileSize },
+                                    { "@AdminId", adminId ?? (object)DBNull.Value },
+                                    { "@CustomerPhone", phone }
+                                };
+
+                                code2.DatabaseQuerySafe(conn, insertSlipQuery, slipParams);
+                            }
+                            catch (Exception ex)
+                            {
+                                code2.Logs(conn, "Button3_Click - Payment_Slips Insert Error",
+                                    $"File uploaded but not recorded in DB: {filename}, Error: {ex.Message}",
+                                    Session["User"]?.ToString() ?? "SYSTEM");
+                            }
+                        }
+
+                        // ✅ Show success message
+                        ClientScript.RegisterStartupScript(this.GetType(), "uploadSuccess",
+                            "alert('✅ อัพโหลดสลิปสำเร็จ!\\n\\n📎 ไฟล์: " + FileUpload1.FileName.Replace("'", "\\'") + "\\n✅ แสดงรูปด้านล่างแล้ว');", true);
+                    }
+                    catch (Exception ex)
+                    {
+                        ClientScript.RegisterStartupScript(this.GetType(), "uploadError",
+                            $"alert('❌ เกิดข้อผิดพลาด: {ex.Message.Replace("'", "\\'")}');", true);
+
+                        code2.Logs(conn, "Button3_Click Error",
+                            $"Phone: {TextBox1.Text}, Error: {ex.Message}",
+                            Session["User"]?.ToString() ?? "SYSTEM");
+                    }
                 }
                 else
                 {
@@ -3901,7 +4010,7 @@ namespace Take_Time_BangPhra
             }
             else
             {
-                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเระบุเบอร์โทรศัพท์ก่อน');", true);
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุเบอร์โทรศัพท์ก่อน');", true);
             }
         }
 
