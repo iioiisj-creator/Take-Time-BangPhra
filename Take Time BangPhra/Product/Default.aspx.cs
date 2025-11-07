@@ -279,40 +279,70 @@ namespace Take_Time_BangPhra.Product
                 {
                     if (Button2.Enabled == true || Command == "View" || Command == "Edit")
                     {
-                        List<string> ddl = new List<string>();
-
-                        for (int i = 0; i < dtProvince.Rows.Count; i++)
-                        {
-                            ddl.Add(dtProvince.Rows[i][0].ToString());
-                        }
-                        DropDownList3.DataSource = ddl;
-                        DropDownList3.DataBind();
-                        //DropDownList5.SelectedIndex = 0;
-
-                        ddl.Clear();
-
-                        for (int i = 0; i < dtDistrict.Rows.Count; i++)
-                        {
-                            ddl.Add(dtDistrict.Rows[i][0].ToString());
-                        }
-                        DropDownList4.DataSource = ddl;
-                        DropDownList4.DataBind();
-                        //DropDownList6.SelectedIndex = 0;
-
-                        ddl.Clear();
-
-                        for (int i = 0; i < dtSubDistrict.Rows.Count; i++)
-                        {
-                            ddl.Add(dtSubDistrict.Rows[i][0].ToString());
-                        }
-                        DropDownList5.DataSource = ddl;
-                        DropDownList5.DataBind();
-                        //DropDownList7.SelectedIndex = 0;
+                        LoadAddressDropdowns(dtProvince, dtDistrict, dtSubDistrict);
                     }
                     else { }
                 }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Load address dropdowns without Button2 condition (for auto-fill scenarios)
+        /// </summary>
+        private void LoadAddressDropdownsByPostalCode(string postalCode)
+        {
+            if (string.IsNullOrEmpty(postalCode) || postalCode.Length != 5)
+                return;
+
+            try
+            {
+                DataTable dtProvince = code.DatabaseQuery(conn,
+                    $"SELECT DISTINCT [Province] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY Province ASC");
+                DataTable dtDistrict = code.DatabaseQuery(conn,
+                    $"SELECT DISTINCT [District] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY District ASC");
+                DataTable dtSubDistrict = code.DatabaseQuery(conn,
+                    $"SELECT DISTINCT [SubDistrict] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY SubDistrict ASC");
+
+                if (dtProvince.Rows.Count > 0 && dtDistrict.Rows.Count > 0 && dtSubDistrict.Rows.Count > 0)
+                {
+                    LoadAddressDropdowns(dtProvince, dtDistrict, dtSubDistrict);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Populate address dropdowns from DataTables
+        /// </summary>
+        private void LoadAddressDropdowns(DataTable dtProvince, DataTable dtDistrict, DataTable dtSubDistrict)
+        {
+            List<string> ddl = new List<string>();
+
+            for (int i = 0; i < dtProvince.Rows.Count; i++)
+            {
+                ddl.Add(dtProvince.Rows[i][0].ToString());
+            }
+            DropDownList3.DataSource = ddl;
+            DropDownList3.DataBind();
+
+            ddl.Clear();
+
+            for (int i = 0; i < dtDistrict.Rows.Count; i++)
+            {
+                ddl.Add(dtDistrict.Rows[i][0].ToString());
+            }
+            DropDownList4.DataSource = ddl;
+            DropDownList4.DataBind();
+
+            ddl.Clear();
+
+            for (int i = 0; i < dtSubDistrict.Rows.Count; i++)
+            {
+                ddl.Add(dtSubDistrict.Rows[i][0].ToString());
+            }
+            DropDownList5.DataSource = ddl;
+            DropDownList5.DataBind();
         }
 
         protected void DropDownList1_SelectedIndexChanged(object sender, EventArgs e)
@@ -361,20 +391,14 @@ namespace Take_Time_BangPhra.Product
 
                 try //Address
                 {
-                    // ✅ Set postal code first
-                    TextBox9.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
+                    // ✅ Step 1: Set postal code first
+                    string postalCode = dtCustomer.Rows[0]["PostalCode"]?.ToString() ?? "";
+                    TextBox9.Text = postalCode;
 
-                    // ✅ Load dropdowns based on postal code (this populates the dropdown items)
-                    if (!string.IsNullOrEmpty(TextBox9.Text) && TextBox9.Text.Length == 5)
-                    {
-                        getAddress(
-                            "SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by Province ASC",
-                            "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by District ASC",
-                            "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by SubDistrict ASC"
-                        );
-                    }
+                    // ✅ Step 2: Load dropdowns based on postal code (bypasses Button2.Enabled check)
+                    LoadAddressDropdownsByPostalCode(postalCode);
 
-                    // ✅ Now select the correct values from the populated dropdowns
+                    // ✅ Step 3: Now select the correct values from the populated dropdowns
                     try
                     {
                         DropDownList3.ClearSelection();
