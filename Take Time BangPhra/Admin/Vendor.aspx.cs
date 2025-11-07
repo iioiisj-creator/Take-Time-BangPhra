@@ -169,16 +169,10 @@ namespace Take_Time_BangPhra.Admin
 
         protected void Button2_Click(object sender, EventArgs e)
         {
-            // ✅ Validation: ต้องมีชื่อและเบอร์โทรศัพท์
+            // ✅ Validation: ต้องมีชื่อ (เบอร์โทรไม่บังคับ)
             if (string.IsNullOrEmpty(TextBox2.Text.Trim()))
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกชื่อผู้เสียภาษี / ชื่อบริษัท');", true);
-                return;
-            }
-
-            if (string.IsNullOrEmpty(TextBox7.Text.Trim()))
-            {
-                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกเบอร์โทรศัพท์');", true);
                 return;
             }
 
@@ -205,9 +199,9 @@ namespace Take_Time_BangPhra.Admin
                 }
                 else
                 {
-                    // ไม่มี Tax ID: check ด้วย Name + Phone_Number
+                    // ไม่มี Tax ID: check ด้วย Name เพียงอย่างเดียว (PK)
                     dt = code.DatabaseQuery(conn,
-                        $"SELECT * FROM Vendor WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}' AND Phone_Number = '{TextBox7.Text.Trim()}'");
+                        $"SELECT * FROM Vendor WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}'");
                     isDuplicate = dt.Rows.Count > 0;
                 }
 
@@ -218,7 +212,11 @@ namespace Take_Time_BangPhra.Admin
                     // 📝 UPDATE existing vendor
                     if (!string.IsNullOrEmpty(taxId))
                     {
-                        // Update by IDNumber
+                        // Update by IDNumber + Branch_Number
+                        string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
+                            ? "NULL"
+                            : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
+
                         code.DatabaseInsert(conn,
                             $@"UPDATE [dbo].[Vendor] SET
                                 [IDNumber] = '{taxId.Replace("'", "''")}',
@@ -227,14 +225,18 @@ namespace Take_Time_BangPhra.Admin
                                 [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
                                 [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
                                 [Address_ID] = {addressId},
-                                [Phone_Number] = '{TextBox7.Text.Trim().Replace("'", "''")}',
+                                [Phone_Number] = {phoneValue},
                                 [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
                                 [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
                             WHERE IDNumber = '{taxId}' AND Branch_Number = '{TextBox3.Text.Trim()}'");
                     }
                     else
                     {
-                        // Update by Name + Phone_Number
+                        // Update by Name (PK)
+                        string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
+                            ? "NULL"
+                            : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
+
                         code.DatabaseInsert(conn,
                             $@"UPDATE [dbo].[Vendor] SET
                                 [Vendor_Type_ID] = {DropDownList1.SelectedValue},
@@ -242,10 +244,10 @@ namespace Take_Time_BangPhra.Admin
                                 [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
                                 [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
                                 [Address_ID] = {addressId},
-                                [Phone_Number] = '{TextBox7.Text.Trim().Replace("'", "''")}',
+                                [Phone_Number] = {phoneValue},
                                 [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
                                 [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
-                            WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}' AND Phone_Number = '{TextBox7.Text.Trim()}'");
+                            WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}'");
                     }
 
                     ClientScript.RegisterStartupScript(this.GetType(), "success", "alert('✅ อัพเดทข้อมูล Vendor สำเร็จ');", true);
@@ -254,6 +256,9 @@ namespace Take_Time_BangPhra.Admin
                 {
                     // ➕ INSERT new vendor
                     string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : $"'{taxId.Replace("'", "''")}'";
+                    string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
+                        ? "NULL"
+                        : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
 
                     code.DatabaseInsert(conn,
                         $@"INSERT INTO [dbo].[Vendor]
@@ -263,7 +268,7 @@ namespace Take_Time_BangPhra.Admin
                             {DropDownList1.SelectedValue},
                             N'{TextBox2.Text.Trim().Replace("'", "''")}',
                             '{TextBox3.Text.Trim().Replace("'", "''")}',
-                            '{TextBox7.Text.Trim().Replace("'", "''")}',
+                            {phoneValue},
                             N'{TextBox4.Text.Trim().Replace("'", "''")}',
                             N'{TextBox5.Text.Trim().Replace("'", "''")}',
                             {addressId},
