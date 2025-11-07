@@ -1579,8 +1579,15 @@ namespace Take_Time_BangPhra.Product
                 int? adminId = Session["UserID"] != null ? Convert.ToInt32(Session["UserID"]) : (int?)null;
                 int itemCount = dtOrder.Rows.Count;
 
-                // ✅ Validate reservation allows charging
-                _roomChargeService.ValidateRoomChargeAllowed(reservationId);
+                // Get selected date from TextBox12, default to today if empty/invalid
+                DateTime searchDate = DateTime.Now.Date;
+                if (!string.IsNullOrEmpty(TextBox12.Text))
+                {
+                    DateTime.TryParse(TextBox12.Text, out searchDate);
+                }
+
+                // ✅ Validate reservation allows charging (with date filter)
+                _roomChargeService.ValidateRoomChargeAllowed(reservationId, searchDate);
 
                 // ✅ Validate stock availability for all items
                 foreach (DataRow item in dtOrder.Rows)

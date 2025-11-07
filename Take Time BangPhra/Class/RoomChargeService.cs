@@ -299,6 +299,14 @@ namespace Take_Time_BangPhra
         }
 
         /// <summary>
+        /// Get guest reservation info for specific date
+        /// </summary>
+        public DataTable GetGuestInfo(int reservationId, DateTime searchDate)
+        {
+            return _chargeDA.GetReservationById(reservationId, searchDate);
+        }
+
+        /// <summary>
         /// Check if reservation has pending charges
         /// </summary>
         public bool HasPendingCharges(int reservationId)
@@ -405,6 +413,32 @@ namespace Take_Time_BangPhra
         {
             // Get reservation info
             var reservationInfo = _chargeDA.GetReservationById(reservationId);
+
+            if (reservationInfo.Rows.Count == 0)
+            {
+                throw new Exception("ไม่พบข้อมูลการจอง");
+            }
+
+            var row = reservationInfo.Rows[0];
+            string status = row["Status"].ToString();
+
+            // Check if reservation status allows charging
+            if (status == "ยกเลิกคืนเงิน" || status == "ยกเลิกไม่คืนเงิน")
+            {
+                throw new Exception("ไม่สามารถชาร์จสินค้าเข้าการจองที่ถูกยกเลิกได้");
+            }
+
+            // Additional validations can be added here
+            // e.g., check-out date, credit limit, etc.
+        }
+
+        /// <summary>
+        /// Validate if room charge operation is allowed for specific date
+        /// </summary>
+        public void ValidateRoomChargeAllowed(int reservationId, DateTime searchDate)
+        {
+            // Get reservation info for the specified date
+            var reservationInfo = _chargeDA.GetReservationById(reservationId, searchDate);
 
             if (reservationInfo.Rows.Count == 0)
             {
