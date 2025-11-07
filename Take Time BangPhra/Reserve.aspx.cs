@@ -1784,6 +1784,9 @@ namespace Take_Time_BangPhra
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                         createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                        uploadSlip(id);
                                                     }
                                                     else
                                                     {
@@ -1794,6 +1797,9 @@ namespace Take_Time_BangPhra
                                                             code2.Logs(conn, "Reserve RentMore - Manual Payment",
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
+
+                                                            // ✅ Upload slip even without receipt
+                                                            uploadSlip(id);
                                                         }
                                                         catch (Exception ex)
                                                         {
@@ -1813,7 +1819,20 @@ namespace Take_Time_BangPhra
                                                         Deposit,
                                                         TextBox6.Text
                                                     );
-                                                    Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text);
+
+                                                    // ✅ Reload page to show uploaded slip image (don't redirect to Confirmed yet)
+                                                    // This allows user to see the uploaded slip before confirming
+                                                    if (FileUpload1.HasFile)
+                                                    {
+                                                        // Reload the same rentmore page to show the slip
+                                                        Response.Redirect($"./Reserve?command=rentmore&id={id}&check={TextBox1.Text}", false);
+                                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                                    }
+                                                    else
+                                                    {
+                                                        Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text, false);
+                                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                                    }
                                                 }
                                             }
                                             else
@@ -2385,7 +2404,15 @@ namespace Take_Time_BangPhra
                                             if (CheckBox4.Checked == false)
                                             {
                                                 createReceipt(ID, Convert.ToDouble(TextBox5.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                uploadSlip(ID);
                                             }
+                                        }
+                                        else if (TextBox1.Text != "02" && CheckBox4.Checked == true)
+                                        {
+                                            // Manual payment - no receipt but slip uploaded
+                                            uploadSlip(ID);
                                         }
                                         msg += "\r\nหมายเหตุ:" + TextBox6.Text;
 
@@ -2433,15 +2460,36 @@ namespace Take_Time_BangPhra
 💬 หมายเหตุ: {TextBox6.Text}";
 
                                             var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
-                                            await bot.SendMessageAsync("-4969611371", message); 
-                                            
-                                            Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text + "&sendline=ok", false);
-                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            await bot.SendMessageAsync("-4969611371", message);
+
+                                            // ✅ Reload page to show uploaded slip image (don't redirect to Confirmed yet)
+                                            // This allows user to see the uploaded slip before confirming
+                                            if (FileUpload1.HasFile)
+                                            {
+                                                // Reload the same reserve page to show the slip
+                                                Response.Redirect($"./Reserve?command=reserve&date={TextBox12.Text}", false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
+                                            else
+                                            {
+                                                Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text + "&sendline=ok", false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
                                         }
                                         catch(Exception ex) {
                                             code2.Logs(conn, "Check Telegram", "Error"+ex, "SYSTEM");
-                                            Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text, false);
-                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+
+                                            // ✅ Reload page to show uploaded slip image even on Telegram error
+                                            if (FileUpload1.HasFile)
+                                            {
+                                                Response.Redirect($"./Reserve?command=reserve&date={TextBox12.Text}", false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
+                                            else
+                                            {
+                                                Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text, false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
                                         }
                                         //SendLineNotify("ลูกค้าจองห้องพักใหม่หมายเลขการจอง: "+Reservation_ID+"\r\nหมายเลขโทรศัพท์: "+ TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n"+msg);
 
