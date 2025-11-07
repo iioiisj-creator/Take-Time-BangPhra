@@ -208,6 +208,51 @@ namespace Take_Time_BangPhra
                 parameters);
         }
 
+        /// <summary>
+        /// Get reservation info by ID for a specific date (for guest selection with date filter)
+        /// </summary>
+        public DataTable GetReservationById(int reservationId, DateTime searchDate)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@reservationId", reservationId },
+                { "@searchDate", searchDate.Date }
+            };
+
+            // Same query as GetActiveGuestReservations(DateTime) but filtered by ID
+            return _code.DatabaseQuerySafe(_connectionString,
+                @"SELECT
+                    R.ID AS ReservationID,
+                    C.Name AS CustomerName,
+                    C.NickName AS CustomerNickName,
+                    C.MobilePhone AS CustomerPhone,
+                    R.CheckinDate AS CheckInDate,
+                    R.CheckoutDate AS CheckOutDate,
+                    R.Status,
+                    R.TotalPrice,
+                    R.Deposit AS TotalPaid,
+                    (R.TotalPrice - ISNULL(R.Deposit, 0)) AS RemainingBalance,
+                    dbo.fn_GetReservationRoomNames(R.ID) AS RoomNames,
+                    ISNULL(PC.PendingTotal, 0) AS PendingCharges,
+                    C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
+                    CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
+                    CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
+                FROM Reservation R
+                INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
+                LEFT JOIN (
+                    SELECT Reservation_ID, SUM(TotalAmount) AS PendingTotal
+                    FROM Reservation_Product_Charges
+                    WHERE Status = 'PENDING'
+                    GROUP BY Reservation_ID
+                ) PC ON R.ID = PC.Reservation_ID
+                WHERE
+                    R.ID = @reservationId
+                    AND CAST(@searchDate AS DATE) >= CAST(R.CheckinDate AS DATE)
+                    AND CAST(@searchDate AS DATE) <= CAST(R.CheckoutDate AS DATE)
+                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว')",
+                parameters);
+        }
+
         #endregion
 
         #region Charge Updates
