@@ -9,6 +9,7 @@ using System.Configuration;
 using System.IO;
 using Microsoft.Reporting.WebForms;
 using System.Globalization;
+using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Admin
 {
@@ -16,7 +17,6 @@ namespace Take_Time_BangPhra.Admin
     {
         _Default code = new _Default();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
-        Reservation rv = new Reservation();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -122,8 +122,8 @@ namespace Take_Time_BangPhra.Admin
                 CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
                 if (chk != null && chk.Checked)
                 {
-                    incentiveTotal += rv.TwoDecimalPoints(Convert.ToDouble(row.Cells[5].Text));
-                    dt.Rows.Add(i.ToString(), "ค่าแนะนำ ID:" + row.Cells[1].Text + " เข้าพัก:" + row.Cells[2].Text +" ห้องพัก:" + row.Cells[3].Text + " ราคาต่อคืน:" + row.Cells[4].Text, rv.TwoDecimalPoints(Convert.ToDouble(row.Cells[5].Text)), row.Cells[1].Text);
+                    incentiveTotal += NumberHelper.TwoDecimalPoints(Convert.ToDouble(row.Cells[5].Text));
+                    dt.Rows.Add(i.ToString(), "ค่าแนะนำ ID:" + row.Cells[1].Text + " เข้าพัก:" + row.Cells[2].Text +" ห้องพัก:" + row.Cells[3].Text + " ราคาต่อคืน:" + row.Cells[4].Text, NumberHelper.TwoDecimalPoints(Convert.ToDouble(row.Cells[5].Text)), row.Cells[1].Text);
                     i++;
                 }
                 else
@@ -132,8 +132,8 @@ namespace Take_Time_BangPhra.Admin
                 }
             }
 
-            vat = rv.TwoDecimalPoints((incentiveTotal * 0) / 100);
-            incentiveTotalExcludeVat = rv.TwoDecimalPoints(incentiveTotal - vat);
+            vat = NumberHelper.TwoDecimalPoints((incentiveTotal * 0) / 100);
+            incentiveTotalExcludeVat = NumberHelper.TwoDecimalPoints(incentiveTotal - vat);
 
             TextBox3.Text = incentiveTotalExcludeVat.ToString();
             TextBox4.Text = vat.ToString();

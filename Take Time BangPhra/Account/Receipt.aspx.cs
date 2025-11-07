@@ -15,6 +15,7 @@ using ECertificateAPI;
 using System.Net.Mail;
 using Take_Time_BangPhra.Admin;
 using iTextSharp.text.pdf.parser;
+using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Account.Report
 {
@@ -23,7 +24,6 @@ namespace Take_Time_BangPhra.Account.Report
         _Default code = new _Default();
         code code2 = new code();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
-        Reservation rv = new Reservation();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -1062,8 +1062,7 @@ namespace Take_Time_BangPhra.Account.Report
                                     string subject = "[" + docCreateThaiDate + "][INV][" + dtReceipt.Rows[0]["ID"].ToString() + "]";
                                     string body = "เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br /> หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />ขอแสดงความนับถือ<br /> หจก.แอม แฮปปี้เนส (Take Time) ";
 
-                                    Reservation rs = new Reservation();
-                                    rs.SendEmail(ConfigurationSettings.AppSettings["SMTP"].ToString(), Convert.ToInt32(ConfigurationSettings.AppSettings["SMTP_Port"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_EnableSsl"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_UseDefaultCredentials"].ToString()), ConfigurationSettings.AppSettings["Email_From"].ToString(), ConfigurationSettings.AppSettings["Email_Password_From"].ToString(), TextBox17.Text, ConfigurationSettings.AppSettings["Email_CC"].ToString(), subject, body, dataall);
+                                    NumberHelper.SendEmail(ConfigurationSettings.AppSettings["SMTP"].ToString(), Convert.ToInt32(ConfigurationSettings.AppSettings["SMTP_Port"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_EnableSsl"].ToString()), Convert.ToBoolean(ConfigurationSettings.AppSettings["SMTP_UseDefaultCredentials"].ToString()), ConfigurationSettings.AppSettings["Email_From"].ToString(), ConfigurationSettings.AppSettings["Email_Password_From"].ToString(), TextBox17.Text, ConfigurationSettings.AppSettings["Email_CC"].ToString(), subject, body, dataall);
 
 
                                 }

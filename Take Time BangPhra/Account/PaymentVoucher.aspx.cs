@@ -10,6 +10,7 @@ using System.IO;
 using Microsoft.Reporting.WebForms;
 using System.Globalization;
 using iTextSharp.text.pdf.parser;
+using Take_Time_BangPhra.Class;
 
 namespace Take_Time_BangPhra.Account.Report
 {
@@ -18,7 +19,6 @@ namespace Take_Time_BangPhra.Account.Report
 
         _Default code = new _Default();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
-        Reservation rv = new Reservation();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -187,7 +187,7 @@ namespace Take_Time_BangPhra.Account.Report
             if (TextBox1.Text.Length > 1 && TextBox2.Text.Length > 0)
             {
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
-                dtDetail.Rows.Add(dtDetail.Rows.Count+1,TextBox1.Text,rv.TwoDecimalPoints(Convert.ToDouble(TextBox2.Text)));
+                dtDetail.Rows.Add(dtDetail.Rows.Count+1,TextBox1.Text,NumberHelper.TwoDecimalPoints(Convert.ToDouble(TextBox2.Text)));
                 Session["dtDetail"] = (DataTable)dtDetail;
                 GridView1.DataSource = dtDetail;
                 GridView1.DataBind();
@@ -220,9 +220,9 @@ namespace Take_Time_BangPhra.Account.Report
                 AmountIncludeVat = totalAmount + vat;
             }
             
-            TextBox3.Text = (rv.TwoDecimalPoints(totalAmount)).ToString();
-            TextBox4.Text = (rv.TwoDecimalPoints(vat)).ToString();
-            TextBox6.Text = (rv.TwoDecimalPoints(AmountIncludeVat)).ToString();
+            TextBox3.Text = (NumberHelper.TwoDecimalPoints(totalAmount)).ToString();
+            TextBox4.Text = (NumberHelper.TwoDecimalPoints(vat)).ToString();
+            TextBox6.Text = (NumberHelper.TwoDecimalPoints(AmountIncludeVat)).ToString();
 
         }
 
