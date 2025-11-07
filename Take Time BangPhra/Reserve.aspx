@@ -1,4 +1,4 @@
-﻿<%@ Page MaintainScrollPositionOnPostback="true" Async="True" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Reserve.aspx.cs" Inherits="Take_Time_BangPhra.Reserve" %>
+﻿<%@ Page MaintainScrollPositionOnPostback="true" Async="True" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Reserve.aspx.cs" Inherits="Take_Time_BangPhra.Reserve" EnableEventValidation="false" %>
 <%@ Register assembly="Microsoft.ReportViewer.WebForms" namespace="Microsoft.Reporting.WebForms" tagprefix="rsweb" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style>
