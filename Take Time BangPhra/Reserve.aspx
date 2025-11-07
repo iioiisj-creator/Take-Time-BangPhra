@@ -630,8 +630,7 @@
                                 style="background-color: #f44336; padding: 6px 12px;"
                                 CommandName="DeleteCharge"
                                 CommandArgument='<%# Eval("ID") %>'
-                                Visible='<%# Eval("Status").ToString() == "PENDING" %>'
-                                OnClientClick="return confirm('⚠️ ต้องการลบรายการนี้?\n\n✅ สต๊อกสินค้าจะถูกคืน\n✅ ยอดรวมจะถูกลด\n\nคลิก OK เพื่อยืนยัน');" />
+                                Visible='<%# Eval("Status").ToString() == "PENDING" %>' />
                         </ItemTemplate>
                     </asp:TemplateField>
                 </Columns>
