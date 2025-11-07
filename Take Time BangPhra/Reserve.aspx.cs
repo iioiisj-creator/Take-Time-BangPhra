@@ -1024,18 +1024,32 @@ namespace Take_Time_BangPhra
                     checkcustype = 1;
                 }
 
-                // 🔧 FIX: Allow edit mode with just additional deposit (no room changes)
+                // 🔧 FIX: Allow edit mode with or without additional deposit
+                bool isEditMode = (command == "edit");
                 bool isAdditionalDepositOnly = (command == "edit" && CheckBox2.Checked && checkgrid1 == 0);
                 bool hasRoomSelection = checkgrid1 > 0;
+                bool isEditWithoutPayment = (command == "edit" && !CheckBox2.Checked);
 
                 if (TextBox1.Text.Length > 0 && checkcustype == 1)
                 {
-                    // ✅ Allow: 1) Room changes, OR 2) Additional deposit only
-                    if (hasRoomSelection || isAdditionalDepositOnly)
+                    // ✅ Allow: 1) Room changes, OR 2) Additional deposit only, OR 3) Edit without payment
+                    if (hasRoomSelection || isAdditionalDepositOnly || isEditWithoutPayment)
                     {
-                        if (deposit >= 0 || TextBox1.Text == "02" || CheckBox2.Checked == true)
+                        if (deposit >= 0 || TextBox1.Text == "02" || CheckBox2.Checked == true || isEditWithoutPayment)
                         {
-                            if ((FileUpload1.HasFile || Image1.ImageUrl != "./Images/บัญชี.png" || TextBox1.Text == "02" || DropDownList2.SelectedItem.Text == "เงินสด") && checkpaymentselect == 0)
+                            // 🔧 Check slip only if additional deposit is checked
+                            bool needSlipValidation = (command == "edit" && CheckBox2.Checked) ||
+                                                     (command == "reserve") ||
+                                                     (command == "checkin" && CheckBox2.Checked) ||
+                                                     (command == "rentmore" && CheckBox2.Checked);
+
+                            bool hasValidPaymentProof = FileUpload1.HasFile ||
+                                                       Image1.ImageUrl != "./Images/บัญชี.png" ||
+                                                       TextBox1.Text == "02" ||
+                                                       DropDownList2.SelectedItem.Text == "เงินสด";
+
+                            // ✅ Skip slip validation for edit without additional deposit
+                            if ((!needSlipValidation || hasValidPaymentProof) && checkpaymentselect == 0)
                             {
                                 try
                                 {
@@ -1506,6 +1520,66 @@ namespace Take_Time_BangPhra
                                                     uploadSlip(id, null);
                                                 }
                                             }
+
+                                            // 💰 Calculate NEW total price from ALL selected rooms and items
+                                            decimal calculatedTotalPrice = 0;
+
+                                            try
+                                            {
+                                                // Calculate from ALL selected accommodations (not just new ones)
+                                                foreach (GridViewRow row in GridView1.Rows)
+                                                {
+                                                    CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                                        decimal pricePerUnit = Convert.ToDecimal(row.Cells[4].Text);
+                                                        int stayDays = Convert.ToInt32(DropDownList1.SelectedValue);
+
+                                                        if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                        {
+                                                            // คิดตามคน
+                                                            int peopleCount = Convert.ToInt32(txtPeopleStay.Text);
+                                                            calculatedTotalPrice += pricePerUnit * peopleCount * stayDays;
+                                                        }
+                                                        else
+                                                        {
+                                                            // คิดตามห้อง/คืน
+                                                            calculatedTotalPrice += pricePerUnit * stayDays;
+                                                        }
+                                                    }
+                                                }
+
+                                                // Calculate from ALL selected items
+                                                foreach (GridViewRow row in GridView2.Rows)
+                                                {
+                                                    CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        TextBox txtAmount = (row.Cells[2].FindControl("txtAmount") as TextBox);
+                                                        decimal pricePerUnit = Convert.ToDecimal(row.Cells[4].Text);
+                                                        int itemAmount = Convert.ToInt32(txtAmount.Text);
+                                                        int stayDays = Convert.ToInt32(DropDownList1.SelectedValue);
+
+                                                        calculatedTotalPrice += pricePerUnit * itemAmount * stayDays;
+                                                    }
+                                                }
+
+                                                // 📝 Log calculated price
+                                                code2.Logs(conn, "Reserve Edit - Price Calculation",
+                                                    $"Reservation ID: {id}, Old Price: {TextBox4.Text}, " +
+                                                    $"New Calculated Price: {calculatedTotalPrice}",
+                                                    Session["User"]?.ToString());
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                code2.Logs(conn, "Reserve Edit - Price Calculation Error",
+                                                    $"Reservation ID: {id}, Error: {ex.Message}, Using TextBox4: {TextBox4.Text}",
+                                                    Session["User"]?.ToString());
+                                                // Fallback to TextBox4 if calculation fails
+                                                calculatedTotalPrice = Convert.ToDecimal(TextBox4.Text);
+                                            }
+
                                             try
                                             {
                                                 // ✅ FIXED: Use parameterized query to prevent SQL Injection
@@ -1518,7 +1592,7 @@ namespace Take_Time_BangPhra
                                                         checkinDate.Value,
                                                         checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)),
                                                         Convert.ToInt32(DropDownList1.SelectedValue),
-                                                        Convert.ToDecimal(TextBox4.Text),
+                                                        calculatedTotalPrice,  // ✅ Use calculated price
                                                         Deposit,
                                                         TextBox6.Text
                                                     );
@@ -1539,7 +1613,7 @@ namespace Take_Time_BangPhra
                                                         DateTime.Parse("1990-01-01"),
                                                         DateTime.Parse("1990-01-01"),
                                                         Convert.ToInt32(DropDownList1.SelectedValue),
-                                                        Convert.ToDecimal(TextBox4.Text),
+                                                        calculatedTotalPrice,  // ✅ Use calculated price
                                                         Deposit,
                                                         TextBox6.Text
                                                     );
@@ -1793,25 +1867,16 @@ namespace Take_Time_BangPhra
                                             }
                                             catch { }
 
-                                            // ✅ Check if this was an additional deposit payment
-                                            if (CheckBox2.Checked && !string.IsNullOrEmpty(TextBox10.Text) && Convert.ToInt32(TextBox10.Text) > 0)
-                                            {
-                                                // 💰 มัดจำเพิ่มสำเร็จ → ไปหน้า ReserveTable
-                                                Response.Redirect("/ReserveTable", false);
-                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                            }
-                                            else if (FileUpload1.HasFile)
-                                            {
-                                                // 📄 มีการอัพโหลดสลิป (ไม่ใช่มัดจำเพิ่ม) → Reload เพื่อแสดงสลิป
-                                                Response.Redirect($"./Reserve?command=edit&id={id}&check={TextBox1.Text}", false);
-                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                            }
-                                            else
-                                            {
-                                                // 📝 แก้ไขธรรมดา → ไปหน้า Confirmed
-                                                Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text, false);
-                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                            }
+                                            // ✅ Edit mode always redirects to ReserveTable
+                                            // 📝 Log edit completion
+                                            code2.Logs(conn, "Reserve Edit - Completed",
+                                                $"Reservation ID: {id}, HasAdditionalDeposit: {CheckBox2.Checked}, " +
+                                                $"TotalPrice: {TextBox4.Text}, Deposit: {Deposit}",
+                                                Session["User"]?.ToString());
+
+                                            // 📊 All edit operations redirect to ReserveTable
+                                            Response.Redirect("/ReserveTable", false);
+                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
 
 
 
