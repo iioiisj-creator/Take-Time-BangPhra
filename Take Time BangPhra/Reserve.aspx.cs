@@ -386,8 +386,27 @@ namespace Take_Time_BangPhra
                                 ReserveDate = dtReservation.Rows[0]["CheckinDate"].ToString();
                             }
                         }
-                        if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
+                        // 🔧 FIX: On PostBack, use price from GridView (may be edited by admin)
+                        // Only query DB price on initial load or when CheckBox6 unchecked AND not PostBack
+                        bool useGridViewPrice = IsPostBack || CheckBox6.Checked == true;
+
+                        if (useGridViewPrice)
                         {
+                            // ✅ Use current price from GridView (preserves manual edits)
+                            double gridPrice = 0;
+                            if (double.TryParse(row.Cells[4].Text, out gridPrice))
+                            {
+                                PriceAccom += gridPrice * Convert.ToInt32(DropDownList1.SelectedValue);
+                            }
+                            else
+                            {
+                                // Fallback to 0 if invalid
+                                PriceAccom += 0;
+                            }
+                        }
+                        else if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
+                        {
+                            // Initial load: Multi-day reservation, query DB for holiday prices
                             double PriceThisAccom = 0;
                             for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
                             {
@@ -398,12 +417,14 @@ namespace Take_Time_BangPhra
                         }
                         else if(CheckBox6.Checked == false)
                         {
+                            // Initial load: Single-day reservation, query DB for price
                             double PriceThisAccom = Convert.ToInt32(AccomPrice(dtAccommodation.Rows[i]["ID"].ToString(), code2.ParseDate(ReserveDate).Value));
                             PriceAccom += PriceThisAccom;
                             GridView1.Rows[i].Cells[4].Text = PriceThisAccom.ToString();
                         }
                         else
                         {
+                            // Permission mode: Use GridView price
                             PriceAccom += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
                         }
                         if (Convert.ToInt32(txtPeopleStay.Text) == 0)
