@@ -1747,8 +1747,20 @@ namespace Take_Time_BangPhra
                                                 }
                                             }
                                             catch { }
-                                            Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text,false);
-                                            HttpContext.Current.ApplicationInstance.CompleteRequest();
+
+                                            // ✅ Reload page to show uploaded slip image (don't redirect to Confirmed yet)
+                                            // This allows user to see the uploaded slip before confirming
+                                            if (FileUpload1.HasFile)
+                                            {
+                                                // Reload the same edit page to show the slip
+                                                Response.Redirect($"./Reserve?command=edit&id={id}&check={TextBox1.Text}", false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
+                                            else
+                                            {
+                                                Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text,false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
 
 
 
