@@ -1911,6 +1911,9 @@ namespace Take_Time_BangPhra
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                     createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                    // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                    uploadSlip(id);
                                                 }
                                                 else
                                                 {
@@ -1921,6 +1924,9 @@ namespace Take_Time_BangPhra
                                                         code2.Logs(conn, "Reserve CheckIn - Manual Payment (No Deposit)",
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
+
+                                                        // ✅ Upload slip even without receipt
+                                                        uploadSlip(id);
                                                     }
                                                     catch (Exception ex)
                                                     {
@@ -1956,6 +1962,9 @@ namespace Take_Time_BangPhra
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                        uploadSlip(id);
                                                     }
                                                     else
                                                     {
@@ -1966,6 +1975,9 @@ namespace Take_Time_BangPhra
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment (Exact Deposit)",
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
+
+                                                            // ✅ Upload slip even without receipt
+                                                            uploadSlip(id);
                                                         }
                                                         catch (Exception ex)
                                                         {
@@ -1989,6 +2001,9 @@ namespace Take_Time_BangPhra
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                         createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                        uploadSlip(id);
                                                     }
                                                     else
                                                     {
@@ -1999,6 +2014,9 @@ namespace Take_Time_BangPhra
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment (With Discount)",
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
+
+                                                            // ✅ Upload slip even without receipt
+                                                            uploadSlip(id);
                                                         }
                                                         catch (Exception ex)
                                                         {
