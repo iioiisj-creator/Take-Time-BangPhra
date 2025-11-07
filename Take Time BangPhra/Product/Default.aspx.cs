@@ -345,6 +345,46 @@ namespace Take_Time_BangPhra.Product
             DropDownList5.DataBind();
         }
 
+        /// <summary>
+        /// Load address dropdowns by province/district/subdistrict (fallback when postal code is not available)
+        /// </summary>
+        private void LoadAddressDropdownsByLocation(string province, string district, string subDistrict)
+        {
+            try
+            {
+                // Build queries based on available data
+                string provinceQuery = "SELECT DISTINCT [Province] FROM [Address] WHERE 1=1";
+                string districtQuery = "SELECT DISTINCT [District] FROM [Address] WHERE 1=1";
+                string subDistrictQuery = "SELECT DISTINCT [SubDistrict] FROM [Address] WHERE 1=1";
+
+                // Add conditions based on available data
+                if (!string.IsNullOrEmpty(province))
+                {
+                    districtQuery += $" AND Province = N'{province.Replace("'", "''")}'";
+                    subDistrictQuery += $" AND Province = N'{province.Replace("'", "''")}'";
+                }
+
+                if (!string.IsNullOrEmpty(district))
+                {
+                    subDistrictQuery += $" AND District = N'{district.Replace("'", "''")}'";
+                }
+
+                provinceQuery += " ORDER BY Province ASC";
+                districtQuery += " ORDER BY District ASC";
+                subDistrictQuery += " ORDER BY SubDistrict ASC";
+
+                DataTable dtProvince = code.DatabaseQuery(conn, provinceQuery);
+                DataTable dtDistrict = code.DatabaseQuery(conn, districtQuery);
+                DataTable dtSubDistrict = code.DatabaseQuery(conn, subDistrictQuery);
+
+                if (dtProvince.Rows.Count > 0 || dtDistrict.Rows.Count > 0 || dtSubDistrict.Rows.Count > 0)
+                {
+                    LoadAddressDropdowns(dtProvince, dtDistrict, dtSubDistrict);
+                }
+            }
+            catch { }
+        }
+
         protected void DropDownList1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if(DropDownList1.SelectedValue == "1")
@@ -380,9 +420,13 @@ namespace Take_Time_BangPhra.Product
                 try
                 {
                     DropDownList2.ClearSelection();
-                    DropDownList2.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()).Selected = true;
-                    DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString()));
-                    DropDownList2.DataBind();
+                    var customerTypeItem = DropDownList2.Items.FindByValue(dtCustomer.Rows[0]["Customer_Type_ID"].ToString());
+                    if (customerTypeItem != null)
+                    {
+                        customerTypeItem.Selected = true;
+                        DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(customerTypeItem);
+                    }
+                    // ❌ REMOVED: DropDownList2.DataBind() - this was clearing the selection!
                 }
                 catch
                 {
@@ -391,50 +435,80 @@ namespace Take_Time_BangPhra.Product
 
                 try //Address
                 {
-                    // ✅ Step 1: Set postal code first
-                    string postalCode = dtCustomer.Rows[0]["PostalCode"]?.ToString() ?? "";
+                    // Get address data from customer record
+                    string postalCode = dtCustomer.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
+                    string province = dtCustomer.Rows[0]["Province"]?.ToString()?.Trim() ?? "";
+                    string district = dtCustomer.Rows[0]["District"]?.ToString()?.Trim() ?? "";
+                    string subDistrict = dtCustomer.Rows[0]["SubDistrict"]?.ToString()?.Trim() ?? "";
+
+                    // ✅ Step 1: Set postal code
                     TextBox9.Text = postalCode;
 
-                    // ✅ Step 2: Load dropdowns based on postal code (bypasses Button2.Enabled check)
-                    LoadAddressDropdownsByPostalCode(postalCode);
+                    // ✅ Step 2: Load dropdowns (prefer postal code, fallback to address values)
+                    bool dropdownsPopulated = false;
 
-                    // ✅ Step 3: Now select the correct values from the populated dropdowns
-                    try
+                    // Try loading by postal code first (most accurate)
+                    if (!string.IsNullOrEmpty(postalCode) && postalCode.Length == 5)
                     {
-                        DropDownList3.ClearSelection();
-                        var provinceItem = DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString());
-                        if (provinceItem != null)
+                        LoadAddressDropdownsByPostalCode(postalCode);
+                        // Check if any items were added
+                        if (DropDownList3.Items.Count > 0)
                         {
-                            provinceItem.Selected = true;
-                            DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(provinceItem);
+                            dropdownsPopulated = true;
                         }
                     }
-                    catch { }
 
-                    try
+                    // If postal code didn't work, try loading by province/district/subdistrict
+                    if (!dropdownsPopulated && !string.IsNullOrEmpty(province))
                     {
-                        DropDownList4.ClearSelection();
-                        var districtItem = DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString());
-                        if (districtItem != null)
-                        {
-                            districtItem.Selected = true;
-                            DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(districtItem);
-                        }
+                        LoadAddressDropdownsByLocation(province, district, subDistrict);
                     }
-                    catch { }
 
-                    try
+                    // ✅ Step 3: Select the correct values from the populated dropdowns
+                    if (!string.IsNullOrEmpty(province))
                     {
-                        DropDownList5.ClearSelection();
-                        var subdistrictItem = DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString());
-                        if (subdistrictItem != null)
+                        try
                         {
-                            subdistrictItem.Selected = true;
-                            DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(subdistrictItem);
+                            DropDownList3.ClearSelection();
+                            var provinceItem = DropDownList3.Items.FindByText(province);
+                            if (provinceItem != null)
+                            {
+                                provinceItem.Selected = true;
+                                DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(provinceItem);
+                            }
                         }
+                        catch { }
                     }
-                    catch { }
 
+                    if (!string.IsNullOrEmpty(district))
+                    {
+                        try
+                        {
+                            DropDownList4.ClearSelection();
+                            var districtItem = DropDownList4.Items.FindByText(district);
+                            if (districtItem != null)
+                            {
+                                districtItem.Selected = true;
+                                DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(districtItem);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (!string.IsNullOrEmpty(subDistrict))
+                    {
+                        try
+                        {
+                            DropDownList5.ClearSelection();
+                            var subdistrictItem = DropDownList5.Items.FindByText(subDistrict);
+                            if (subdistrictItem != null)
+                            {
+                                subdistrictItem.Selected = true;
+                                DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(subdistrictItem);
+                            }
+                        }
+                        catch { }
+                    }
 
                     if (dtCustomer.Rows[0]["Customer_Type_ID"].ToString() == "1")
                     {
