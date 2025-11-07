@@ -503,7 +503,8 @@ namespace Take_Time_BangPhra
             Session["totalPrice"] = totalPrice;
             Session["PendingCharges"] = PendingCharges;
 
-            TextBox4.Text = Session["totalPrice"].ToString();
+            // ⚠️ DON'T set TextBox4.Text here - it will be set later in edit/checkin/rentmore section
+            // TextBox4.Text = Session["totalPrice"].ToString();
 
             if ((command == "edit" || command == "checkin" || command == "rentmore") && Session["permission"].ToString() == "True")
             {
@@ -532,6 +533,9 @@ namespace Take_Time_BangPhra
                     // 🔧 FIX: On PostBack, ALWAYS use calculated price from GridView
                     // This ensures that if user edits prices in GridView and then ticks payment checkbox,
                     // the edited prices are preserved (not overwritten by DB prices)
+
+                    // 🎯 IMPORTANT: Use calculatedTotalPrice from Session["totalPrice"]
+                    // This was just calculated above (line 502) from current GridView values
                     TextBox4.Text = calculatedTotalPrice.ToString();
                     Session["OldPrice"] = calculatedTotalPrice.ToString();
 
@@ -808,6 +812,11 @@ namespace Take_Time_BangPhra
                 }
                 // Note: TextBox4, TextBox5, Label7 are now loaded outside if (!IsPostBack) above
 
+            }
+            else
+            {
+                // 🔧 For reserve mode (new reservation), use calculated totalPrice
+                TextBox4.Text = Session["totalPrice"]?.ToString() ?? "0";
             }
 
         }
