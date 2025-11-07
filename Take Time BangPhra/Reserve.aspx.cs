@@ -492,8 +492,30 @@ namespace Take_Time_BangPhra
                 DataTable dtReservation = reservationDA.GetReservationByIdAndPhone(Convert.ToInt32(id), check);
                 DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
 
-                // 💰 Always load current payment amounts (needed for PostBack validation)
-                TextBox4.Text = dtCustomer.Rows[0]["TotalPrice"].ToString();
+                // 💰 Load payment amounts (needed for PostBack validation)
+                // ✅ FIX: Use calculated totalPrice on PostBack (when user changes rooms)
+                //         Only use DB price on initial load
+                decimal dbTotalPrice = Convert.ToDecimal(dtCustomer.Rows[0]["TotalPrice"]);
+                decimal calculatedTotalPrice = Convert.ToDecimal(Session["totalPrice"]);
+
+                if (!IsPostBack)
+                {
+                    // First load: Use database price
+                    TextBox4.Text = dbTotalPrice.ToString();
+                    Session["OldPrice"] = dbTotalPrice.ToString();
+                }
+                else if (calculatedTotalPrice != dbTotalPrice)
+                {
+                    // PostBack with different price: User changed rooms/items
+                    // Keep calculated price (already set above)
+                    Session["OldPrice"] = calculatedTotalPrice.ToString();
+                }
+                else
+                {
+                    // PostBack with same price: Keep database price
+                    TextBox4.Text = dbTotalPrice.ToString();
+                    Session["OldPrice"] = dbTotalPrice.ToString();
+                }
 
                 // 💰 Get actual total paid amount from Payment_History instead of Deposit column
                 decimal totalPaid = 0;
@@ -1004,6 +1026,42 @@ namespace Take_Time_BangPhra
                                         int totalnew = 0;
                                         int checkoldAccomRemoved = 0;
                                         List<string> cmds = new List<string>();
+
+                                        // ✅ FIX: Delete old accommodations that are unchecked
+                                        for (int x = 0; x < dtoldAccom.Rows.Count; x++)
+                                        {
+                                            bool stillChecked = false;
+                                            string oldAccomId = dtoldAccom.Rows[x]["Accommodation_ID"].ToString();
+
+                                            // Check if this old room is still checked
+                                            foreach (GridViewRow row in GridView1.Rows)
+                                            {
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                if (chk != null && chk.Checked)
+                                                {
+                                                    if (dtAccommodation.Rows[row.RowIndex]["ID"].ToString() == oldAccomId)
+                                                    {
+                                                        stillChecked = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            // If old room is no longer checked, DELETE it
+                                            if (!stillChecked)
+                                            {
+                                                if (command == "edit")
+                                                {
+                                                    reservationDA.DeleteReservationAccommodation(
+                                                        Convert.ToInt32(id),
+                                                        Convert.ToInt32(oldAccomId)
+                                                    );
+                                                    msg += $"🗑️ ยกเลิกห้อง: {dtoldAccom.Rows[x]["AccomName"]}\r\n";
+                                                    checkoldAccomRemoved++;
+                                                }
+                                            }
+                                        }
+
                                         for (int x = 0; x < dtoldAccom.Rows.Count; x++)
                                         {
                                             foreach (GridViewRow row in GridView1.Rows)
@@ -1307,7 +1365,9 @@ namespace Take_Time_BangPhra
                                             TextBox18.Text  // Branch_Number
                                         );
 
-                                        uploadSlip(id);
+                                        // ⚠️ uploadSlip moved AFTER createReceipt to ensure Session["PaymentHistoryId"] exists
+                                        // uploadSlip(id);  // MOVED DOWN
+
                                         if (command == "edit")
                                         {
 
@@ -1322,6 +1382,9 @@ namespace Take_Time_BangPhra
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
                                                     createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                    // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
+                                                    uploadSlip(id);
                                                 }
                                                 else
                                                 {
@@ -1332,6 +1395,9 @@ namespace Take_Time_BangPhra
                                                         code2.Logs(conn, "Reserve Edit - Manual Payment",
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
+
+                                                        // ✅ Upload slip even without receipt
+                                                        uploadSlip(id);
                                                     }
                                                     catch (Exception ex)
                                                     {
@@ -1343,7 +1409,12 @@ namespace Take_Time_BangPhra
                                             }
                                             else
                                             {
-
+                                                // ✅ No payment checkbox - but might have slip from earlier
+                                                // Upload slip anyway if file exists
+                                                if (FileUpload1.HasFile)
+                                                {
+                                                    uploadSlip(id);
+                                                }
                                             }
                                             try
                                             {
