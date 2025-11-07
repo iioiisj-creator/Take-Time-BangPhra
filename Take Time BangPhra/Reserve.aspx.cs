@@ -5979,16 +5979,14 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                         }
                     }
 
-                    // Show success message
-                    ClientScript.RegisterStartupScript(this.GetType(), "success",
-                        "alert('✅ ลบรายการเรียบร้อย\\n\\n✅ สต๊อกสินค้าถูกคืนแล้ว\\n✅ ยอดรวมถูกปรับลดแล้ว');", true);
+                    // Log success (removed alert to prevent blocking postback)
+                    code2.Logs(conn, "gvProductCharges_RowCommand Success",
+                        $"Deleted ChargeID: {chargeId}",
+                        adminId?.ToString() ?? "SYSTEM");
                 }
                 catch (Exception ex)
                 {
-                    // Show error message
-                    ClientScript.RegisterStartupScript(this.GetType(), "error",
-                        $"alert('❌ เกิดข้อผิดพลาด: {ex.Message.Replace("'", "\\'")}');", true);
-
+                    // Log error (removed alert to prevent blocking postback)
                     code2.Logs(conn, "gvProductCharges_RowCommand Error",
                         $"ChargeID: {e.CommandArgument}, Error: {ex.Message}",
                         Session["User"]?.ToString() ?? "SYSTEM");
