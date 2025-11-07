@@ -3245,7 +3245,7 @@ namespace Take_Time_BangPhra
                     var paymentParams = new Dictionary<string, object>
                     {
                         { "@ReservationId", Reservation_ID },
-                        { "@PaymentDate", docDate },
+                        { "@PaymentDate", DateTime.Now },  // Use actual payment date (today), not docDate (checkin date)
                         { "@PaymentAmount", (decimal)Total_Amount },
                         { "@PaymentType", paymentType },
                         { "@PaymentMethod", paymentMethod },

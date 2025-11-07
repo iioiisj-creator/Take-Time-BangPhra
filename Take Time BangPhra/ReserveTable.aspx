@@ -169,10 +169,6 @@
                                                 CommandArgument='<%# Eval("ID") %>' CommandName="RentMore"
                                                 CssClass="btn btn-info btn-sm mb-1" />
 
-                                            <asp:Button ID="btnPayMore" runat="server" Text="จ่ายเงินเพิ่ม"
-                                                CommandArgument='<%# Eval("ID") %>' CommandName="PayMore"
-                                                CssClass="btn btn-success btn-sm mb-1" />
-
                                             <asp:Button ID="btnCheckout" runat="server" Text="เช็คเอาท์"
                                                 CommandArgument='<%# Eval("ID") %>' CommandName="Checkout"
                                                 CssClass="btn btn-danger btn-sm mb-1"
