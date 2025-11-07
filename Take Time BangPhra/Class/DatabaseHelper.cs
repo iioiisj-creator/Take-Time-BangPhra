@@ -27,6 +27,14 @@ namespace Take_Time_BangPhra.Helpers
             get { return _connectionString; }
         }
 
+        /// <summary>
+        /// Gets the default connection string from configuration
+        /// </summary>
+        public static string GetConnectionString()
+        {
+            return ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
+        }
+
         public int ExecuteInsert(string sqlCommand)
         {
             int id = 0;
