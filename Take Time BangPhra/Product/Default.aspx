@@ -248,7 +248,7 @@ box-shadow: 0 0 7px 3px #e5e5e5;}
          <td class="auto-style1" style="vertical-align: top; padding-top: 15px;">
              โหมดการชำระเงิน: </td>
          <td class="auto-style2">
-             <asp:RadioButtonList ID="rblChargeMode" runat="server" RepeatDirection="Horizontal">
+             <asp:RadioButtonList ID="rblChargeMode" runat="server" RepeatDirection="Horizontal" AutoPostBack="True" OnSelectedIndexChanged="rblChargeMode_SelectedIndexChanged">
                  <asp:ListItem Value="ROOM_CHARGE" Selected="True" style="margin-right: 20px;">
                      <strong>ชาร์จเข้าห้อง</strong> (ชำระทีหลัง)
                  </asp:ListItem>

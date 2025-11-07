@@ -187,10 +187,70 @@ namespace Take_Time_BangPhra.Product
             {
                 CheckBox1.Checked = true;
                 Panel1.Visible = true;
+
+                // ✅ Auto-fill customer data from selected guest reservation
+                if (ddlGuestReservation.SelectedValue != "0")
+                {
+                    int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
+                    FillCustomerDataFromReservation(reservationId);
+                }
             }
             else
             {
                 Panel1.Visible = false;
+            }
+        }
+
+        /// <summary>
+        /// Fill customer data from reservation for tax invoice
+        /// </summary>
+        private void FillCustomerDataFromReservation(int reservationId)
+        {
+            try
+            {
+                var dt = _roomChargeDA.GetReservationById(reservationId);
+
+                if (dt.Rows.Count > 0)
+                {
+                    var row = dt.Rows[0];
+                    string customerPhone = row["CustomerPhone"]?.ToString() ?? "";
+
+                    if (!string.IsNullOrEmpty(customerPhone))
+                    {
+                        TextBox3.Text = customerPhone;
+                        fillData($"SELECT * FROM [Customer] WHERE MobilePhone = '{customerPhone}'");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't break the flow
+                code.Logs(conn, "Fill Customer Data Error", ex.Message, "SYSTEM");
+            }
+        }
+
+        /// <summary>
+        /// Charge mode changed - enable/disable payment method dropdown
+        /// </summary>
+        protected void rblChargeMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (rblChargeMode.SelectedValue == "ROOM_CHARGE")
+            {
+                // ชาร์จเข้าห้อง - ไม่ต้องเลือกวิธีชำระตอนนี้
+                DropDownList1.Enabled = false;
+                DropDownList1.SelectedIndex = 0; // Reset to default
+                CheckBox1.Enabled = false;
+                CheckBox1.Checked = false;
+                CheckBox2.Enabled = false;
+                CheckBox2.Checked = false;
+                Panel1.Visible = false;
+            }
+            else // PAY_NOW
+            {
+                // ชำระทันที - ต้องเลือกวิธีชำระ
+                DropDownList1.Enabled = true;
+                CheckBox1.Enabled = true;
+                CheckBox2.Enabled = true;
             }
         }
 
@@ -1081,16 +1141,14 @@ namespace Take_Time_BangPhra.Product
                 // Default to Room Charge mode
                 rblChargeMode.SelectedValue = "ROOM_CHARGE";
 
-                // Disable payment method selection when room charge mode is active
-                if (rblChargeMode.SelectedValue == "ROOM_CHARGE")
-                {
-                    DropDownList1.Enabled = false;
-                    DropDownList1.SelectedIndex = 0; // Reset to default
-                }
-                else
-                {
-                    DropDownList1.Enabled = true;
-                }
+                // ✅ Disable payment controls when room charge mode is active
+                DropDownList1.Enabled = false;
+                DropDownList1.SelectedIndex = 0; // Reset to default
+                CheckBox1.Enabled = false;
+                CheckBox1.Checked = false;
+                CheckBox2.Enabled = false;
+                CheckBox2.Checked = false;
+                Panel1.Visible = false;
             }
             else
             {
@@ -1098,6 +1156,8 @@ namespace Take_Time_BangPhra.Product
                 trChargeMode.Visible = false;
                 trGuestInfo.Visible = false;
                 DropDownList1.Enabled = true;
+                CheckBox1.Enabled = true;
+                CheckBox2.Enabled = true;
                 lblGuestInfo.Text = "";
             }
         }
