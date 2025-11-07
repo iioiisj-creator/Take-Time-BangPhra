@@ -975,7 +975,7 @@ namespace Take_Time_BangPhra
                 }
                 catch { }
                 int checkgrid1 = 0;
-                
+
                 foreach (GridViewRow row in GridView1.Rows)
                 {
                     CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
@@ -993,7 +993,10 @@ namespace Take_Time_BangPhra
                         if (DropDownList2.SelectedIndex == 0)
                         {
                             checkpaymentselect = 1;
-                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวิธีชำระเงิน');", true);
+                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณาเลือกวิธีชำระเงิน (ธนาคาร/เงินสด)\\nเพื่อบันทึกการชำระเงิน');", true);
+                            code2.Logs(conn, "Reserve Validation Error",
+                                $"Command: {command}, Reservation ID: {id}, Error: Payment method not selected",
+                                Session["User"]?.ToString());
                         }
                         else
                         {
@@ -1021,9 +1024,14 @@ namespace Take_Time_BangPhra
                     checkcustype = 1;
                 }
 
+                // 🔧 FIX: Allow edit mode with just additional deposit (no room changes)
+                bool isAdditionalDepositOnly = (command == "edit" && CheckBox2.Checked && checkgrid1 == 0);
+                bool hasRoomSelection = checkgrid1 > 0;
+
                 if (TextBox1.Text.Length > 0 && checkcustype == 1)
                 {
-                    if (checkgrid1 > 0)
+                    // ✅ Allow: 1) Room changes, OR 2) Additional deposit only
+                    if (hasRoomSelection || isAdditionalDepositOnly)
                     {
                         if (deposit >= 0 || TextBox1.Text == "02" || CheckBox2.Checked == true)
                         {
@@ -1415,18 +1423,55 @@ namespace Take_Time_BangPhra
 
                                         if (command == "edit")
                                         {
+                                            // 📝 Log edit mode entry
+                                            code2.Logs(conn, "Reserve Edit Mode",
+                                                $"Reservation ID: {id}, CheckBox2: {CheckBox2.Checked}, TextBox10: {TextBox10.Text}, FileUpload: {FileUpload1.HasFile}",
+                                                Session["User"]?.ToString());
 
                                             int Deposit = Convert.ToInt32(TextBox5.Text);
                                             if (CheckBox2.Checked == true && TextBox1.Text != "02")
                                             {
-                                                Deposit += Convert.ToInt32(TextBox10.Text);
+                                                int additionalDeposit = 0;
+                                                try
+                                                {
+                                                    additionalDeposit = Convert.ToInt32(TextBox10.Text);
+                                                }
+                                                catch
+                                                {
+                                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                                                        "alert('⚠️ กรุณากรอกยอดมัดจำเพิ่มให้ถูกต้อง');", true);
+                                                    code2.Logs(conn, "Reserve Edit Error",
+                                                        $"Reservation ID: {id}, Error: Invalid additional deposit amount: {TextBox10.Text}",
+                                                        Session["User"]?.ToString());
+                                                    return;
+                                                }
+
+                                                if (additionalDeposit <= 0)
+                                                {
+                                                    ClientScript.RegisterStartupScript(this.GetType(), "myalert",
+                                                        "alert('⚠️ ยอดมัดจำเพิ่มต้องมากกว่า 0 บาท');", true);
+                                                    return;
+                                                }
+
+                                                Deposit += additionalDeposit;
                                                 IsDeposit = true;
+
+                                                // 📝 Log before receipt creation
+                                                code2.Logs(conn, "Reserve Edit - Creating Additional Deposit Receipt",
+                                                    $"Reservation ID: {id}, Amount: {additionalDeposit}, CheckBox4: {CheckBox4.Checked}",
+                                                    Session["User"]?.ToString());
+
                                                 if (CheckBox4.Checked == false)
                                                 {
                                                     // 🏨 Add product charges to receipt
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                    string receiptId = createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    string receiptId = createReceipt(id, Convert.ToDouble(additionalDeposit), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+
+                                                    // 📝 Log after receipt creation
+                                                    code2.Logs(conn, "Reserve Edit - Receipt Created",
+                                                        $"Reservation ID: {id}, Receipt ID: {receiptId}",
+                                                        Session["User"]?.ToString());
 
                                                     // ✅ Upload slip AFTER createReceipt with Receipt_ID
                                                     uploadSlip(id, receiptId);
@@ -1748,17 +1793,23 @@ namespace Take_Time_BangPhra
                                             }
                                             catch { }
 
-                                            // ✅ Reload page to show uploaded slip image (don't redirect to Confirmed yet)
-                                            // This allows user to see the uploaded slip before confirming
-                                            if (FileUpload1.HasFile)
+                                            // ✅ Check if this was an additional deposit payment
+                                            if (CheckBox2.Checked && !string.IsNullOrEmpty(TextBox10.Text) && Convert.ToInt32(TextBox10.Text) > 0)
                                             {
-                                                // Reload the same edit page to show the slip
+                                                // 💰 มัดจำเพิ่มสำเร็จ → ไปหน้า ReserveTable
+                                                Response.Redirect("/ReserveTable", false);
+                                                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                                            }
+                                            else if (FileUpload1.HasFile)
+                                            {
+                                                // 📄 มีการอัพโหลดสลิป (ไม่ใช่มัดจำเพิ่ม) → Reload เพื่อแสดงสลิป
                                                 Response.Redirect($"./Reserve?command=edit&id={id}&check={TextBox1.Text}", false);
                                                 HttpContext.Current.ApplicationInstance.CompleteRequest();
                                             }
                                             else
                                             {
-                                                Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text,false);
+                                                // 📝 แก้ไขธรรมดา → ไปหน้า Confirmed
+                                                Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text, false);
                                                 HttpContext.Current.ApplicationInstance.CompleteRequest();
                                             }
 
@@ -1820,19 +1871,9 @@ namespace Take_Time_BangPhra
                                                         TextBox6.Text
                                                     );
 
-                                                    // ✅ Reload page to show uploaded slip image (don't redirect to Confirmed yet)
-                                                    // This allows user to see the uploaded slip before confirming
-                                                    if (FileUpload1.HasFile)
-                                                    {
-                                                        // Reload the same rentmore page to show the slip
-                                                        Response.Redirect($"./Reserve?command=rentmore&id={id}&check={TextBox1.Text}", false);
-                                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                                    }
-                                                    else
-                                                    {
-                                                        Response.Redirect("./Reservation_Confirmed?id=" + id + "&check=" + TextBox1.Text, false);
-                                                        HttpContext.Current.ApplicationInstance.CompleteRequest();
-                                                    }
+                                                    // 🛒 จองของเช่าเพิ่มสำเร็จ → ไปหน้า ReserveTable
+                                                    Response.Redirect("/ReserveTable", false);
+                                                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                                                 }
                                             }
                                             else
