@@ -2770,7 +2770,7 @@ namespace Take_Time_BangPhra
                                     IsActive,
                                     Status
                                 ) OUTPUT INSERTED.ID VALUES (
-                                    0,
+                                    @AccountReceiptId,
                                     @ReservationId,
                                     @SlipFileURL,
                                     @FileName,
@@ -2788,6 +2788,7 @@ namespace Take_Time_BangPhra
 
                             var slipParams = new Dictionary<string, object>
                             {
+                                { "@AccountReceiptId", (object)DBNull.Value },  // ✅ Use NULL instead of 0
                                 { "@ReservationId", Convert.ToInt32(ID) },
                                 { "@SlipFileURL", slipFileURL },
                                 { "@FileName", fileName },
@@ -4001,7 +4002,7 @@ namespace Take_Time_BangPhra
                                         IsActive,
                                         Status
                                     ) VALUES (
-                                        0,
+                                        @AccountReceiptId,
                                         @ReservationId,
                                         @SlipFileURL,
                                         @FileName,
@@ -4019,6 +4020,7 @@ namespace Take_Time_BangPhra
 
                                 var slipParams = new Dictionary<string, object>
                                 {
+                                    { "@AccountReceiptId", (object)DBNull.Value },  // ✅ Use NULL instead of 0
                                     { "@ReservationId", Convert.ToInt32(id) },
                                     { "@SlipFileURL", "Upload/Slip/" + filename },
                                     { "@FileName", filename },
