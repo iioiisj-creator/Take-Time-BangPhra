@@ -732,8 +732,53 @@ namespace Take_Time_BangPhra
                     }
 
                     // Load slip image and remark
-                    Image1.ImageUrl = "./Upload/Slip/" + id + "_" + check + ".jpg";
-                    Image1.DataBind();
+                    // ✅ FIX: Load most recent slip from Payment_Slips table (new format with PaymentHistoryId)
+                    try
+                    {
+                        string slipQuery = @"
+                            SELECT TOP 1 SlipFileURL
+                            FROM Payment_Slips
+                            WHERE Reservation_ID = @ReservationId
+                            AND IsActive = 1
+                            ORDER BY UploadedDate DESC";
+
+                        var slipParams = new Dictionary<string, object>
+                        {
+                            { "@ReservationId", Convert.ToInt32(id) }
+                        };
+
+                        DataTable dtSlip = code2.DatabaseQuerySafe(conn, slipQuery, slipParams);
+                        if (dtSlip.Rows.Count > 0)
+                        {
+                            // Use slip URL from database (new format)
+                            Image1.ImageUrl = "./" + dtSlip.Rows[0]["SlipFileURL"].ToString();
+                            Image1.Visible = true;
+                        }
+                        else
+                        {
+                            // Fall back to old pattern for legacy slips
+                            string legacySlipPath = "./Upload/Slip/" + id + "_" + check + ".jpg";
+                            if (File.Exists(Server.MapPath(legacySlipPath)))
+                            {
+                                Image1.ImageUrl = legacySlipPath;
+                                Image1.Visible = true;
+                            }
+                            else
+                            {
+                                // No slip found - show placeholder
+                                Image1.ImageUrl = "./Images/บัญชี.png";
+                                Image1.Visible = true;
+                            }
+                        }
+                        Image1.DataBind();
+                    }
+                    catch
+                    {
+                        // Error loading slip - show placeholder
+                        Image1.ImageUrl = "./Images/บัญชี.png";
+                        Image1.Visible = true;
+                        Image1.DataBind();
+                    }
                     TextBox6.Text = dtCustomer.Rows[0]["Remark"].ToString();
                 }
                 // Note: TextBox4, TextBox5, Label7 are now loaded outside if (!IsPostBack) above
@@ -2562,6 +2607,11 @@ namespace Take_Time_BangPhra
                             File.Move(
                                 AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
                                 AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
+
+                            // ✅ Show uploaded image preview
+                            Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
+                            Image1.Visible = true;
+                            Image1.DataBind();
                         }
                     }
                     catch
@@ -2569,6 +2619,11 @@ namespace Take_Time_BangPhra
                         File.Move(
                             AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
                             AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
+
+                        // ✅ Show uploaded image preview
+                        Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
+                        Image1.Visible = true;
+                        Image1.DataBind();
                     }
 
                 }
@@ -2586,6 +2641,11 @@ namespace Take_Time_BangPhra
                         string FileSaveWithPath = "";
                         FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + finalFilename.Replace("/", "").Replace("\\", "").Replace("'", ""));
                         FileUpload1.SaveAs(FileSaveWithPath);
+
+                        // ✅ Show uploaded image preview
+                        Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
+                        Image1.Visible = true;
+                        Image1.DataBind();
                     }
                 }
 
