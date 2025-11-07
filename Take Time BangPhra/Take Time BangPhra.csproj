@@ -641,6 +641,8 @@
     <Compile Include="Class\ReceiptService.cs" />
     <Compile Include="Class\ReservationDataAccess.cs" />
     <Compile Include="Class\ReservationService.cs" />
+    <Compile Include="Class\RoomChargeDataAccess.cs" />
+    <Compile Include="Class\RoomChargeService.cs" />
     <Compile Include="Class\TelegramService.cs" />
     <Compile Include="Services\SlipOCRService.cs" />
     <Compile Include="Code.cs" />
