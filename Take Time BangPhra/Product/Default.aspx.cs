@@ -271,7 +271,14 @@ namespace Take_Time_BangPhra.Product
         {
             try
             {
-                var dt = _roomChargeDA.GetReservationById(reservationId);
+                // Get selected date from TextBox12, default to today if empty/invalid
+                DateTime searchDate = DateTime.Now.Date;
+                if (!string.IsNullOrEmpty(TextBox12.Text))
+                {
+                    DateTime.TryParse(TextBox12.Text, out searchDate);
+                }
+
+                var dt = _roomChargeDA.GetReservationById(reservationId, searchDate);
 
                 if (dt.Rows.Count > 0)
                 {
