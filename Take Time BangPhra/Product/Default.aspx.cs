@@ -211,27 +211,51 @@ namespace Take_Time_BangPhra.Product
                 CheckBox1.Checked = true;
                 Panel1.Visible = true;
 
+                // 🐛 Debug start
+                string debugMsg = "CheckBox2_CheckedChanged triggered\\n";
+
                 // ✅ Auto-fill customer data from selected guest reservation
                 if (ddlGuestReservation.SelectedValue != "0")
                 {
+                    debugMsg += $"Guest Reservation ID: {ddlGuestReservation.SelectedValue}\\n";
                     int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
                     FillCustomerDataFromReservation(reservationId);
 
                     // 📝 Apply dropdown bindings immediately after Panel1 is visible and data is filled
                     if (Session["PendingCustomerData"] != null)
                     {
+                        debugMsg += "Session[PendingCustomerData] is NOT null\\n";
                         try
                         {
                             DataTable dtCustomer = (DataTable)Session["PendingCustomerData"];
                             if (dtCustomer != null && dtCustomer.Rows.Count > 0)
                             {
+                                debugMsg += $"DataTable has {dtCustomer.Rows.Count} rows\\n";
                                 ApplyCustomerData(dtCustomer);
                                 Session["PendingCustomerData"] = null; // Clear after applying
                             }
+                            else
+                            {
+                                debugMsg += "DataTable is null or empty\\n";
+                            }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            debugMsg += $"Error applying data: {ex.Message}\\n";
+                        }
+                    }
+                    else
+                    {
+                        debugMsg += "Session[PendingCustomerData] is NULL!\\n";
                     }
                 }
+                else
+                {
+                    debugMsg += "No guest reservation selected\\n";
+                }
+
+                // 🐛 Show debug message
+                ClientScript.RegisterStartupScript(this.GetType(), "checkbox_debug", $"alert('{debugMsg}');", true);
             }
             else
             {
@@ -456,11 +480,56 @@ namespace Take_Time_BangPhra.Product
                 TextBox7.Text = dtCustomer.Rows[0]["Address"].ToString();
                 TextBox8.Text = dtCustomer.Rows[0]["Address1"].ToString();
                 TextBox10.Text = dtCustomer.Rows[0]["Email"].ToString();
-                TextBox9.Text = dtCustomer.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
 
-                // 📝 Store customer data in Session for dropdown binding
-                // This will be applied in Page_PreRender after Panel1 is fully visible
-                Session["PendingCustomerData"] = dtCustomer.Copy();
+                // 🔍 Get Address_ID from Customer and query Address table
+                string addressId = dtCustomer.Rows[0]["Address_ID"]?.ToString()?.Trim() ?? "0";
+                string postalCode = "";
+                string province = "";
+                string district = "";
+                string subDistrict = "";
+
+                if (addressId != "0" && !string.IsNullOrEmpty(addressId))
+                {
+                    try
+                    {
+                        DataTable dtAddress = code.DatabaseQuery(conn, $"SELECT PostalCode, Province, District, SubDistrict FROM [Address] WHERE ID = {addressId}");
+                        if (dtAddress.Rows.Count > 0)
+                        {
+                            postalCode = dtAddress.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
+                            province = dtAddress.Rows[0]["Province"]?.ToString()?.Trim() ?? "";
+                            district = dtAddress.Rows[0]["District"]?.ToString()?.Trim() ?? "";
+                            subDistrict = dtAddress.Rows[0]["SubDistrict"]?.ToString()?.Trim() ?? "";
+                        }
+                    }
+                    catch { }
+                }
+
+                TextBox9.Text = postalCode;
+
+                // 📝 Store customer data with address info in Session for dropdown binding
+                // Create a merged DataTable with both Customer and Address data
+                DataTable dtMerged = dtCustomer.Copy();
+
+                // Add address columns if they don't exist
+                if (!dtMerged.Columns.Contains("PostalCode_Actual"))
+                    dtMerged.Columns.Add("PostalCode_Actual", typeof(string));
+                if (!dtMerged.Columns.Contains("Province_Actual"))
+                    dtMerged.Columns.Add("Province_Actual", typeof(string));
+                if (!dtMerged.Columns.Contains("District_Actual"))
+                    dtMerged.Columns.Add("District_Actual", typeof(string));
+                if (!dtMerged.Columns.Contains("SubDistrict_Actual"))
+                    dtMerged.Columns.Add("SubDistrict_Actual", typeof(string));
+
+                dtMerged.Rows[0]["PostalCode_Actual"] = postalCode;
+                dtMerged.Rows[0]["Province_Actual"] = province;
+                dtMerged.Rows[0]["District_Actual"] = district;
+                dtMerged.Rows[0]["SubDistrict_Actual"] = subDistrict;
+
+                Session["PendingCustomerData"] = dtMerged;
+
+                // 🐛 Debug logging
+                string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}";
+                ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"console.log('{debugMsg}');", true);
             }
         }
 
@@ -506,11 +575,11 @@ namespace Take_Time_BangPhra.Product
                 // ✅ Address dropdowns
                 try
                 {
-                    // Get address data from customer record
-                    string postalCode = dtCustomer.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
-                    string province = dtCustomer.Rows[0]["Province"]?.ToString()?.Trim() ?? "";
-                    string district = dtCustomer.Rows[0]["District"]?.ToString()?.Trim() ?? "";
-                    string subDistrict = dtCustomer.Rows[0]["SubDistrict"]?.ToString()?.Trim() ?? "";
+                    // Get address data from merged table (Address_ID query result)
+                    string postalCode = dtCustomer.Rows[0]["PostalCode_Actual"]?.ToString()?.Trim() ?? "";
+                    string province = dtCustomer.Rows[0]["Province_Actual"]?.ToString()?.Trim() ?? "";
+                    string district = dtCustomer.Rows[0]["District_Actual"]?.ToString()?.Trim() ?? "";
+                    string subDistrict = dtCustomer.Rows[0]["SubDistrict_Actual"]?.ToString()?.Trim() ?? "";
 
                     debugMsg += $"PostalCode: {postalCode}, Province: {province}, District: {district}, SubDistrict: {subDistrict}\\n";
 
