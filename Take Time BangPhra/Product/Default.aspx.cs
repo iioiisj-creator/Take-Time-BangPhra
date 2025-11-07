@@ -1391,6 +1391,18 @@ namespace Take_Time_BangPhra.Product
                 }
                 catch { }
             }
+
+            // 🏨 Reload active guests for the new selected date
+            try
+            {
+                LoadActiveGuests();
+            }
+            catch (Exception ex)
+            {
+                code.Logs(conn, "Product.TextBox12_TextChanged Error",
+                    $"Failed to reload active guests: {ex.Message}",
+                    Session["User"]?.ToString());
+            }
         }
 
         #region 🏨 Room Charge Feature Methods
@@ -1408,7 +1420,15 @@ namespace Take_Time_BangPhra.Product
                 // Always add default "no room charge" option first
                 ddlGuestReservation.Items.Add(new ListItem("--- ไม่ชาร์จเข้าห้อง (ชำระทันที) ---", "0"));
 
-                var guests = _roomChargeDA.GetActiveGuestReservations();
+                // Get selected date from TextBox12, default to today if empty/invalid
+                DateTime searchDate = DateTime.Now.Date;
+                if (!string.IsNullOrEmpty(TextBox12.Text))
+                {
+                    DateTime.TryParse(TextBox12.Text, out searchDate);
+                }
+
+                // Get active guests for the selected date
+                var guests = _roomChargeDA.GetActiveGuestReservations(searchDate);
 
                 if (guests.Rows.Count > 0)
                 {
@@ -1421,13 +1441,15 @@ namespace Take_Time_BangPhra.Product
                         ));
                     }
 
-                    // Show count of active guests
-                    lblActiveGuestCount.Text = $"📊 มีผู้เข้าพัก {guests.Rows.Count} รายการ ที่อยู่ในช่วงวันนี้";
+                    // Show count of active guests with selected date
+                    string displayDate = searchDate.ToString("dd/MM/yyyy");
+                    lblActiveGuestCount.Text = $"📊 มีผู้เข้าพัก {guests.Rows.Count} รายการ ในวันที่ {displayDate}";
                 }
                 else
                 {
-                    // No active guests today
-                    lblActiveGuestCount.Text = "ℹ️ ไม่มีผู้เข้าพักในช่วงวันนี้";
+                    // No active guests for selected date
+                    string displayDate = searchDate.ToString("dd/MM/yyyy");
+                    lblActiveGuestCount.Text = $"ℹ️ ไม่มีผู้เข้าพักในวันที่ {displayDate}";
                 }
             }
             catch (Exception ex)
