@@ -263,6 +263,15 @@ namespace Take_Time_BangPhra
             bool isGridViewCommand = IsPostBack && Request.Form["__EVENTTARGET"] != null &&
                                      Request.Form["__EVENTTARGET"].Contains("gvProductCharges");
 
+            // 🐛 DEBUG: Log Page_Load behavior
+            if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]))
+            {
+                string eventTarget = Request.Form["__EVENTTARGET"] ?? "NULL";
+                code2.Logs(conn, "Reserve.Page_Load ProductCharges",
+                    $"IsPostBack: {IsPostBack}, isGridViewCommand: {isGridViewCommand}, __EVENTTARGET: {eventTarget}",
+                    Session["User"]?.ToString() ?? "SYSTEM");
+            }
+
             if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]) && !isGridViewCommand)
             {
                 LoadProductCharges();
@@ -5942,6 +5951,11 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         // 🏨 Handle Product Charge Delete Command
         protected void gvProductCharges_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            // 🐛 DEBUG: Log that method was called
+            code2.Logs(conn, "gvProductCharges_RowCommand CALLED",
+                $"CommandName: {e.CommandName}, CommandArgument: {e.CommandArgument}",
+                Session["User"]?.ToString() ?? "SYSTEM");
+
             if (e.CommandName == "DeleteCharge")
             {
                 try
