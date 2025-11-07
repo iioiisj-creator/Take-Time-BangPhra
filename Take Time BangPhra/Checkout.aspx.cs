@@ -121,6 +121,7 @@ namespace Take_Time_BangPhra
                     lblRemainingBalance.Text = remainingBalance.ToString("N2");
 
                     // Check payment status
+                    // ✅ STRICT VALIDATION: Must pay FULL amount before checkout
                     if (remainingBalance <= 0)
                     {
                         pnlPaymentComplete.Visible = true;
@@ -134,19 +135,12 @@ namespace Take_Time_BangPhra
                         pnlPaymentIncomplete.Visible = true;
                         lblPaymentStatus.Text = "<span class='icon-warning'><i class='fa fa-exclamation-triangle'></i> ยังไม่ครบ</span>";
 
-                        // Check if can checkout with unpaid balance using fn_CanCheckout
-                        bool canCheckout = CheckCanCheckout(reservationId);
-
-                        if (!canCheckout)
-                        {
-                            ShowWarning($"ไม่สามารถเช็คเอาท์ได้ กรุณาชำระเงินให้ครบ (คงเหลือ {remainingBalance:N2} บาท)");
-                            btnCheckout.Enabled = false;
-                        }
-                        else
-                        {
-                            ShowWarning($"การจองนี้ยังชำระเงินไม่ครบ (คงเหลือ {remainingBalance:N2} บาท) แต่สามารถเช็คเอาท์ได้");
-                            btnCheckout.Enabled = true;
-                        }
+                        // 🔒 STRICT: ไม่อนุญาตให้เช็คเอาท์ถ้ายอดไม่ครบ 100%
+                        ShowWarning($"⚠️ ไม่สามารถเช็คเอาท์ได้<br/>" +
+                                   $"กรุณาชำระเงินให้ครบ 100% ก่อนเช็คเอาท์<br/>" +
+                                   $"<strong>ยอดคงเหลือ: {remainingBalance:N2} บาท</strong><br/><br/>" +
+                                   $"💡 หมายเหตุ: ระบบต้องการยอดชำระครบถ้วนตามนโยบายของ PMS");
+                        btnCheckout.Enabled = false;
                     }
                 }
                 else
