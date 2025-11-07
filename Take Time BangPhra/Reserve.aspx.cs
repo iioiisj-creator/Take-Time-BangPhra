@@ -5889,10 +5889,15 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 int resId = Convert.ToInt32(reservationId);
                 DataTable dtCharges = _roomChargeDA.GetReservationCharges(resId);
 
-                if (dtCharges.Rows.Count > 0)
+                // 🔧 Filter out CANCELLED charges (don't display deleted items)
+                DataView dv = dtCharges.DefaultView;
+                dv.RowFilter = "Status <> 'CANCELLED'";
+                DataTable dtFiltered = dv.ToTable();
+
+                if (dtFiltered.Rows.Count > 0)
                 {
                     divProductCharges.Visible = true;
-                    gvProductCharges.DataSource = dtCharges;
+                    gvProductCharges.DataSource = dtFiltered;
                     gvProductCharges.DataBind();
 
                     // Calculate and display summary
@@ -5900,7 +5905,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                     decimal totalPaid = 0;
                     decimal totalCancelled = 0;
 
-                    foreach (DataRow row in dtCharges.Rows)
+                    foreach (DataRow row in dtFiltered.Rows)
                     {
                         string status = row["Status"].ToString();
                         decimal amount = Convert.ToDecimal(row["TotalAmount"]);
@@ -5912,8 +5917,8 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                     }
 
                     lblProductChargesSummary.Text = string.Format(
-                        "📊 สรุป: <strong>รอชำระ {0:N2} บาท</strong> | ชำระแล้ว {1:N2} บาท | ยกเลิก {2:N2} บาท | รวมทั้งหมด {3} รายการ",
-                        totalPending, totalPaid, totalCancelled, dtCharges.Rows.Count);
+                        "📊 สรุป: <strong>รอชำระ {0:N2} บาท</strong> | ชำระแล้ว {1:N2} บาท | รวมทั้งหมด {2} รายการ",
+                        totalPending, totalPaid, dtFiltered.Rows.Count);
                 }
                 else
                 {
