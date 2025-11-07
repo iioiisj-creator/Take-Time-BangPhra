@@ -515,7 +515,7 @@ namespace Take_Time_BangPhra
                 DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
 
                 // 💰 Load payment amounts (needed for PostBack validation)
-                // ✅ FIX: Use calculated totalPrice on PostBack (when user changes rooms)
+                // ✅ FIX: Use calculated totalPrice on PostBack (when user changes rooms/prices)
                 //         Only use DB price on initial load
                 decimal dbTotalPrice = Convert.ToDecimal(dtCustomer.Rows[0]["TotalPrice"]);
                 decimal calculatedTotalPrice = Convert.ToDecimal(Session["totalPrice"]);
@@ -525,18 +525,21 @@ namespace Take_Time_BangPhra
                     // First load: Use database price
                     TextBox4.Text = dbTotalPrice.ToString();
                     Session["OldPrice"] = dbTotalPrice.ToString();
-                }
-                else if (calculatedTotalPrice != dbTotalPrice)
-                {
-                    // PostBack with different price: User changed rooms/items
-                    // Keep calculated price (already set above)
-                    Session["OldPrice"] = calculatedTotalPrice.ToString();
+                    Session["PriceModified"] = "false";  // Track if user modified prices
                 }
                 else
                 {
-                    // PostBack with same price: Keep database price
-                    TextBox4.Text = dbTotalPrice.ToString();
-                    Session["OldPrice"] = dbTotalPrice.ToString();
+                    // 🔧 FIX: On PostBack, ALWAYS use calculated price from GridView
+                    // This ensures that if user edits prices in GridView and then ticks payment checkbox,
+                    // the edited prices are preserved (not overwritten by DB prices)
+                    TextBox4.Text = calculatedTotalPrice.ToString();
+                    Session["OldPrice"] = calculatedTotalPrice.ToString();
+
+                    // Mark as modified if price differs from DB
+                    if (calculatedTotalPrice != dbTotalPrice)
+                    {
+                        Session["PriceModified"] = "true";
+                    }
                 }
 
                 // 💰 Get actual total paid amount from Payment_History instead of Deposit column
@@ -3432,6 +3435,20 @@ namespace Take_Time_BangPhra
                 {
                     lastRow["Price_PerPeice"] = TwoDecimalPoints((lastPriceAmount + difference) / productAmount);
                 }
+            }
+
+            // ✅ VALIDATE: ตรวจสอบว่ายอดรวมทั้งหมด (รวม product charges) ตรงกับ expectedTotal
+            double finalTotal = 0;
+            foreach (DataRow row in dtReserve.Rows)
+            {
+                finalTotal += Convert.ToDouble(row["Price_Amount"]);
+            }
+            double totalDifference = TwoDecimalPoints(expectedTotal - finalTotal);
+            if (Math.Abs(totalDifference) > 0.5)
+            {
+                code2.Logs(conn, "Receipt Adjustment Warning",
+                    $"Reservation {reservationId}: Final total mismatch! Expected: {expectedTotal:F2}, Actual: {finalTotal:F2}, Difference: {totalDifference:F2}",
+                    "SYSTEM");
             }
         }
 

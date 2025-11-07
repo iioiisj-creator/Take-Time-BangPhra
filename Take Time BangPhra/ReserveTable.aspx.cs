@@ -173,21 +173,39 @@ namespace Take_Time_BangPhra
 
                     // Check status and update buttons
                     string status = sortedReservation.Rows[row.RowIndex]["Status"].ToString();
+                    bool isOwner = Session["User"]?.ToString() == "Owner";
+
                     if (status == "เช็คอินแล้ว")
                     {
                         SetButtonEnabled(row, "Button1", false); // Check-in
                         SetButtonEnabled(row, "Button2", false); // Edit
                         SetButtonEnabled(row, "Button3", false); // Cancel no refund
                         SetButtonEnabled(row, "Button4", false); // Cancel with refund
-                    }
 
-                    // Owner permissions
-                    if (Session["User"]?.ToString() == "Owner")
+                        // Owner permissions - can still edit checked-in reservations
+                        if (isOwner)
+                        {
+                            SetButtonEnabled(row, "Button1", true);
+                            SetButtonEnabled(row, "Button2", true);
+                            SetButtonEnabled(row, "Button3", true);
+                            SetButtonEnabled(row, "Button4", true);
+                        }
+                    }
+                    else if (status == "เช็คเอ้าท์แล้ว")
                     {
-                        SetButtonEnabled(row, "Button1", true);
-                        SetButtonEnabled(row, "Button2", true);
-                        SetButtonEnabled(row, "Button3", true);
-                        SetButtonEnabled(row, "Button4", true);
+                        // 🔧 FIX: For checked-out reservations
+                        // - Non-Owner Admin: Only "รายละเอียด" button (Button7) is enabled
+                        // - Owner: All buttons disabled (completed reservation)
+                        SetButtonEnabled(row, "Button1", false); // Check-in
+                        SetButtonEnabled(row, "Button2", false); // Edit
+                        SetButtonEnabled(row, "Button3", false); // Cancel no refund
+                        SetButtonEnabled(row, "Button4", false); // Cancel with refund
+                        SetButtonEnabled(row, "Button5", false); // Rent more
+                        SetButtonEnabled(row, "Button8", false); // Pay more
+                        SetButtonEnabled(row, "Button9", false); // Checkout
+
+                        // Button7 (รายละเอียด) remains enabled for everyone
+                        // Button6 (history) remains enabled for everyone
                     }
                 }
             }

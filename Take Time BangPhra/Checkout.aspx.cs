@@ -113,16 +113,53 @@ namespace Take_Time_BangPhra
                         totalPaid = deposit;
                     }
 
-                    decimal remainingBalance = totalPrice - totalPaid;
+                    // ✅ Check for pending product charges
+                    decimal pendingCharges = 0;
+                    try
+                    {
+                        var chargesParams = new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "@reservationId", reservationId }
+                        };
+                        string chargesQuery = @"
+                            SELECT ISNULL(SUM(rd.Price_Amount), 0) as PendingCharges
+                            FROM Reserve_Detail rd
+                            WHERE rd.Reservation_ID = @reservationId
+                            AND rd.ProductType_ID = 3
+                            AND rd.ID NOT IN (
+                                SELECT ISNULL(Reserve_Detail_ID, 0)
+                                FROM Payment_History
+                                WHERE Reservation_ID = @reservationId
+                                AND Status = 'COMPLETED'
+                            )";
+                        DataTable dtCharges = codeInstance.DatabaseQuerySafe(connectionString, chargesQuery, chargesParams);
+                        if (dtCharges.Rows.Count > 0 && dtCharges.Rows[0]["PendingCharges"] != DBNull.Value)
+                        {
+                            pendingCharges = Convert.ToDecimal(dtCharges.Rows[0]["PendingCharges"]);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if table doesn't exist
+                    }
 
-                    lblTotalPrice.Text = totalPrice.ToString("N2");
+                    decimal remainingBalance = totalPrice - totalPaid + pendingCharges;
+
+                    lblTotalPrice.Text = (totalPrice + pendingCharges).ToString("N2");
                     lblPaidAmount.Text = totalPaid.ToString("N2");
                     lblTotalPaid.Text = totalPaid.ToString("N2");
                     lblRemainingBalance.Text = remainingBalance.ToString("N2");
 
+                    // Show pending charges warning if any
+                    if (pendingCharges > 0)
+                    {
+                        ShowWarning($"⚠️ มีสินค้าชาร์จเข้าห้องที่ยังไม่ได้ชำระ: {pendingCharges:N2} บาท<br/>" +
+                                   $"กรุณาชำระยอดคงเหลือก่อนเช็คเอาท์");
+                    }
+
                     // Check payment status
-                    // ✅ STRICT VALIDATION: Must pay FULL amount before checkout
-                    if (remainingBalance <= 0)
+                    // ✅ STRICT VALIDATION: Must pay FULL amount before checkout (including pending charges)
+                    if (remainingBalance <= 0 && pendingCharges == 0)
                     {
                         pnlPaymentComplete.Visible = true;
                         pnlPaymentIncomplete.Visible = false;

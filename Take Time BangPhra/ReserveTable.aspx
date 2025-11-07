@@ -57,6 +57,110 @@
         .legend-red { color: red; font-weight: bold; }
         .btn-group-vertical .btn { margin-bottom: 2px; }
         .calendar-style { font-size: 14px; }
+
+        /* 📱 Responsive Design สำหรับมือถือ */
+        @media screen and (max-width: 1024px) {
+            /* ปรับ container ให้เต็มจอ */
+            .container-fluid {
+                padding: 5px;
+            }
+
+            /* ปรับ heading */
+            h2 {
+                font-size: 1.5rem;
+                margin-bottom: 10px;
+            }
+
+            /* ปรับ calendar ให้เต็มจอ */
+            .calendar-style {
+                width: 100% !important;
+                font-size: 12px;
+            }
+
+            /* ปรับ table wrapper ให้ scroll ได้ */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* ปรับ GridView */
+            .mydatagrid {
+                font-size: 12px;
+                min-width: 800px; /* ให้ scroll แนวนอน */
+            }
+
+            .mydatagrid th, .mydatagrid td {
+                padding: 3px !important;
+                white-space: nowrap;
+            }
+
+            /* ปรับปุ่มให้เล็กลง */
+            .btn-sm {
+                font-size: 11px;
+                padding: 2px 5px;
+            }
+
+            .btn-group-vertical {
+                width: 100%;
+            }
+
+            .btn-group-vertical .btn {
+                margin-bottom: 1px;
+                white-space: nowrap;
+            }
+        }
+
+        /* 📱 Responsive สำหรับมือถือขนาดเล็ก (สมาร์ทโฟน) */
+        @media screen and (max-width: 768px) {
+            h2 {
+                font-size: 1.2rem;
+            }
+
+            /* ซ่อนคอลัมน์ที่ไม่สำคัญบนมือถือ */
+            .mydatagrid th:nth-child(4),  /* จำนวนคืน */
+            .mydatagrid td:nth-child(4),
+            .mydatagrid th:nth-child(5),  /* รายการของเช่า */
+            .mydatagrid td:nth-child(5),
+            .mydatagrid th:nth-child(9),  /* หมายเหตุ */
+            .mydatagrid td:nth-child(9) {
+                display: none;
+            }
+
+            .mydatagrid {
+                font-size: 11px;
+                min-width: 600px;
+            }
+
+            /* ปรับปุ่มให้แสดงแบบ compact */
+            .btn-sm {
+                font-size: 10px;
+                padding: 1px 4px;
+            }
+
+            /* ปรับ calendar ให้กระทัดรัด */
+            .calendar-style {
+                font-size: 10px;
+            }
+
+            .legend {
+                font-size: 10px;
+            }
+        }
+
+        /* 📱 Responsive สำหรับมือถือขนาดจิ๋ว */
+        @media screen and (max-width: 480px) {
+            /* แสดงแค่คอลัมน์สำคัญ */
+            .mydatagrid th:nth-child(1),  /* เคยมาแล้ว */
+            .mydatagrid td:nth-child(1),
+            .mydatagrid th:nth-child(10), /* จองโดย */
+            .mydatagrid td:nth-child(10) {
+                display: none;
+            }
+
+            .mydatagrid {
+                min-width: 450px;
+            }
+        }
     </style>
 
     <div class="container-fluid">
