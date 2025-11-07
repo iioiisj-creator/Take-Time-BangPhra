@@ -2047,7 +2047,7 @@ namespace Take_Time_BangPhra
                                                     // 🏨 Add product charges to receipt
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                    string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    string receiptId = createReceipt(id, Convert.ToDouble(paymentAmount), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
                                                     // ✅ Upload slip AFTER createReceipt with Receipt_ID
                                                     uploadSlip(id, receiptId);
@@ -2098,7 +2098,7 @@ namespace Take_Time_BangPhra
                                                         // 🏨 Add product charges to receipt
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                        string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        string receiptId = createReceipt(id, Convert.ToDouble(paymentAmount), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
                                                         // ✅ Upload slip AFTER createReceipt with Receipt_ID
                                                         uploadSlip(id, receiptId);
@@ -2137,7 +2137,7 @@ namespace Take_Time_BangPhra
                                                         // 🏨 Add product charges to receipt
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                        string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        string receiptId = createReceipt(id, Convert.ToDouble(paymentAmount), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
                                                         // ✅ Upload slip AFTER createReceipt with Receipt_ID
                                                         uploadSlip(id, receiptId);

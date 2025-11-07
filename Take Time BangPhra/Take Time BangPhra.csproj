@@ -424,7 +424,7 @@
     <Content Include="Payment\MakePayment.aspx" />
     <Content Include="Payment\PaymentHistory.aspx" />
     <Content Include="PostponeList.aspx" />
-    <Content Include="Reservation.aspx" />
+    <!--<Content Include="Reservation.aspx" />-->
     <Content Include="Reservation_Confirmed.aspx" />
     <Content Include="ReserveTable.aspx" />
     <Content Include="Scripts\AutoComplete.js" />
@@ -743,13 +743,13 @@
     <Compile Include="Reserve.aspx.designer.cs">
       <DependentUpon>Reserve.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Reservation.aspx.cs">
+    <!--<Compile Include="Reservation.aspx.cs">
       <DependentUpon>Reservation.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Reservation.aspx.designer.cs">
       <DependentUpon>Reservation.aspx</DependentUpon>
-    </Compile>
+    </Compile>-->
     <Compile Include="Checkout.aspx.cs">
       <DependentUpon>Checkout.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
