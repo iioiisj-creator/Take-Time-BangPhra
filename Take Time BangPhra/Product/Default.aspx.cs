@@ -536,8 +536,8 @@ namespace Take_Time_BangPhra.Product
                 Session["PendingCustomerData"] = dtMerged;
 
                 // 🐛 Debug logging
-                string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}";
-                ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"console.log('{debugMsg}');", true);
+                string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}\\nCustomer_Type_ID: {dtCustomer.Rows[0]["Customer_Type_ID"]?.ToString() ?? "NULL"}";
+                ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"alert('{debugMsg}');", true);
             }
         }
 
@@ -554,6 +554,15 @@ namespace Take_Time_BangPhra.Product
             {
                 // 🐛 Debug logging
                 string debugMsg = "ApplyCustomerData called\\n";
+
+                // 🔧 Force SqlDataSource2 to bind before setting value
+                // SqlDataSource binds after Page_Load, so we need to force it
+                if (DropDownList2.Items.Count <= 1) // Only default item exists
+                {
+                    debugMsg += "Forcing SqlDataSource2 to DataBind()\\n";
+                    DropDownList2.DataBind();
+                    debugMsg += $"After DataBind: DropDownList2 Items Count: {DropDownList2.Items.Count}\\n";
+                }
 
                 // ✅ Customer Type dropdown
                 try
