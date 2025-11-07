@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using Take_Time_BangPhra.Helpers;
 
 namespace Take_Time_BangPhra.Class
 {

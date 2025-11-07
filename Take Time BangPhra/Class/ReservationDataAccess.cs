@@ -346,6 +346,20 @@ namespace Take_Time_BangPhra
                 parameters);
         }
 
+        public void DeleteReservationAccommodation(int reservationId, int accommodationId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@accommodationId", accommodationId },
+                { "@reservationId", reservationId }
+            };
+
+            _code.DatabaseInsertSafe(_connectionString,
+                @"DELETE FROM [dbo].[Reservation_Accommodation]
+                  WHERE Accommodation_ID = @accommodationId AND Reservation_ID = @reservationId",
+                parameters);
+        }
+
         /// <summary>
         /// Update reservation with all details
         /// </summary>

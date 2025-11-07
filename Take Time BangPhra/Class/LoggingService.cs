@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Text;
 using System.Web;
+using Take_Time_BangPhra.Helpers;
 
 namespace Take_Time_BangPhra.Class
 {
