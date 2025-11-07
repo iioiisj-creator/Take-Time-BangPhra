@@ -177,25 +177,26 @@ namespace Take_Time_BangPhra
 
                     if (status == "เช็คอินแล้ว")
                     {
-                        SetButtonEnabled(row, "Button1", false); // Check-in
-                        SetButtonEnabled(row, "Button2", false); // Edit
-                        SetButtonEnabled(row, "Button3", false); // Cancel no refund
-                        SetButtonEnabled(row, "Button4", false); // Cancel with refund
+                        // สำหรับการจองที่เช็คอินแล้ว
+                        // Admin ทั่วไป: disable เช็คอิน/แก้ไข/ยกเลิก แต่เปิด เช่าเพิ่ม/จ่ายเพิ่ม/เช็คเอาท์/รายละเอียด
+                        SetButtonEnabled(row, "Button1", false); // Check-in - ไม่สามารถเช็คอินซ้ำได้
+                        SetButtonEnabled(row, "Button2", false); // Edit - ห้ามแก้ไขหลังเช็คอินแล้ว
+                        SetButtonEnabled(row, "Button3", false); // Cancel no refund - ห้ามยกเลิกหลังเช็คอิน
+                        SetButtonEnabled(row, "Button4", false); // Cancel with refund - ห้ามยกเลิกหลังเช็คอิน
+                        // Button5 (เช่าเพิ่ม), Button8 (จ่ายเพิ่ม), Button9 (เช็คเอาท์), Button7 (รายละเอียด) ยังใช้งานได้
 
-                        // Owner permissions - can still edit checked-in reservations
+                        // Owner permissions - สามารถแก้ไข/ยกเลิกได้แม้หลังเช็คอิน
                         if (isOwner)
                         {
-                            SetButtonEnabled(row, "Button1", true);
-                            SetButtonEnabled(row, "Button2", true);
-                            SetButtonEnabled(row, "Button3", true);
-                            SetButtonEnabled(row, "Button4", true);
+                            SetButtonEnabled(row, "Button2", true);  // Edit
+                            SetButtonEnabled(row, "Button3", true);  // Cancel no refund
+                            SetButtonEnabled(row, "Button4", true);  // Cancel with refund
                         }
                     }
                     else if (status == "เช็คเอ้าท์แล้ว")
                     {
-                        // 🔧 FIX: For checked-out reservations
-                        // - Non-Owner Admin: Only "รายละเอียด" button (Button7) is enabled
-                        // - Owner: All buttons disabled (completed reservation)
+                        // 🔧 สำหรับการจองที่เช็คเอาท์แล้ว (เสร็จสิ้น)
+                        // ทุกคน: เห็นเฉพาะ รายละเอียด และ ประวัติ
                         SetButtonEnabled(row, "Button1", false); // Check-in
                         SetButtonEnabled(row, "Button2", false); // Edit
                         SetButtonEnabled(row, "Button3", false); // Cancel no refund
@@ -204,9 +205,9 @@ namespace Take_Time_BangPhra
                         SetButtonEnabled(row, "Button8", false); // Pay more
                         SetButtonEnabled(row, "Button9", false); // Checkout
 
-                        // Button7 (รายละเอียด) remains enabled for everyone
-                        // Button6 (history) remains enabled for everyone
+                        // Button7 (รายละเอียด) และ Button6 (ประวัติ) ยังใช้งานได้สำหรับทุกคน
                     }
+                    // สถานะอื่นๆ (มัดจำแล้ว, รอเช็คอิน ฯลฯ): ปุ่มทั้งหมดเปิดใช้งานตามปกติ
                 }
             }
         }
