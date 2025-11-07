@@ -225,47 +225,13 @@
 
     <script type="text/javascript">
         function printTable() {
-            // Detect if device is mobile/Android
-            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            var isAndroid = /Android/i.test(navigator.userAgent);
-
-            // For Android/Mobile devices, use alternative print method
-            if (isMobile) {
-                // Hide non-print elements
-                var noPrintElements = document.querySelectorAll('.no-print');
-                noPrintElements.forEach(function(el) {
-                    el.style.display = 'none';
-                });
-
-                // Show print-only elements
-                var printElements = document.querySelectorAll('.print-only');
-                printElements.forEach(function(el) {
-                    el.style.display = 'table-cell';
-                });
-
-                // Use direct print
-                window.print();
-
-                // Restore display after print
-                setTimeout(function() {
-                    noPrintElements.forEach(function(el) {
-                        el.style.display = '';
-                    });
-                    printElements.forEach(function(el) {
-                        el.style.display = '';
-                    });
-                }, 100);
-
-                return;
-            }
-
-            // Desktop/iOS - use popup window method
-            var originalContents = document.body.innerHTML;
+            // ✅ All platforms (including Android) now use the same HTML generation method
+            // This ensures consistent print output across all devices
 
             var printWindow = window.open('', '_blank', 'width=1200,height=800');
 
             if (!printWindow) {
-                alert('กรุณาอนุญาตให้เปิด popup window เพื่อพิมพ์ตาราง');
+                alert('กรุณาอนุญาตให้เปิด popup window เพื่อพิมพ์ตาราง\n\nสำหรับ Android: ไปที่ Settings > Site Settings > Pop-ups and redirects > อนุญาต');
                 return;
             }
 
