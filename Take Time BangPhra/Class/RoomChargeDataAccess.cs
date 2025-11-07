@@ -333,19 +333,30 @@ namespace Take_Time_BangPhra
             {
                 { "@chargeId", chargeId },
                 { "@cancelledBy", cancelledByAdminId ?? (object)DBNull.Value },
-                { "@cancelReason", cancelReason ?? (object)DBNull.Value },
                 { "@cancelDate", DateTime.Now }
             };
 
-            _code.DatabaseInsertSafe(_connectionString,
-                @"UPDATE Reservation_Product_Charges
-                  SET Status = 'CANCELLED',
-                      StockReturned = 1,
-                      CancelledDate = @cancelDate,
-                      CancelledBy_AdminID = @cancelledBy,
-                      CancelReason = @cancelReason
-                  WHERE ID = @chargeId",
-                parameters);
+            // Try to update with all columns, but catch error if columns don't exist
+            try
+            {
+                _code.DatabaseInsertSafe(_connectionString,
+                    @"UPDATE Reservation_Product_Charges
+                      SET Status = 'CANCELLED',
+                          StockReturned = 1,
+                          CancelledDate = @cancelDate,
+                          CancelledBy_AdminID = @cancelledBy
+                      WHERE ID = @chargeId",
+                    parameters);
+            }
+            catch
+            {
+                // Fallback: minimal update if columns don't exist
+                _code.DatabaseInsertSafe(_connectionString,
+                    @"UPDATE Reservation_Product_Charges
+                      SET Status = 'CANCELLED'
+                      WHERE ID = @chargeId",
+                    new Dictionary<string, object> { { "@chargeId", chargeId } });
+            }
         }
 
         #endregion
@@ -363,14 +374,13 @@ namespace Take_Time_BangPhra
                 { "@productId", productId },
                 { "@quantity", quantity },
                 { "@receiptId", receiptId ?? (object)DBNull.Value },
-                { "@remark", remark ?? "Room Charge Stock Deduction" },
                 { "@dateTime", DateTime.Now }
             };
 
             _code.DatabaseInsertSafe(_connectionString,
-                @"INSERT INTO Product_Out (DateTime_Out, Product_ID, Amount, PricePerUnit, Account_Receipt_ID, Remark)
+                @"INSERT INTO Product_Out (DateTime_Out, Product_ID, Amount, PricePerUnit, Account_Receipt_ID)
                   SELECT @dateTime, @productId, @quantity,
-                         ISNULL(Sell_Price, 0), @receiptId, @remark
+                         ISNULL(Sell_Price, 0), @receiptId
                   FROM Product WHERE ID = @productId",
                 parameters);
         }
@@ -386,14 +396,13 @@ namespace Take_Time_BangPhra
             {
                 { "@productId", productId },
                 { "@quantity", quantity },
-                { "@remark", remark ?? "Room Charge Cancellation - Stock Return" },
                 { "@dateTime", DateTime.Now }
             };
 
             _code.DatabaseInsertSafe(_connectionString,
-                @"INSERT INTO Product_In (DateTime_In, Product_ID, Amount, PricePerUnit, Remark)
+                @"INSERT INTO Product_In (DateTime_In, Product_ID, Amount, PricePerUnit)
                   SELECT @dateTime, @productId, @quantity,
-                         ISNULL(Sell_Price, 0), @remark
+                         ISNULL(Sell_Price, 0)
                   FROM Product WHERE ID = @productId",
                 parameters);
         }
