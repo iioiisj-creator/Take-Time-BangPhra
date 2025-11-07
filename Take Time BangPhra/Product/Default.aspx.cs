@@ -255,8 +255,8 @@ namespace Take_Time_BangPhra.Product
                     debugMsg += "No guest reservation selected\\n";
                 }
 
-                // 🐛 Show debug message
-                ClientScript.RegisterStartupScript(this.GetType(), "checkbox_debug", $"alert('{debugMsg}');", true);
+                // 🐛 Debug message (commented out - working correctly)
+                // ClientScript.RegisterStartupScript(this.GetType(), "checkbox_debug", $"alert('{debugMsg}');", true);
             }
             else
             {
