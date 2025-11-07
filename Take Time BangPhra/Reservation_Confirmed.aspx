@@ -389,6 +389,14 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Remark -->
+                <div class="detail-card">
+                    <h3>📝 หมายเหตุ</h3>
+                    <div class="content-box" style="background: #fff3e0; border-left: 2px solid #ff9800;">
+                        <asp:Label ID="Label14" runat="server" style="white-space: pre-line;"></asp:Label>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column -->
@@ -466,14 +474,6 @@
                     <h3>🛍️ รายการของเช่า/สินค้า</h3>
                     <div class="content-box">
                         <asp:Label ID="Label9" runat="server" style="white-space: pre-line;"></asp:Label>
-                    </div>
-                </div>
-
-                <!-- Remark -->
-                <div class="detail-card">
-                    <h3>📝 หมายเหตุ</h3>
-                    <div class="content-box" style="background: #fff3e0; border-left: 2px solid #ff9800;">
-                        <asp:Label ID="Label14" runat="server" style="white-space: pre-line;"></asp:Label>
                     </div>
                 </div>
             </div>
