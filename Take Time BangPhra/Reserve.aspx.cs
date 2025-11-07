@@ -274,28 +274,6 @@ namespace Take_Time_BangPhra
                 }
             }
 
-            // 🐛 DEBUG: Log Page_Load behavior
-            if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]))
-            {
-                string formKeys = "NONE";
-                if (Request.Form != null)
-                {
-                    var gridKeys = new System.Collections.Generic.List<string>();
-                    foreach (string k in Request.Form.AllKeys)
-                    {
-                        if (k != null && k.Contains("gvProductCharges"))
-                        {
-                            gridKeys.Add(k);
-                            if (gridKeys.Count >= 3) break;
-                        }
-                    }
-                    formKeys = gridKeys.Count > 0 ? string.Join(", ", gridKeys) : "NONE";
-                }
-                code2.Logs(conn, "Reserve.Page_Load ProductCharges",
-                    $"IsPostBack: {IsPostBack}, isGridViewCommand: {isGridViewCommand}, FormKeys: {formKeys}",
-                    Session["User"]?.ToString() ?? "SYSTEM");
-            }
-
             if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]) && !isGridViewCommand)
             {
                 LoadProductCharges();
@@ -5975,11 +5953,6 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         // 🏨 Handle Product Charge Delete Command
         protected void gvProductCharges_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            // 🐛 DEBUG: Log that method was called
-            code2.Logs(conn, "gvProductCharges_RowCommand CALLED",
-                $"CommandName: {e.CommandName}, CommandArgument: {e.CommandArgument}",
-                Session["User"]?.ToString() ?? "SYSTEM");
-
             if (e.CommandName == "DeleteCharge")
             {
                 try
