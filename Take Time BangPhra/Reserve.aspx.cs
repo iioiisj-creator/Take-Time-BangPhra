@@ -260,15 +260,39 @@ namespace Take_Time_BangPhra
 
             // 🔧 IMPORTANT: Rebind product charges on page load, BUT NOT during postback from delete button
             // Check if this is a postback from GridView command (delete button click)
-            bool isGridViewCommand = IsPostBack && Request.Form["__EVENTTARGET"] != null &&
-                                     Request.Form["__EVENTTARGET"].Contains("gvProductCharges");
+            // ASP.NET Button doesn't use __EVENTTARGET, so check Request.Form keys instead
+            bool isGridViewCommand = false;
+            if (IsPostBack && Request.Form != null)
+            {
+                foreach (string key in Request.Form.AllKeys)
+                {
+                    if (key != null && key.Contains("gvProductCharges") && key.Contains("btnDeleteCharge"))
+                    {
+                        isGridViewCommand = true;
+                        break;
+                    }
+                }
+            }
 
             // 🐛 DEBUG: Log Page_Load behavior
             if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]))
             {
-                string eventTarget = Request.Form["__EVENTTARGET"] ?? "NULL";
+                string formKeys = "NONE";
+                if (Request.Form != null)
+                {
+                    var gridKeys = new System.Collections.Generic.List<string>();
+                    foreach (string k in Request.Form.AllKeys)
+                    {
+                        if (k != null && k.Contains("gvProductCharges"))
+                        {
+                            gridKeys.Add(k);
+                            if (gridKeys.Count >= 3) break;
+                        }
+                    }
+                    formKeys = gridKeys.Count > 0 ? string.Join(", ", gridKeys) : "NONE";
+                }
                 code2.Logs(conn, "Reserve.Page_Load ProductCharges",
-                    $"IsPostBack: {IsPostBack}, isGridViewCommand: {isGridViewCommand}, __EVENTTARGET: {eventTarget}",
+                    $"IsPostBack: {IsPostBack}, isGridViewCommand: {isGridViewCommand}, FormKeys: {formKeys}",
                     Session["User"]?.ToString() ?? "SYSTEM");
             }
 
