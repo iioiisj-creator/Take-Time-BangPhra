@@ -101,11 +101,12 @@ namespace Take_Time_BangPhra
                 {
                     if (dtReservation.Rows[i]["ID"].ToString() == dtReservation_Accom.Rows[j]["Reservation_ID"].ToString())
                     {
-                        AccomName += dtReservation_Accom.Rows[j]["AccomName"] + " ";
+                        AccomName += dtReservation_Accom.Rows[j]["AccomName"];
                         if (dtReservation_Accom.Rows[j]["LimitWithPeople"].ToString() == "True")
                         {
-                            AccomName += $": ({dtReservation_Accom.Rows[j]["Amount"]}คน) ";
+                            AccomName += $": ({dtReservation_Accom.Rows[j]["Amount"]}คน)";
                         }
+                        AccomName += "<br/>";
 
                         if (Convert.ToInt32(dtReservation_Accom.Rows[j]["OrderID"]) < orderID)
                         {
