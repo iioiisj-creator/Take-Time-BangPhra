@@ -5931,6 +5931,33 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
             }
         }
 
+        /// <summary>
+        /// Override Render to register dynamic controls for Event Validation
+        /// This fixes "Invalid postback or callback argument" error for delete buttons with dynamic Visible property
+        /// </summary>
+        protected override void Render(HtmlTextWriter writer)
+        {
+            // Register all buttons in GridView for Event Validation
+            // This is needed because buttons have Visible='<%# Eval("Status") == "PENDING" %>'
+            if (gvProductCharges != null && gvProductCharges.Rows.Count > 0)
+            {
+                foreach (GridViewRow row in gvProductCharges.Rows)
+                {
+                    if (row.RowType == DataControlRowType.DataRow)
+                    {
+                        Button btnDelete = row.FindControl("btnDeleteCharge") as Button;
+                        if (btnDelete != null)
+                        {
+                            // Register for validation even if button is not visible
+                            Page.ClientScript.RegisterForEventValidation(btnDelete.UniqueID);
+                        }
+                    }
+                }
+            }
+
+            base.Render(writer);
+        }
+
         // 🏨 Handle Product Charge Delete Command
         protected void gvProductCharges_RowCommand(object sender, GridViewCommandEventArgs e)
         {
