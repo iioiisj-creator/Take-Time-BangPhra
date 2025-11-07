@@ -361,18 +361,57 @@ namespace Take_Time_BangPhra.Product
 
                 try //Address
                 {
+                    // ✅ Set postal code first
                     TextBox9.Text = dtCustomer.Rows[0]["PostalCode"].ToString();
-                    DropDownList3.ClearSelection();
-                    DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()).Selected = true;
-                    DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString()));
-                    DropDownList4.ClearSelection();
-                    DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()).Selected = true;
-                    DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString()));
-                    DropDownList5.ClearSelection();
-                    DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()).Selected = true;
-                    DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString()));
 
-                    
+                    // ✅ Load dropdowns based on postal code (this populates the dropdown items)
+                    if (!string.IsNullOrEmpty(TextBox9.Text) && TextBox9.Text.Length == 5)
+                    {
+                        getAddress(
+                            "SELECT DISTINCT [Province] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by Province ASC",
+                            "SELECT DISTINCT [District] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by District ASC",
+                            "SELECT DISTINCT [SubDistrict] FROM [Address] Where PostalCode = '" + TextBox9.Text + "' order by SubDistrict ASC"
+                        );
+                    }
+
+                    // ✅ Now select the correct values from the populated dropdowns
+                    try
+                    {
+                        DropDownList3.ClearSelection();
+                        var provinceItem = DropDownList3.Items.FindByText(dtCustomer.Rows[0]["Province"].ToString());
+                        if (provinceItem != null)
+                        {
+                            provinceItem.Selected = true;
+                            DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(provinceItem);
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        DropDownList4.ClearSelection();
+                        var districtItem = DropDownList4.Items.FindByText(dtCustomer.Rows[0]["District"].ToString());
+                        if (districtItem != null)
+                        {
+                            districtItem.Selected = true;
+                            DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(districtItem);
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        DropDownList5.ClearSelection();
+                        var subdistrictItem = DropDownList5.Items.FindByText(dtCustomer.Rows[0]["SubDistrict"].ToString());
+                        if (subdistrictItem != null)
+                        {
+                            subdistrictItem.Selected = true;
+                            DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(subdistrictItem);
+                        }
+                    }
+                    catch { }
+
+
                     if (dtCustomer.Rows[0]["Customer_Type_ID"].ToString() == "1")
                     {
                         TextBox5.Visible = true;
