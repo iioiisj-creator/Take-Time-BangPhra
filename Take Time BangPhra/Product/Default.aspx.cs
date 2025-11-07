@@ -30,9 +30,6 @@ namespace Take_Time_BangPhra.Product
         private RoomChargeService _roomChargeService;
         private RoomChargeDataAccess _roomChargeDA;
 
-        // 📝 Pending customer data for auto-fill (applied in PreRender when Panel1 is visible)
-        private DataTable _pendingCustomerData = null;
-
         protected void Page_Load(object sender, EventArgs e)
         {
             // 🏨 Initialize Room Charge services
@@ -114,10 +111,18 @@ namespace Take_Time_BangPhra.Product
         protected void Page_PreRender(object sender, EventArgs e)
         {
             // Apply pending customer data if Panel1 is now visible
-            if (Panel1.Visible && _pendingCustomerData != null && _pendingCustomerData.Rows.Count > 0)
+            if (Panel1.Visible && Session["PendingCustomerData"] != null)
             {
-                ApplyCustomerData(_pendingCustomerData);
-                _pendingCustomerData = null; // Clear after applying
+                try
+                {
+                    DataTable dtCustomer = (DataTable)Session["PendingCustomerData"];
+                    if (dtCustomer != null && dtCustomer.Rows.Count > 0)
+                    {
+                        ApplyCustomerData(dtCustomer);
+                        Session["PendingCustomerData"] = null; // Clear after applying
+                    }
+                }
+                catch { }
             }
         }
 
@@ -211,6 +216,21 @@ namespace Take_Time_BangPhra.Product
                 {
                     int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
                     FillCustomerDataFromReservation(reservationId);
+
+                    // 📝 Apply dropdown bindings immediately after Panel1 is visible and data is filled
+                    if (Session["PendingCustomerData"] != null)
+                    {
+                        try
+                        {
+                            DataTable dtCustomer = (DataTable)Session["PendingCustomerData"];
+                            if (dtCustomer != null && dtCustomer.Rows.Count > 0)
+                            {
+                                ApplyCustomerData(dtCustomer);
+                                Session["PendingCustomerData"] = null; // Clear after applying
+                            }
+                        }
+                        catch { }
+                    }
                 }
             }
             else
@@ -438,9 +458,9 @@ namespace Take_Time_BangPhra.Product
                 TextBox10.Text = dtCustomer.Rows[0]["Email"].ToString();
                 TextBox9.Text = dtCustomer.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
 
-                // 📝 Store customer data for dropdown binding
-                // This will be applied in Page_PreRender after Panel1 is fully visible and ViewState is ready
-                _pendingCustomerData = dtCustomer.Copy();
+                // 📝 Store customer data in Session for dropdown binding
+                // This will be applied in Page_PreRender after Panel1 is fully visible
+                Session["PendingCustomerData"] = dtCustomer.Copy();
             }
         }
 
