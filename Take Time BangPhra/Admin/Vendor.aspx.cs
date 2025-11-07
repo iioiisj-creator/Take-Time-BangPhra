@@ -50,6 +50,7 @@ namespace Take_Time_BangPhra.Admin
 
         protected void TextBox1_TextChanged(object sender, EventArgs e)
         {
+            // ✅ รองรับการค้นหาด้วย Tax ID (13 หลัก)
             if(TextBox1.Text.Length == 13)
             {
                 DataTable dt = code.DatabaseQuery(conn, "Select * from Vendor left join Customer_Type on Customer_Type.ID = Vendor_Type_ID left join Address on Address.ID = Address_ID Where IDNumber = '"+TextBox1.Text+"'");
@@ -168,22 +169,117 @@ namespace Take_Time_BangPhra.Admin
 
         protected void Button2_Click(object sender, EventArgs e)
         {
-            if (TextBox1.Text.Length == 13)
+            // ✅ Validation: ต้องมีชื่อและเบอร์โทรศัพท์
+            if (string.IsNullOrEmpty(TextBox2.Text.Trim()))
             {
-                DataTable dt = code.DatabaseQuery(conn, "Select * from Vendor left join Customer_Type on Customer_Type.ID = Vendor_Type_ID left join Address on Address.ID = Address_ID Where IDNumber = '" + TextBox1.Text + "' AND Branch_Number = '" + TextBox3.Text + "'");
-                if (dt.Rows.Count > 0)
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกชื่อผู้เสียภาษี / ชื่อบริษัท');", true);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(TextBox7.Text.Trim()))
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกเบอร์โทรศัพท์');", true);
+                return;
+            }
+
+            // ✅ Validation: ถ้ามี Tax ID ต้องยาว 13 หลัก
+            string taxId = TextBox1.Text.Trim();
+            if (!string.IsNullOrEmpty(taxId) && taxId.Length != 13)
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ เลขผู้เสียภาษีต้องมี 13 หลัก (หรือเว้นว่างไว้ถ้าไม่มี)');", true);
+                return;
+            }
+
+            try
+            {
+                DataTable dt;
+                bool isDuplicate = false;
+
+                // 🔍 Check duplicate based on available data
+                if (!string.IsNullOrEmpty(taxId))
                 {
-                    code.DatabaseInsert(conn, "UPDATE [dbo].[Vendor] SET [IDNumber] = '"+ TextBox1.Text.Replace("'", "''") + "',[Vendor_Type_ID] = "+ DropDownList1.SelectedValue + " ,[Name] = N'"+ TextBox2.Text.Replace("'", "''") + "' ,[Address] = N'"+ TextBox4.Text.Replace("'", "''") + "' ,[Address1] = N'"+ TextBox5.Text.Replace("'", "''") + "' ,[Address_ID] = "+CheckAddressID(TextBox6.Text,DropDownList2.SelectedValue,DropDownList3.SelectedValue,DropDownList4.SelectedValue)+",[Phone_Number] = '"+ TextBox7.Text.Replace("'", "''") + "',[Vendor_Group] = N'"+DropDownList5.SelectedItem.Text+"',[Branch_Number] = '"+ TextBox3.Text.Replace("'", "''") + "' WHERE IDNumber = '"+TextBox1.Text+ "' AND Branch_Number = '"+TextBox3.Text+"'");
+                    // มี Tax ID: check ด้วย IDNumber + Branch_Number
+                    dt = code.DatabaseQuery(conn,
+                        $"SELECT * FROM Vendor WHERE IDNumber = '{taxId}' AND Branch_Number = '{TextBox3.Text.Trim()}'");
+                    isDuplicate = dt.Rows.Count > 0;
                 }
                 else
                 {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Vendor](IDNumber,Vendor_Type_ID,Name,Branch_Number,Phone_Number,Address,Address1,Address_ID,Vendor_Group) VALUES ('" + TextBox1.Text.Replace("'", "''") + "'," + DropDownList1.SelectedValue + ",N'" + TextBox2.Text.Replace("'", "''")+"','" + TextBox3.Text.Replace("'", "''") + "','" + TextBox7.Text.Replace("'", "''") + "',N'" + TextBox4.Text.Replace("'", "''") + "',N'" + TextBox5.Text.Replace("'", "''") + "',"+CheckAddressID(TextBox6.Text,DropDownList2.SelectedValue,DropDownList3.SelectedValue,DropDownList4.SelectedValue)+",N'"+DropDownList5.SelectedItem.Text+"')");
+                    // ไม่มี Tax ID: check ด้วย Name + Phone_Number
+                    dt = code.DatabaseQuery(conn,
+                        $"SELECT * FROM Vendor WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}' AND Phone_Number = '{TextBox7.Text.Trim()}'");
+                    isDuplicate = dt.Rows.Count > 0;
                 }
+
+                string addressId = CheckAddressID(TextBox6.Text, DropDownList2.SelectedValue, DropDownList3.SelectedValue, DropDownList4.SelectedValue);
+
+                if (isDuplicate)
+                {
+                    // 📝 UPDATE existing vendor
+                    if (!string.IsNullOrEmpty(taxId))
+                    {
+                        // Update by IDNumber
+                        code.DatabaseInsert(conn,
+                            $@"UPDATE [dbo].[Vendor] SET
+                                [IDNumber] = '{taxId.Replace("'", "''")}',
+                                [Vendor_Type_ID] = {DropDownList1.SelectedValue},
+                                [Name] = N'{TextBox2.Text.Trim().Replace("'", "''")}',
+                                [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
+                                [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
+                                [Address_ID] = {addressId},
+                                [Phone_Number] = '{TextBox7.Text.Trim().Replace("'", "''")}',
+                                [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
+                                [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
+                            WHERE IDNumber = '{taxId}' AND Branch_Number = '{TextBox3.Text.Trim()}'");
+                    }
+                    else
+                    {
+                        // Update by Name + Phone_Number
+                        code.DatabaseInsert(conn,
+                            $@"UPDATE [dbo].[Vendor] SET
+                                [Vendor_Type_ID] = {DropDownList1.SelectedValue},
+                                [Name] = N'{TextBox2.Text.Trim().Replace("'", "''")}',
+                                [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
+                                [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
+                                [Address_ID] = {addressId},
+                                [Phone_Number] = '{TextBox7.Text.Trim().Replace("'", "''")}',
+                                [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
+                                [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
+                            WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}' AND Phone_Number = '{TextBox7.Text.Trim()}'");
+                    }
+
+                    ClientScript.RegisterStartupScript(this.GetType(), "success", "alert('✅ อัพเดทข้อมูล Vendor สำเร็จ');", true);
+                }
+                else
+                {
+                    // ➕ INSERT new vendor
+                    string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : $"'{taxId.Replace("'", "''")}'";
+
+                    code.DatabaseInsert(conn,
+                        $@"INSERT INTO [dbo].[Vendor]
+                            (IDNumber, Vendor_Type_ID, Name, Branch_Number, Phone_Number, Address, Address1, Address_ID, Vendor_Group)
+                        VALUES (
+                            {idNumberValue},
+                            {DropDownList1.SelectedValue},
+                            N'{TextBox2.Text.Trim().Replace("'", "''")}',
+                            '{TextBox3.Text.Trim().Replace("'", "''")}',
+                            '{TextBox7.Text.Trim().Replace("'", "''")}',
+                            N'{TextBox4.Text.Trim().Replace("'", "''")}',
+                            N'{TextBox5.Text.Trim().Replace("'", "''")}',
+                            {addressId},
+                            N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}'
+                        )");
+
+                    ClientScript.RegisterStartupScript(this.GetType(), "success", "alert('✅ บันทึกข้อมูล Vendor สำเร็จ');", true);
+                }
+
+                // Clear form after save
                 Response.Redirect("/Admin/Vendor");
             }
-            else
+            catch (Exception ex)
             {
-                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('เลขผู้เสียภาษีไม่ครบ 13 หลัก');", true);
+                ClientScript.RegisterStartupScript(this.GetType(), "error",
+                    $"alert('❌ เกิดข้อผิดพลาด: {ex.Message}');", true);
             }
         }
 
