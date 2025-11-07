@@ -202,6 +202,10 @@ namespace Take_Time_BangPhra
             catch { }
             Session["OldPrice"] = TextBox4.Text;
 
+            // 🏨 Load product charges for modes that support it
+            // Must be called on EVERY postback to prevent Event Validation errors with dynamic button visibility
+            bool shouldLoadProductCharges = false;
+
             if(command == "checkin")
             {
                 GridView1.Enabled = false;
@@ -216,8 +220,7 @@ namespace Take_Time_BangPhra
                 // 🆕 Show payment history
                 LoadPaymentHistory();
 
-                // 🏨 Show product charges
-                LoadProductCharges();
+                shouldLoadProductCharges = true;
             }
             else if(command == "edit")
             {
@@ -231,8 +234,7 @@ namespace Take_Time_BangPhra
                 // 🆕 Show payment history
                 LoadPaymentHistory();
 
-                // 🏨 Show product charges
-                LoadProductCharges();
+                shouldLoadProductCharges = true;
             }
             else if(command == "rentmore")
             {
@@ -248,13 +250,19 @@ namespace Take_Time_BangPhra
                 // 🆕 Show payment history
                 LoadPaymentHistory();
 
-                // 🏨 Show product charges
-                LoadProductCharges();
+                shouldLoadProductCharges = true;
             }
             else if(command == "reserve")
             {
                 // Reserve mode: Don't show payment history (new reservation)
                 divPaymentHistory.Visible = false;
+            }
+
+            // 🔧 CRITICAL: Always rebind product charges on every page load (including postbacks)
+            // This prevents Event Validation errors when clicking delete buttons with Visible='<%# Eval(...) %>'
+            if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]))
+            {
+                LoadProductCharges();
             }
 
             DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
