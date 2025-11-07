@@ -232,7 +232,7 @@ namespace Take_Time_BangPhra.Class
                             SELECT ID FROM Account_PaymentMethod
                             WHERE @LegacyMethod LIKE '%' + Name_TH + '%'
                                OR @LegacyMethod = Code
-                            ORDER BY LEN(Name_TH) DESC";  -- Match longest name first
+                            ORDER BY LEN(Name_TH) DESC";  // Match longest name first
 
                         command.Parameters.AddWithValue("@LegacyMethod", legacyPaymentMethod);
 
