@@ -369,8 +369,8 @@
                         <title>รายการผู้เข้าพักรายวัน - ${dateLabelText}</title>
                         <style>
                             @page {
-                                margin: 0.2cm;
-                                size: landscape;
+                                margin: 0.5cm;
+                                size: A4 landscape;
                             }
                             body { 
                                 font-family: 'Tahoma', 'Sans-serif'; 
@@ -473,12 +473,28 @@
             `);
 
             printWindow.document.close();
-            printWindow.focus();
 
-            setTimeout(function () {
-                printWindow.print();
-                printWindow.close();
-            }, 500);
+            // ✅ Wait for content to fully load before printing (critical for Android)
+            printWindow.onload = function() {
+                printWindow.focus();
+
+                // Give browser extra time to render on slower devices
+                setTimeout(function() {
+                    printWindow.print();
+
+                    // Don't auto-close - let user close after print/cancel
+                    // This prevents "problem printing" error on Android
+                    // printWindow.close();
+                }, 250);
+            };
+
+            // Fallback for browsers that don't fire onload on document.write
+            setTimeout(function() {
+                if (printWindow.document.readyState === 'complete') {
+                    printWindow.focus();
+                    printWindow.print();
+                }
+            }, 1000);
         }
     </script>
 </asp:Content>
