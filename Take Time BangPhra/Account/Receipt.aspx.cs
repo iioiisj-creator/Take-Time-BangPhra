@@ -337,7 +337,7 @@ namespace Take_Time_BangPhra.Account.Report
             if (TextBox1.Text.Length > 1 && TextBox2.Text.Length > 0)
             {
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
-                dtDetail.Rows.Add(dtDetail.Rows.Count+1,DropDownList3.SelectedValue,TextBox1.Text, TextBox14.Text, TextBox15.Text, rv.TwoDecimalPoints(Convert.ToDouble(TextBox2.Text)),rv.TwoDecimalPoints(Convert.ToDouble(TextBox14.Text) *Convert.ToDouble(TextBox2.Text)));
+                dtDetail.Rows.Add(dtDetail.Rows.Count+1,DropDownList3.SelectedValue,TextBox1.Text, TextBox14.Text, TextBox15.Text, NumberHelper.TwoDecimalPoints(Convert.ToDouble(TextBox2.Text)),NumberHelper.TwoDecimalPoints(Convert.ToDouble(TextBox14.Text) *Convert.ToDouble(TextBox2.Text)));
                 Session["dtDetail"] = (DataTable)dtDetail;
                 GridView1.DataSource = dtDetail;
                 GridView1.DataBind();
@@ -361,9 +361,9 @@ namespace Take_Time_BangPhra.Account.Report
             int vatPercent = Convert.ToInt32(code.DatabaseQuery(conn, "Select Vat_Percent from Account_Vat_Type Where Status = 'True' AND ID = "+DropDownList4.SelectedValue).Rows[0][0].ToString());
             double AmountExcludeVat = (totalAmount * 100) / (100 + vatPercent);
             double vat = totalAmount - AmountExcludeVat;
-            TextBox3.Text = rv.TwoDecimalPoints(AmountExcludeVat).ToString();
-            TextBox4.Text = rv.TwoDecimalPoints(vat).ToString();
-            TextBox6.Text = rv.TwoDecimalPoints(totalAmount).ToString();
+            TextBox3.Text = NumberHelper.TwoDecimalPoints(AmountExcludeVat).ToString();
+            TextBox4.Text = NumberHelper.TwoDecimalPoints(vat).ToString();
+            TextBox6.Text = NumberHelper.TwoDecimalPoints(totalAmount).ToString();
 
         }
 
