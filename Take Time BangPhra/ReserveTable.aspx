@@ -58,110 +58,69 @@
         .btn-group-vertical .btn { margin-bottom: 2px; }
         .calendar-style { font-size: 14px; }
 
-        /* 📱 Responsive Design สำหรับมือถือ */
-        @media screen and (max-width: 1024px) {
-            /* ปรับ container ให้เต็มจอ */
-            .container-fluid {
-                padding: 5px;
-            }
-
-            /* ปรับ heading */
-            h2 {
-                font-size: 1.5rem;
-                margin-bottom: 10px;
-            }
-
-            /* ปรับ calendar ให้เต็มจอ */
-            .calendar-style {
-                width: 100% !important;
+        /* 📱 Mobile-Friendly Design - Simple & Easy to Use */
+        @media screen and (max-width: 768px) {
+            /* เพิ่ม zoom control สำหรับมือถือ */
+            .mobile-zoom-hint {
+                background: #fffbcc;
+                border: 1px solid #ffc107;
+                padding: 8px;
+                margin: 10px 0;
+                border-radius: 5px;
                 font-size: 12px;
+                text-align: center;
             }
 
-            /* ปรับ table wrapper ให้ scroll ได้ */
+            /* ให้ table scroll ได้แนวนอน แต่แสดงข้อมูลสำคัญ */
             .table-container {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                border: 1px solid #ddd;
+                border-radius: 5px;
             }
 
-            /* ปรับ GridView */
+            /* ปรับ font ให้เล็กลงแต่ยังอ่านได้ */
             .mydatagrid {
-                font-size: 12px;
-                min-width: 800px; /* ให้ scroll แนวนอน */
+                font-size: 10px;
+                white-space: nowrap;
             }
 
             .mydatagrid th, .mydatagrid td {
-                padding: 3px !important;
-                white-space: nowrap;
+                padding: 4px 2px !important;
+                font-size: 10px;
             }
 
-            /* ปรับปุ่มให้เล็กลง */
+            /* ปรับปุ่มให้เล็กแต่กดได้ */
             .btn-sm {
-                font-size: 11px;
-                padding: 2px 5px;
-            }
-
-            .btn-group-vertical {
-                width: 100%;
-            }
-
-            .btn-group-vertical .btn {
+                font-size: 9px;
+                padding: 2px 4px;
                 margin-bottom: 1px;
-                white-space: nowrap;
             }
-        }
 
-        /* 📱 Responsive สำหรับมือถือขนาดเล็ก (สมาร์ทโฟน) */
-        @media screen and (max-width: 768px) {
+            /* ปรับ calendar */
+            .calendar-style {
+                width: 100% !important;
+                font-size: 11px;
+            }
+
             h2 {
-                font-size: 1.2rem;
+                font-size: 1.3rem;
             }
 
-            /* ซ่อนคอลัมน์ที่ไม่สำคัญบนมือถือ */
+            /* ซ่อนคอลัมน์ที่ไม่จำเป็นบนมือถือ */
             .mydatagrid th:nth-child(4),  /* จำนวนคืน */
             .mydatagrid td:nth-child(4),
             .mydatagrid th:nth-child(5),  /* รายการของเช่า */
             .mydatagrid td:nth-child(5),
-            .mydatagrid th:nth-child(9),  /* หมายเหตุ */
+            .mydatagrid th:nth-child(9)   /* หมายเหตุ */
             .mydatagrid td:nth-child(9) {
                 display: none;
             }
-
-            .mydatagrid {
-                font-size: 11px;
-                min-width: 600px;
-            }
-
-            /* ปรับปุ่มให้แสดงแบบ compact */
-            .btn-sm {
-                font-size: 10px;
-                padding: 1px 4px;
-            }
-
-            /* ปรับ calendar ให้กระทัดรัด */
-            .calendar-style {
-                font-size: 10px;
-            }
-
-            .legend {
-                font-size: 10px;
-            }
-        }
-
-        /* 📱 Responsive สำหรับมือถือขนาดจิ๋ว */
-        @media screen and (max-width: 480px) {
-            /* แสดงแค่คอลัมน์สำคัญ */
-            .mydatagrid th:nth-child(1),  /* เคยมาแล้ว */
-            .mydatagrid td:nth-child(1),
-            .mydatagrid th:nth-child(10), /* จองโดย */
-            .mydatagrid td:nth-child(10) {
-                display: none;
-            }
-
-            .mydatagrid {
-                min-width: 450px;
-            }
         }
     </style>
+
+    <!-- 📱 Viewport สำหรับมือถือ - อนุญาตให้ zoom ได้ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
 
     <div class="container-fluid">
         <div class="row">
