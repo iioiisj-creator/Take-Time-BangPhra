@@ -952,7 +952,7 @@ namespace Take_Time_BangPhra
                 int Reservation_ID = 0; ;
                 DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
                 DataTable dtItems = (DataTable)Session["dtItems"];
-                int deposit = 0;
+                decimal deposit = 0;
                 bool IsDeposit = true;
                 DataTable dtReserve = new DataTable();
                 try
@@ -971,7 +971,7 @@ namespace Take_Time_BangPhra
 
                 try
                 {
-                    deposit = Convert.ToInt32(TextBox5.Text);
+                    deposit = Convert.ToDecimal(TextBox5.Text);
                 }
                 catch { }
                 int checkgrid1 = 0;
@@ -1442,13 +1442,13 @@ namespace Take_Time_BangPhra
                                                 $"Reservation ID: {id}, CheckBox2: {CheckBox2.Checked}, TextBox10: {TextBox10.Text}, FileUpload: {FileUpload1.HasFile}",
                                                 Session["User"]?.ToString());
 
-                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            decimal Deposit = Convert.ToDecimal(TextBox5.Text);
                                             if (CheckBox2.Checked == true && TextBox1.Text != "02")
                                             {
-                                                int additionalDeposit = 0;
+                                                decimal additionalDeposit = 0;
                                                 try
                                                 {
-                                                    additionalDeposit = Convert.ToInt32(TextBox10.Text);
+                                                    additionalDeposit = Convert.ToDecimal(TextBox10.Text);
                                                 }
                                                 catch
                                                 {
@@ -1883,7 +1883,7 @@ namespace Take_Time_BangPhra
                                         }
                                         else if (command == "rentmore" && TextBox1.Text != "02")
                                         {
-                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            decimal Deposit = Convert.ToDecimal(TextBox5.Text);
                                             if (checkoldAccomRemoved == 0 && checkoldItemRemoved == 0 && totalnew.ToString() == TextBox10.Text)
                                             {
                                                 if (CheckBox2.Checked == true)
@@ -1892,7 +1892,7 @@ namespace Take_Time_BangPhra
                                                     {
                                                         code.DatabaseInsert(conn, cmds[i]);
                                                     }
-                                                    Deposit += Convert.ToInt32(TextBox10.Text);
+                                                    Deposit += Convert.ToDecimal(TextBox10.Text);
                                                     IsDeposit = false;
                                                     if (CheckBox4.Checked == false)
                                                     {
@@ -1982,10 +1982,10 @@ namespace Take_Time_BangPhra
                                         if (CheckBox2.Checked && !string.IsNullOrEmpty(TextBox10.Text))
                                         {
                                             // CheckIn mode: Must pay exact remaining amount (locked)
-                                            int paymentAmount = Convert.ToInt32(TextBox10.Text);
-                                            int Deposit = Convert.ToInt32(TextBox5.Text);
-                                            int totalAmount = Convert.ToInt32(TextBox4.Text);
-                                            int remainingAmount = totalAmount - Deposit;
+                                            decimal paymentAmount = Convert.ToDecimal(TextBox10.Text);
+                                            decimal Deposit = Convert.ToDecimal(TextBox5.Text);
+                                            decimal totalAmount = Convert.ToDecimal(TextBox4.Text);
+                                            decimal remainingAmount = totalAmount - Deposit;
 
                                             // 🔒 Validate: payment must equal remaining amount (prevent manual editing)
                                             if (paymentAmount != remainingAmount && remainingAmount > 0)
@@ -1995,7 +1995,7 @@ namespace Take_Time_BangPhra
                                                 return;
                                             }
 
-                                            if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
+                                            if (Convert.ToDecimal(TextBox4.Text) == Convert.ToDecimal(TextBox5.Text))
                                             {
                                                 // Already paid in full - just check in
                                                 reservationDA.CheckInReservation(Convert.ToInt32(id));
@@ -2035,7 +2035,7 @@ namespace Take_Time_BangPhra
                                                     dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน " + code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), txtAmount.Text, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text)));
                                                 }
                                             }
-                                            int DepositAmount = 0;
+                                            decimal DepositAmount = 0;
                                             if (dtfindDeposit.Rows.Count <= 0)
                                             {
                                                 // 🆕 Use manual payment amount from TextBox10 (like rentmore)
@@ -2083,13 +2083,13 @@ namespace Take_Time_BangPhra
                                                     DataTable dtDepositDetail = reservationDA.GetReceiptDetails(dtfindDeposit.Rows[j]["ID"].ToString());
                                                     for (int k = 0; k < dtDepositDetail.Rows.Count; k++)
                                                     {
-                                                        DepositAmount += Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
-                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", dtDepositDetail.Rows[0]["ProductType_ID"].ToString(), dtDepositDetail.Rows[0]["Product_ID"].ToString(), dtDepositDetail.Rows[0]["Product_Data"].ToString(), dtDepositDetail.Rows[0]["Product_Amount"].ToString(), dtDepositDetail.Rows[0]["Product_Unit"].ToString(), Convert.ToInt32(dtDepositDetail.Rows[0]["Price_PerPeice"].ToString()) * -1, Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString()) * -1);
+                                                        DepositAmount += Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
+                                                        dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", dtDepositDetail.Rows[0]["ProductType_ID"].ToString(), dtDepositDetail.Rows[0]["Product_ID"].ToString(), dtDepositDetail.Rows[0]["Product_Data"].ToString(), dtDepositDetail.Rows[0]["Product_Amount"].ToString(), dtDepositDetail.Rows[0]["Product_Unit"].ToString(), Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_PerPeice"].ToString()) * -1, Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_Amount"].ToString()) * -1);
                                                     }
                                                 }
 
 
-                                                if (DepositAmount == Convert.ToInt32(TextBox5.Text))
+                                                if (DepositAmount == Convert.ToDecimal(TextBox5.Text))
                                                 {
                                                     // 🆕 Use manual payment amount from TextBox10
                                                     id = Request.QueryString["id"];
@@ -2129,7 +2129,7 @@ namespace Take_Time_BangPhra
                                                 else
                                                 {
                                                     // 🆕 Use manual payment amount from TextBox10
-                                                    int remain = Convert.ToInt32(TextBox5.Text) - (DepositAmount);
+                                                    decimal remain = Convert.ToDecimal(TextBox5.Text) - (DepositAmount);
                                                     dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", remain * -1, remain * -1);
                                                     id = Request.QueryString["id"];
                                                     if (CheckBox4.Checked == false)
@@ -3845,7 +3845,7 @@ namespace Take_Time_BangPhra
                 }
                 else
                 {
-                    if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                    if (Convert.ToDecimal(TextBox5.Text) < minDeposit * 0.8m)
                     {
                         TextBox5.Text = "0";
                         ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
@@ -3854,7 +3854,7 @@ namespace Take_Time_BangPhra
             }
             catch
             {
-                if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                if (Convert.ToDecimal(TextBox5.Text) < minDeposit * 0.8m)
                 {
                     TextBox5.Text = "0";
                     ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
@@ -4332,9 +4332,9 @@ namespace Take_Time_BangPhra
             string command = Request.QueryString["command"];
             if (command == "rentmore")
             {
-                int total = Convert.ToInt32(TextBox4.Text);
-                int deposit = Convert.ToInt32(TextBox5.Text);
-                int paymore = Convert.ToInt32(TextBox10.Text);
+                decimal total = Convert.ToDecimal(TextBox4.Text);
+                decimal deposit = Convert.ToDecimal(TextBox5.Text);
+                decimal paymore = Convert.ToDecimal(TextBox10.Text);
                 if(total == deposit+paymore)
                 { }
                 else

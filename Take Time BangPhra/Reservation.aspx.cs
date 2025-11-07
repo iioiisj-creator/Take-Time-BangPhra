@@ -505,7 +505,7 @@ namespace Take_Time_BangPhra
                     TextBox6.Text = dtCustomer.Rows[0]["Remark"].ToString();
 
                     Label7.Visible = true;
-                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + (Convert.ToInt32(TextBox4.Text) - Convert.ToInt32(TextBox5.Text)).ToString() + " บาท";
+                    Label7.Text = "ยอดเงินส่วนที่เหลือที่จะต้องชำระตอนเช็คอิน = " + (Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text)).ToString("N2") + " บาท";
 
                     string paidType = dtCustomer.Rows[0]["Paid_Type"].ToString();
                     try
@@ -646,7 +646,7 @@ namespace Take_Time_BangPhra
             int Reservation_ID = 0; ;
             DataTable dtAccommodation = (DataTable)Session["dtAccommodation"];
             DataTable dtItems = (DataTable)Session["dtItems"];
-            int deposit = 0;
+            decimal deposit = 0;
             bool IsDeposit = true;
             DataTable dtReserve = new DataTable();
             try
@@ -665,7 +665,7 @@ namespace Take_Time_BangPhra
 
             try
             {
-                deposit = Convert.ToInt32(TextBox5.Text);
+                deposit = Convert.ToDecimal(TextBox5.Text);
             }
             catch { }
             int checkgrid1 = 0;
@@ -995,11 +995,11 @@ namespace Take_Time_BangPhra
                                     uploadSlip(id);
                                     if (command == "edit")
                                     {
-                                        
-                                        int Deposit = Convert.ToInt32(TextBox5.Text);
+
+                                        decimal Deposit = Convert.ToDecimal(TextBox5.Text);
                                         if (CheckBox2.Checked == true && TextBox1.Text != "02")
                                         {
-                                            Deposit += Convert.ToInt32(TextBox10.Text);
+                                            Deposit += Convert.ToDecimal(TextBox10.Text);
                                             IsDeposit = true;
                                             if (CheckBox4.Checked == false)
                                             {
@@ -1030,7 +1030,7 @@ namespace Take_Time_BangPhra
                                     }
                                     else if (command == "rentmore" && TextBox1.Text != "02")
                                     {
-                                        int Deposit = Convert.ToInt32(TextBox5.Text);
+                                        decimal Deposit = Convert.ToDecimal(TextBox5.Text);
                                         if (checkoldAccomRemoved == 0 && checkoldItemRemoved == 0 && totalnew.ToString() == TextBox10.Text)
                                         {
                                             if (CheckBox2.Checked == true)
@@ -1039,7 +1039,7 @@ namespace Take_Time_BangPhra
                                                 {
                                                     code.DatabaseInsert(conn, cmds[i]);
                                                 }
-                                                Deposit += Convert.ToInt32(TextBox10.Text);
+                                                Deposit += Convert.ToDecimal(TextBox10.Text);
                                                 IsDeposit = false;
                                                 if (CheckBox4.Checked == false)
                                                 {
@@ -1067,7 +1067,7 @@ namespace Take_Time_BangPhra
                                     IsDeposit = false;
                                     code.DatabaseInsert(conn, "UPDATE [dbo].[Customer] SET [Name] = N'" + TextBox2.Text.Replace("'", "''") + "' ,[NickName] = N'" + TextBox3.Text.Replace("'", "''") + "',[FullName] = N'" + TextBox2.Text.Replace("'", "''") + "',[Address] = N'" + cleantext(TextBox8.Text) + "',[IDNumber] = N'" + TextBox9.Text.Replace("'", "''") + "',[Email] = N'" + TextBox13.Text.Replace("'", "''") + "',[Customer_Type_ID] = " + DropDownList8.SelectedValue + ",[Address_ID] = " + CheckAddressID(TextBox16.Text, DropDownList5.SelectedItem.Text, DropDownList6.SelectedItem.Text, DropDownList7.SelectedItem.Text) + ",[Address1] = N'" + TextBox17.Text.Replace("'", "''") + "',[Branch_Number] = N'" + TextBox18.Text.Replace("'", "''") + "' WHERE MobilePhone = '" + TextBox1.Text + "'");
 
-                                    if (Convert.ToInt32(TextBox4.Text) == Convert.ToInt32(TextBox5.Text))
+                                    if (Convert.ToDecimal(TextBox4.Text) == Convert.ToDecimal(TextBox5.Text))
                                     {
                                         code.DatabaseInsert(conn, "UPDATE [dbo].[Reservation] SET [Status] = N'เช็คอินแล้ว',[Deposit] = [TotalPrice] WHERE ID = " + id);
                                     }
@@ -1105,12 +1105,12 @@ namespace Take_Time_BangPhra
                                                 dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "2", dtItems.Rows[row.RowIndex]["ID"].ToString(), dtItems.Rows[row.RowIndex]["ItemName"].ToString() + " เช็คอิน " + Convert.ToDateTime(TextBox12.Text).ToString("dd MMMM yyyy") + " เช็คเอ้าท์ " + Convert.ToDateTime(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue.ToString())).ToString("dd MMMM yyyy"), txtAmount.Text, dtItems.Rows[row.RowIndex]["Unit"].ToString(), row.Cells[4].Text, (Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue) * Convert.ToInt32(txtAmount.Text)));
                                             }
                                         }
-                                        int DepositAmount = 0;
-                                        int totalAmount = Convert.ToInt32(TextBox4.Text);
+                                        decimal DepositAmount = 0;
+                                        decimal totalAmount = Convert.ToDecimal(TextBox4.Text);
                                         if (dtfindDeposit.Rows.Count <= 0)
                                         {
 
-                                            int Deposit = Convert.ToInt32(TextBox5.Text);
+                                            decimal Deposit = Convert.ToDecimal(TextBox5.Text);
                                             dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", Deposit * -1, Deposit * -1);
                                             id = Request.QueryString["id"];
                                             if (CheckBox4.Checked == false)
@@ -1126,13 +1126,13 @@ namespace Take_Time_BangPhra
                                                 DataTable dtDepositDetail = code.DatabaseQuery(conn, "Select * From Account_Receipt_Detail Where Receipt_ID = '" + dtfindDeposit.Rows[j]["ID"].ToString() + "'");
                                                 for (int k = 0; k < dtDepositDetail.Rows.Count; k++)
                                                 {
-                                                    DepositAmount += Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
-                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", dtDepositDetail.Rows[0]["ProductType_ID"].ToString(), dtDepositDetail.Rows[0]["Product_ID"].ToString(), dtDepositDetail.Rows[0]["Product_Data"].ToString(), dtDepositDetail.Rows[0]["Product_Amount"].ToString(), dtDepositDetail.Rows[0]["Product_Unit"].ToString(), Convert.ToInt32(dtDepositDetail.Rows[0]["Price_PerPeice"].ToString()) * -1, Convert.ToInt32(dtDepositDetail.Rows[0]["Price_Amount"].ToString()) * -1);
+                                                    DepositAmount += Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_Amount"].ToString());
+                                                    dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", dtDepositDetail.Rows[0]["ProductType_ID"].ToString(), dtDepositDetail.Rows[0]["Product_ID"].ToString(), dtDepositDetail.Rows[0]["Product_Data"].ToString(), dtDepositDetail.Rows[0]["Product_Amount"].ToString(), dtDepositDetail.Rows[0]["Product_Unit"].ToString(), Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_PerPeice"].ToString()) * -1, Convert.ToDecimal(dtDepositDetail.Rows[0]["Price_Amount"].ToString()) * -1);
                                                 }
                                             }
 
 
-                                            if (DepositAmount == Convert.ToInt32(TextBox5.Text))
+                                            if (DepositAmount == Convert.ToDecimal(TextBox5.Text))
                                             {
                                                 totalAmount = totalAmount - DepositAmount;
                                                 id = Request.QueryString["id"];
@@ -1144,11 +1144,11 @@ namespace Take_Time_BangPhra
                                             }
                                             else
                                             {
-                                                int remain = Convert.ToInt32(TextBox5.Text) - ( DepositAmount);
+                                                decimal remain = Convert.ToDecimal(TextBox5.Text) - ( DepositAmount);
                                                 dtReserve.Rows.Add(dtReserve.Rows.Count + 1, "", "1", "17", "ส่วนลด", "1", "ครั้ง", remain * -1, remain * -1);
                                                 id = Request.QueryString["id"];
                                                 totalAmount = totalAmount - (DepositAmount+remain);
-                                                if (DepositAmount+remain+totalAmount == Convert.ToInt32(TextBox4.Text))
+                                                if (DepositAmount+remain+totalAmount == Convert.ToDecimal(TextBox4.Text))
                                                 {
                                                     if (CheckBox4.Checked == false)
                                                     {
@@ -2007,7 +2007,7 @@ namespace Take_Time_BangPhra
                 }
                 else
                 {
-                    if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                    if (Convert.ToDecimal(TextBox5.Text) < minDeposit * 0.8m)
                     {
                         TextBox5.Text = "0";
                         ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
@@ -2016,7 +2016,7 @@ namespace Take_Time_BangPhra
             }
             catch
             {
-                if (Convert.ToInt32(TextBox5.Text) < minDeposit * 0.8)
+                if (Convert.ToDecimal(TextBox5.Text) < minDeposit * 0.8m)
                 {
                     TextBox5.Text = "0";
                     ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาโอนยอดมัดจำจองมากกว่ายอดมัดจำจองขั้นต่ำ');", true);
@@ -2331,9 +2331,9 @@ namespace Take_Time_BangPhra
             string command = Request.QueryString["command"];
             if (command == "rentmore")
             {
-                int total = Convert.ToInt32(TextBox4.Text);
-                int deposit = Convert.ToInt32(TextBox5.Text);
-                int paymore = Convert.ToInt32(TextBox10.Text);
+                decimal total = Convert.ToDecimal(TextBox4.Text);
+                decimal deposit = Convert.ToDecimal(TextBox5.Text);
+                decimal paymore = Convert.ToDecimal(TextBox10.Text);
                 if(total == deposit+paymore)
                 { }
                 else
