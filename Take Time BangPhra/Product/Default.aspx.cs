@@ -535,9 +535,9 @@ namespace Take_Time_BangPhra.Product
 
                 Session["PendingCustomerData"] = dtMerged;
 
-                // 🐛 Debug logging
-                string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}\\nCustomer_Type_ID: {dtCustomer.Rows[0]["Customer_Type_ID"]?.ToString() ?? "NULL"}";
-                ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"alert('{debugMsg}');", true);
+                // 🐛 Debug logging (commented out - working correctly)
+                // string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}\\nCustomer_Type_ID: {dtCustomer.Rows[0]["Customer_Type_ID"]?.ToString() ?? "NULL"}";
+                // ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"alert('{debugMsg}');", true);
             }
         }
 
@@ -705,12 +705,13 @@ namespace Take_Time_BangPhra.Product
                     debugMsg += $"Address error: {ex.Message}\\n";
                 }
 
-                // 🐛 Show debug message
-                ClientScript.RegisterStartupScript(this.GetType(), "debug", $"alert('{debugMsg}');", true);
+                // 🐛 Debug message (commented out - working correctly)
+                // ClientScript.RegisterStartupScript(this.GetType(), "debug", $"alert('{debugMsg}');", true);
             }
             catch (Exception ex)
             {
-                ClientScript.RegisterStartupScript(this.GetType(), "debug", $"alert('ApplyCustomerData error: {ex.Message}');", true);
+                // Log errors silently instead of showing alert to users
+                code.Logs(conn, "Product.ApplyCustomerData Error", ex.Message, Session["User"]?.ToString());
             }
         }
         protected void DropDownList2_SelectedIndexChanged(object sender, EventArgs e)
