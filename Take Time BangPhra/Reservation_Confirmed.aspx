@@ -461,9 +461,9 @@
                     </div>
                 </div>
 
-                <!-- Rent Items -->
+                <!-- Rent Items and Product Charges -->
                 <div class="detail-card">
-                    <h3>🛍️ รายการของเช่า</h3>
+                    <h3>🛍️ รายการของเช่า/สินค้า</h3>
                     <div class="content-box">
                         <asp:Label ID="Label9" runat="server" style="white-space: pre-line;"></asp:Label>
                     </div>

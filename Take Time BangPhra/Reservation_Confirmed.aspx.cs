@@ -89,12 +89,42 @@ namespace Take_Time_BangPhra
                     "SELECT * FROM [Reservation] right join Reservation_Items on Reservation.ID = Reservation_Items.Reservation_ID " +
                     "inner join Items on Items.ID = Items_ID where Reservation.ID = " + id);
 
-                for (int i = 0; i < dtReservationItems.Rows.Count; i++)
+                if (dtReservationItems.Rows.Count > 0)
                 {
-                    int price = Convert.ToInt32(dtReservationItems.Rows[i]["Price"].ToString()) * Convert.ToInt32(dtReservationItems.Rows[i]["Amount"].ToString());
-                    Items += $"• {dtReservationItems.Rows[i]["ItemName"].ToString()} ({dtReservationItems.Rows[i]["Amount"].ToString()} ชิ้น) - ฿{price:n0} บาท\r\n";
+                    Items += "📦 ของเช่า:\r\n";
+                    for (int i = 0; i < dtReservationItems.Rows.Count; i++)
+                    {
+                        int price = Convert.ToInt32(dtReservationItems.Rows[i]["Price"].ToString()) * Convert.ToInt32(dtReservationItems.Rows[i]["Amount"].ToString());
+                        Items += $"• {dtReservationItems.Rows[i]["ItemName"].ToString()} ({dtReservationItems.Rows[i]["Amount"].ToString()} ชิ้น) - ฿{price:n0} บาท\r\n";
+                    }
                 }
-                Label9.Text = Items;
+
+                // Add product charges (room charges)
+                DataTable dtProductCharges = code.DatabaseQuery(conn,
+                    "SELECT PC.*, P.Product_Name, PC.Quantity, PC.UnitPrice, PC.TotalAmount, PC.Status, PC.ChargedDate " +
+                    "FROM Reservation_Product_Charges PC " +
+                    "INNER JOIN Product P ON PC.Product_ID = P.ID " +
+                    "WHERE PC.Reservation_ID = " + id + " AND PC.Status <> 'CANCELLED' " +
+                    "ORDER BY PC.ChargedDate");
+
+                if (dtProductCharges.Rows.Count > 0)
+                {
+                    if (Items.Length > 0) Items += "\r\n";
+                    Items += "🛒 สินค้าชาร์จเข้าห้อง:\r\n";
+                    for (int i = 0; i < dtProductCharges.Rows.Count; i++)
+                    {
+                        string productName = dtProductCharges.Rows[i]["Product_Name"].ToString();
+                        decimal quantity = Convert.ToDecimal(dtProductCharges.Rows[i]["Quantity"]);
+                        decimal totalAmount = Convert.ToDecimal(dtProductCharges.Rows[i]["TotalAmount"]);
+                        string status = dtProductCharges.Rows[i]["Status"].ToString();
+                        string statusIcon = status == "PAID" ? "✅" : "⏳";
+                        string statusText = status == "PAID" ? "ชำระแล้ว" : "รอชำระ";
+
+                        Items += $"• {productName} ({quantity:n0} ชิ้น) - ฿{totalAmount:n0} บาท {statusIcon} {statusText}\r\n";
+                    }
+                }
+
+                Label9.Text = string.IsNullOrEmpty(Items) ? "ไม่มีรายการ" : Items;
 
                 // Set payment information using Payment_History
                 int totalPrice = Convert.ToInt32(dtReservationAccommodation.Rows[0]["totalPrice"]);
