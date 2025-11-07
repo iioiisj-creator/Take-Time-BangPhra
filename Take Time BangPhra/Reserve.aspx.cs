@@ -1426,10 +1426,10 @@ namespace Take_Time_BangPhra
                                                     // 🏨 Add product charges to receipt
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                    createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    string receiptId = createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                    // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                    uploadSlip(id);
+                                                    // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                    uploadSlip(id, receiptId);
                                                 }
                                                 else
                                                 {
@@ -1441,8 +1441,8 @@ namespace Take_Time_BangPhra
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
 
-                                                        // ✅ Upload slip even without receipt
-                                                        uploadSlip(id);
+                                                        // ✅ Upload slip without receipt (NULL Receipt_ID)
+                                                        uploadSlip(id, null);
                                                     }
                                                     catch (Exception ex)
                                                     {
@@ -1458,7 +1458,7 @@ namespace Take_Time_BangPhra
                                                 // Upload slip anyway if file exists
                                                 if (FileUpload1.HasFile)
                                                 {
-                                                    uploadSlip(id);
+                                                    uploadSlip(id, null);
                                                 }
                                             }
                                             try
@@ -1783,10 +1783,10 @@ namespace Take_Time_BangPhra
                                                         // 🏨 Add product charges to receipt
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                        createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        string receiptId = createReceipt(id, Convert.ToDouble(TextBox10.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                        uploadSlip(id);
+                                                        // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                        uploadSlip(id, receiptId);
                                                     }
                                                     else
                                                     {
@@ -1798,8 +1798,8 @@ namespace Take_Time_BangPhra
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
 
-                                                            // ✅ Upload slip even without receipt
-                                                            uploadSlip(id);
+                                                            // ✅ Upload slip without receipt (NULL Receipt_ID)
+                                                            uploadSlip(id, null);
                                                         }
                                                         catch (Exception ex)
                                                         {
@@ -1941,10 +1941,10 @@ namespace Take_Time_BangPhra
                                                     // 🏨 Add product charges to receipt
                                                     AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                    createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                    string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                    // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                    uploadSlip(id);
+                                                    // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                    uploadSlip(id, receiptId);
                                                 }
                                                 else
                                                 {
@@ -1956,8 +1956,8 @@ namespace Take_Time_BangPhra
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
 
-                                                        // ✅ Upload slip even without receipt
-                                                        uploadSlip(id);
+                                                        // ✅ Upload slip without receipt (NULL Receipt_ID)
+                                                        uploadSlip(id, null);
                                                     }
                                                     catch (Exception ex)
                                                     {
@@ -1992,10 +1992,10 @@ namespace Take_Time_BangPhra
                                                         // 🏨 Add product charges to receipt
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                        createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                        uploadSlip(id);
+                                                        // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                        uploadSlip(id, receiptId);
                                                     }
                                                     else
                                                     {
@@ -2007,8 +2007,8 @@ namespace Take_Time_BangPhra
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
 
-                                                            // ✅ Upload slip even without receipt
-                                                            uploadSlip(id);
+                                                            // ✅ Upload slip without receipt (NULL Receipt_ID)
+                                                            uploadSlip(id, null);
                                                         }
                                                         catch (Exception ex)
                                                         {
@@ -2031,10 +2031,10 @@ namespace Take_Time_BangPhra
                                                         // 🏨 Add product charges to receipt
                                                         AddProductChargesToReceipt(Convert.ToInt32(id), dtReserve);
 
-                                                        createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                        string receiptId = createReceipt(id, paymentAmount, dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                        // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                        uploadSlip(id);
+                                                        // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                        uploadSlip(id, receiptId);
                                                     }
                                                     else
                                                     {
@@ -2046,8 +2046,8 @@ namespace Take_Time_BangPhra
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
 
-                                                            // ✅ Upload slip even without receipt
-                                                            uploadSlip(id);
+                                                            // ✅ Upload slip without receipt (NULL Receipt_ID)
+                                                            uploadSlip(id, null);
                                                         }
                                                         catch (Exception ex)
                                                         {
@@ -2393,26 +2393,38 @@ namespace Take_Time_BangPhra
                                         }
                                         catch { }
 
-                                        try
-                                        {
-                                            uploadSlip(Reservation_ID.ToString());
-                                        }
-                                        catch { }
-
                                         if (TextBox1.Text != "02" && CheckBox4.Checked == false)
                                         {
                                             if (CheckBox4.Checked == false)
                                             {
-                                                createReceipt(ID, Convert.ToDouble(TextBox5.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
+                                                string receiptId = createReceipt(ID, Convert.ToDouble(TextBox5.Text), dtReserve, IsDeposit, docCreatedDate, CheckBox5.Checked);
 
-                                                // ✅ Upload slip AFTER createReceipt (PaymentHistoryId now available)
-                                                uploadSlip(ID);
+                                                // ✅ Upload slip AFTER createReceipt with Receipt_ID
+                                                try
+                                                {
+                                                    uploadSlip(ID, receiptId);
+                                                }
+                                                catch (Exception ex)
+                                                {
+                                                    code2.Logs(conn, "Reserve Mode - Upload Slip Error",
+                                                        $"Reservation: {ID}, Receipt: {receiptId}, Error: {ex.Message}",
+                                                        Session["User"]?.ToString());
+                                                }
                                             }
                                         }
                                         else if (TextBox1.Text != "02" && CheckBox4.Checked == true)
                                         {
                                             // Manual payment - no receipt but slip uploaded
-                                            uploadSlip(ID);
+                                            try
+                                            {
+                                                uploadSlip(ID, null);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                code2.Logs(conn, "Reserve Mode - Manual Payment Upload Slip Error",
+                                                    $"Reservation: {ID}, Error: {ex.Message}",
+                                                    Session["User"]?.ToString());
+                                            }
                                         }
                                         msg += "\r\nหมายเหตุ:" + TextBox6.Text;
 
@@ -2669,12 +2681,11 @@ namespace Take_Time_BangPhra
             client.Send(mail);
         }
 
-        public void uploadSlip(string ID)
+        public void uploadSlip(string reservationID, string receiptID)
         {
-
             try
             {
-                // 🆕 Get PaymentHistoryId first for unique filename
+                // 🆕 Get PaymentHistoryId for linking (if available)
                 long? paymentHistoryId = null;
                 if (Session["PaymentHistoryId"] != null)
                 {
@@ -2684,13 +2695,13 @@ namespace Take_Time_BangPhra
                 // Generate unique filename pattern: {ReservationID}_{Phone}_{PaymentHistoryId}.jpg
                 string uniqueSuffix = paymentHistoryId.HasValue ? $"_{paymentHistoryId.Value}" : "";
                 string tempFilename = TextBox1.Text + ".jpg";
-                string finalFilename = ID + "_" + TextBox1.Text + uniqueSuffix + ".jpg";
+                string finalFilename = reservationID + "_" + TextBox1.Text + uniqueSuffix + ".jpg";
 
                 if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename))
                 {
                     try
                     {
-                        if (Convert.ToInt32(ID) > 0)
+                        if (Convert.ToInt32(reservationID) > 0)
                         {
                             // Move temp file to final unique filename (no deletion needed - unique names)
                             File.Move(
@@ -2738,8 +2749,8 @@ namespace Take_Time_BangPhra
                     }
                 }
 
-                // 🆕 Record Payment_Slip if file exists and Payment_History was created
-                if (paymentHistoryId.HasValue && Convert.ToInt32(ID) > 0)
+                // 🆕 Record Payment_Slip with Receipt_ID
+                if (Convert.ToInt32(reservationID) > 0)
                 {
                     string slipPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename;
                     if (File.Exists(slipPath))
@@ -2752,7 +2763,10 @@ namespace Take_Time_BangPhra
                             long fileSize = fileInfo.Length;
                             int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
 
-                            // Insert Payment_Slip record with OCR support
+                            // ✅ Use Receipt_ID from createReceipt() or NULL if manual payment
+                            object accountReceiptId = string.IsNullOrEmpty(receiptID) ? (object)DBNull.Value : receiptID;
+
+                            // Insert Payment_Slip record
                             string insertSlipQuery = @"
                                 INSERT INTO [dbo].[Payment_Slips] (
                                     Account_Receipt_ID,
@@ -2781,15 +2795,15 @@ namespace Take_Time_BangPhra
                                     GETDATE(),
                                     'PENDING',
                                     0,
-                                    N'อัพโหลดเมื่อจอง',
+                                    N'อัพโหลดพร้อมบันทึก',
                                     1,
                                     1
                                 )";
 
                             var slipParams = new Dictionary<string, object>
                             {
-                                { "@AccountReceiptId", (object)DBNull.Value },  // ✅ Use NULL instead of 0
-                                { "@ReservationId", Convert.ToInt32(ID) },
+                                { "@AccountReceiptId", accountReceiptId },  // ✅ Use Receipt_ID or NULL
+                                { "@ReservationId", Convert.ToInt32(reservationID) },
                                 { "@SlipFileURL", slipFileURL },
                                 { "@FileName", fileName },
                                 { "@FileSize", (int)fileSize },
@@ -2899,12 +2913,13 @@ namespace Take_Time_BangPhra
             return output;
         }
 
-        public void createReceipt(string Reservation_ID, double Total_Amount,DataTable dtReserve,bool IsDeposit,DateTime docDate,bool etax)
+        public string createReceipt(string Reservation_ID, double Total_Amount,DataTable dtReserve,bool IsDeposit,DateTime docDate,bool etax)
         {
             string status = "Normal";
+            string ReceiptID = "";
             if (Total_Amount > 0)
             {
-                string ReceiptID = code.createDocNumber(conn, "Account_Receipt", "REC",docDate.Year.ToString(),docDate.Month.ToString(),docDate.Day.ToString());
+                ReceiptID = code.createDocNumber(conn, "Account_Receipt", "REC",docDate.Year.ToString(),docDate.Month.ToString(),docDate.Day.ToString());
                 DataTable dtuseVat = code.DatabaseQuery(conn, "select Use_Vat from Business_Info");
                 double PriceExcludeVat = Total_Amount;
                 double Vat = 0;
@@ -3173,6 +3188,8 @@ namespace Take_Time_BangPhra
                     MarkProductChargesAsPaid(Convert.ToInt32(Reservation_ID), ReceiptID);
                 }
             }
+
+            return ReceiptID;  // ✅ Return Receipt_ID so uploadSlip can use it
         }
 
         private bool ValidateReceiptDetails(DataTable dtReserve, double expectedTotal)
@@ -3943,105 +3960,31 @@ namespace Take_Time_BangPhra
                 {
                     try
                     {
-                        string id = Request.QueryString["id"] ?? "0";
                         string phone = TextBox1.Text.Trim();
 
-                        // 🆕 Generate UNIQUE filename with timestamp
-                        // Pattern: {ReservationID}_{Phone}_{Timestamp}.jpg
-                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                        long? paymentHistoryId = null;
+                        // ✅ Save as TEMP file: {phone}.jpg
+                        // This will be moved to final filename when Button1 is clicked
+                        string tempFilename = phone + ".jpg";
 
-                        // Try to get PaymentHistoryId if available
-                        if (Session["PaymentHistoryId"] != null)
+                        // Delete old temp file if exists
+                        string tempPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename;
+                        if (File.Exists(tempPath))
                         {
-                            paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
+                            File.Delete(tempPath);
                         }
 
-                        // Use PaymentHistoryId if available, otherwise use timestamp
-                        string uniqueSuffix = paymentHistoryId.HasValue ?
-                            $"_{paymentHistoryId.Value}" :
-                            $"_{timestamp}";
-
-                        string filename = id + "_" + phone + uniqueSuffix + ".jpg";
-
-                        // ❌ DON'T delete old files - keep all uploaded slips
-                        // Each upload creates a unique filename
-
-                        // Save file with unique filename
-                        string FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename.Replace("/", "").Replace("\\", "").Replace("'", ""));
+                        // Save as temp file
+                        string FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + tempFilename);
                         FileUpload1.SaveAs(FileSaveWithPath);
 
-                        // ✅ Show uploaded image immediately
-                        Image1.ImageUrl = "./Upload/Slip/" + filename;
+                        // ✅ Show uploaded image immediately (from temp file)
+                        Image1.ImageUrl = "./Upload/Slip/" + tempFilename;
                         Image1.Visible = true;
                         Image1.DataBind();
 
-                        // 🆕 Record in Payment_Slips table for tracking
-                        if (Convert.ToInt32(id) > 0)
-                        {
-                            try
-                            {
-                                FileInfo fileInfo = new FileInfo(FileSaveWithPath);
-                                long fileSize = fileInfo.Length;
-                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
-
-                                string insertSlipQuery = @"
-                                    INSERT INTO [dbo].[Payment_Slips] (
-                                        Account_Receipt_ID,
-                                        Reservation_ID,
-                                        SlipFileURL,
-                                        FileName,
-                                        FileType,
-                                        FileSize,
-                                        UploadedBy_ID,
-                                        UploadedBy_CustomerPhone,
-                                        UploadedDate,
-                                        VerificationStatus,
-                                        IsVerified,
-                                        Notes,
-                                        IsActive,
-                                        Status
-                                    ) VALUES (
-                                        @AccountReceiptId,
-                                        @ReservationId,
-                                        @SlipFileURL,
-                                        @FileName,
-                                        'image/jpeg',
-                                        @FileSize,
-                                        @AdminId,
-                                        @CustomerPhone,
-                                        GETDATE(),
-                                        'PENDING',
-                                        0,
-                                        N'อัพโหลดจากปุ่ม Button3',
-                                        1,
-                                        1
-                                    )";
-
-                                var slipParams = new Dictionary<string, object>
-                                {
-                                    { "@AccountReceiptId", (object)DBNull.Value },  // ✅ Use NULL instead of 0
-                                    { "@ReservationId", Convert.ToInt32(id) },
-                                    { "@SlipFileURL", "Upload/Slip/" + filename },
-                                    { "@FileName", filename },
-                                    { "@FileSize", (int)fileSize },
-                                    { "@AdminId", adminId ?? (object)DBNull.Value },
-                                    { "@CustomerPhone", phone }
-                                };
-
-                                code2.DatabaseQuerySafe(conn, insertSlipQuery, slipParams);
-                            }
-                            catch (Exception ex)
-                            {
-                                code2.Logs(conn, "Button3_Click - Payment_Slips Insert Error",
-                                    $"File uploaded but not recorded in DB: {filename}, Error: {ex.Message}",
-                                    Session["User"]?.ToString() ?? "SYSTEM");
-                            }
-                        }
-
                         // ✅ Show success message
                         ClientScript.RegisterStartupScript(this.GetType(), "uploadSuccess",
-                            "alert('✅ อัพโหลดสลิปสำเร็จ!\\n\\n📎 ไฟล์: " + FileUpload1.FileName.Replace("'", "\\'") + "\\n✅ แสดงรูปด้านล่างแล้ว');", true);
+                            "alert('✅ อัพโหลดสลิปสำเร็จ!\\n\\n📎 ไฟล์: " + FileUpload1.FileName.Replace("'", "\\'") + "\\n✅ แสดงรูปด้านล่างแล้ว\\n\\nกด \"บันทึก\" เพื่อบันทึกข้อมูล');", true);
                     }
                     catch (Exception ex)
                     {
