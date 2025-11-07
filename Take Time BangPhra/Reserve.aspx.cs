@@ -258,9 +258,12 @@ namespace Take_Time_BangPhra
                 divPaymentHistory.Visible = false;
             }
 
-            // 🔧 CRITICAL: Always rebind product charges on every page load (including postbacks)
-            // This prevents Event Validation errors when clicking delete buttons with Visible='<%# Eval(...) %>'
-            if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]))
+            // 🔧 IMPORTANT: Rebind product charges on page load, BUT NOT during postback from delete button
+            // Check if this is a postback from GridView command (delete button click)
+            bool isGridViewCommand = IsPostBack && Request.Form["__EVENTTARGET"] != null &&
+                                     Request.Form["__EVENTTARGET"].Contains("gvProductCharges");
+
+            if (shouldLoadProductCharges && !string.IsNullOrEmpty(Request.QueryString["id"]) && !isGridViewCommand)
             {
                 LoadProductCharges();
             }
