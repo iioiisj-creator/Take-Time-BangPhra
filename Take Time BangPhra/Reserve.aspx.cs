@@ -557,27 +557,37 @@ namespace Take_Time_BangPhra
                 DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
 
                 // 💰 Load payment amounts (needed for PostBack validation)
-                // ✅ FIX: Use calculated totalPrice (includes ProductCharges) for both initial load and PostBack
+                // ✅ FIX: Use different logic for initial load vs PostBack
                 decimal dbTotalPrice = Convert.ToDecimal(dtCustomer.Rows[0]["TotalPrice"]);
                 decimal calculatedTotalPrice = Convert.ToDecimal(Session["totalPrice"]);
 
-                // 🔧 ALWAYS use calculatedTotalPrice (which includes ProductCharges)
-                // This ensures ProductCharges are displayed immediately on first load
-                TextBox4.Text = calculatedTotalPrice.ToString();
-                Session["OldPrice"] = calculatedTotalPrice.ToString();
-
+                decimal finalTotalPrice;
                 if (!IsPostBack)
                 {
-                    Session["PriceModified"] = "false";  // Track if user modified prices
+                    // 🔧 Initial load: Use dbTotalPrice + ProductCharges
+                    // Because GridView checkboxes haven't been checked yet
+                    // (they will be checked later in line ~723-736)
+                    decimal productChargesOnly = Convert.ToDecimal(Session["ProductCharges"] ?? "0");
+                    finalTotalPrice = dbTotalPrice + productChargesOnly;
+
+                    Session["PriceModified"] = "false";
                 }
                 else
                 {
-                    // Mark as modified if price differs from DB (on PostBack)
+                    // 🔧 PostBack: Use calculatedTotalPrice from GridView
+                    // Because user may have modified prices/rooms
+                    finalTotalPrice = calculatedTotalPrice;
+
+                    // Mark as modified if price differs from DB
                     if (calculatedTotalPrice != dbTotalPrice)
                     {
                         Session["PriceModified"] = "true";
                     }
                 }
+
+                // Set TextBox and Session
+                TextBox4.Text = finalTotalPrice.ToString();
+                Session["OldPrice"] = finalTotalPrice.ToString();
 
                 // 💰 Get actual total paid amount from Payment_History instead of Deposit column
                 decimal totalPaid = 0;
