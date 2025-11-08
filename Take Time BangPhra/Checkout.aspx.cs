@@ -102,47 +102,23 @@ namespace Take_Time_BangPhra
                     decimal baseTotalPrice = Convert.ToDecimal(row["TotalPrice"]);
                     decimal deposit = row["Deposit"] != DBNull.Value ? Convert.ToDecimal(row["Deposit"]) : 0;
 
-                    // Get product charges from Reservation_Product_Charges (new method)
-                    decimal productChargesNew = 0;
+                    // Get product charges from Reservation_Product_Charges
+                    decimal productCharges = 0;
                     try
                     {
-                        var chargesParamsNew = new System.Collections.Generic.Dictionary<string, object>
+                        var chargesParams = new System.Collections.Generic.Dictionary<string, object>
                         {
                             { "@reservationId", reservationId }
                         };
-                        string chargesQueryNew = @"
+                        string chargesQuery = @"
                             SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
                             FROM Reservation_Product_Charges
                             WHERE Reservation_ID = @reservationId
                             AND Status <> 'CANCELLED'";
-                        DataTable dtChargesNew = codeInstance.DatabaseQuerySafe(connectionString, chargesQueryNew, chargesParamsNew);
-                        if (dtChargesNew.Rows.Count > 0 && dtChargesNew.Rows[0]["TotalCharges"] != DBNull.Value)
+                        DataTable dtCharges = codeInstance.DatabaseQuerySafe(connectionString, chargesQuery, chargesParams);
+                        if (dtCharges.Rows.Count > 0 && dtCharges.Rows[0]["TotalCharges"] != DBNull.Value)
                         {
-                            productChargesNew = Convert.ToDecimal(dtChargesNew.Rows[0]["TotalCharges"]);
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore if table doesn't exist
-                    }
-
-                    // Get product charges from Reserve_Detail (old method - ProductType_ID = 3)
-                    decimal productChargesOld = 0;
-                    try
-                    {
-                        var chargesParamsOld = new System.Collections.Generic.Dictionary<string, object>
-                        {
-                            { "@reservationId", reservationId }
-                        };
-                        string chargesQueryOld = @"
-                            SELECT ISNULL(SUM(Price_Amount), 0) as TotalCharges
-                            FROM Reserve_Detail
-                            WHERE Reservation_ID = @reservationId
-                            AND ProductType_ID = 3";
-                        DataTable dtChargesOld = codeInstance.DatabaseQuerySafe(connectionString, chargesQueryOld, chargesParamsOld);
-                        if (dtChargesOld.Rows.Count > 0 && dtChargesOld.Rows[0]["TotalCharges"] != DBNull.Value)
-                        {
-                            productChargesOld = Convert.ToDecimal(dtChargesOld.Rows[0]["TotalCharges"]);
+                            productCharges = Convert.ToDecimal(dtCharges.Rows[0]["TotalCharges"]);
                         }
                     }
                     catch
@@ -151,7 +127,7 @@ namespace Take_Time_BangPhra
                     }
 
                     // Calculate total price with ALL product charges
-                    decimal totalPriceWithCharges = baseTotalPrice + productChargesNew + productChargesOld;
+                    decimal totalPriceWithCharges = baseTotalPrice + productCharges;
 
                     // Get accurate total paid from Payment_History
                     decimal totalPaid = 0;

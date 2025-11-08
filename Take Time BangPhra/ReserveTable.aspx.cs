@@ -139,32 +139,20 @@ namespace Take_Time_BangPhra
                     baseTotalPrice = Convert.ToDecimal(dtReservation.Rows[i]["TotalPrice"]);
                 }
 
-                // 2. Get product charges from Reservation_Product_Charges (new method)
-                decimal productChargesNew = 0;
-                DataTable dtProductChargesNew = DatabaseQuery(conn,
+                // 2. Get product charges from Reservation_Product_Charges
+                decimal productCharges = 0;
+                DataTable dtProductCharges2 = DatabaseQuery(conn,
                     @"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
                       FROM Reservation_Product_Charges
                       WHERE Reservation_ID = @ReservationId AND Status <> 'CANCELLED'",
                     new SqlParameter("@ReservationId", reservationId));
-                if (dtProductChargesNew.Rows.Count > 0 && dtProductChargesNew.Rows[0]["TotalCharges"] != DBNull.Value)
+                if (dtProductCharges2.Rows.Count > 0 && dtProductCharges2.Rows[0]["TotalCharges"] != DBNull.Value)
                 {
-                    productChargesNew = Convert.ToDecimal(dtProductChargesNew.Rows[0]["TotalCharges"]);
+                    productCharges = Convert.ToDecimal(dtProductCharges2.Rows[0]["TotalCharges"]);
                 }
 
-                // 3. Get product charges from Reserve_Detail (old method - ProductType_ID = 3)
-                decimal productChargesOld = 0;
-                DataTable dtProductChargesOld = DatabaseQuery(conn,
-                    @"SELECT ISNULL(SUM(Price_Amount), 0) as TotalCharges
-                      FROM Reserve_Detail
-                      WHERE Reservation_ID = @ReservationId AND ProductType_ID = 3",
-                    new SqlParameter("@ReservationId", reservationId));
-                if (dtProductChargesOld.Rows.Count > 0 && dtProductChargesOld.Rows[0]["TotalCharges"] != DBNull.Value)
-                {
-                    productChargesOld = Convert.ToDecimal(dtProductChargesOld.Rows[0]["TotalCharges"]);
-                }
-
-                // 4. Calculate total price with charges
-                decimal totalPrice = baseTotalPrice + productChargesNew + productChargesOld;
+                // 3. Calculate total price with charges
+                decimal totalPrice = baseTotalPrice + productCharges;
 
                 // 5. Get total paid from Payment_History
                 decimal totalPaid = 0;
