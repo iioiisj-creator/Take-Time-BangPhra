@@ -127,23 +127,28 @@ namespace Take_Time_BangPhra
                 Label9.Text = string.IsNullOrEmpty(Items) ? "ไม่มีรายการ" : Items;
 
                 // Set payment information using Payment_History
-                int totalPrice = Convert.ToInt32(dtReservationAccommodation.Rows[0]["totalPrice"]);
-                Label11.Text = totalPrice.ToString("n0");
-
-                // Get total paid and remaining balance from Payment_History
+                // 🔧 FIX: Use fn_GetTotalPriceWithCharges to include product charges
                 DataTable dtPayment = code.DatabaseQuery(conn,
-                    $"SELECT dbo.fn_GetTotalPaid({id}) as TotalPaid, dbo.fn_GetRemainingBalance({id}) as RemainingBalance");
+                    $@"SELECT
+                        dbo.fn_GetTotalPriceWithCharges({id}) as TotalPriceWithCharges,
+                        dbo.fn_GetTotalPaid({id}) as TotalPaid,
+                        dbo.fn_GetRemainingBalance({id}) as RemainingBalance");
 
+                decimal totalPrice = 0;
                 decimal totalPaid = 0;
-                decimal remainingBalance = totalPrice;
+                decimal remainingBalance = 0;
+
                 if (dtPayment.Rows.Count > 0)
                 {
+                    totalPrice = dtPayment.Rows[0]["TotalPriceWithCharges"] != DBNull.Value
+                        ? Convert.ToDecimal(dtPayment.Rows[0]["TotalPriceWithCharges"]) : 0;
                     totalPaid = dtPayment.Rows[0]["TotalPaid"] != DBNull.Value
                         ? Convert.ToDecimal(dtPayment.Rows[0]["TotalPaid"]) : 0;
                     remainingBalance = dtPayment.Rows[0]["RemainingBalance"] != DBNull.Value
                         ? Convert.ToDecimal(dtPayment.Rows[0]["RemainingBalance"]) : totalPrice;
                 }
 
+                Label11.Text = totalPrice.ToString("n0");
                 Label12.Text = totalPaid.ToString("n0");
                 Label13.Text = remainingBalance.ToString("n0");
                 Label14.Text = dtReservationAccommodation.Rows[0]["Remark"].ToString();

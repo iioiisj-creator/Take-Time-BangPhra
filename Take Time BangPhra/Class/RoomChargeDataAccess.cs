@@ -114,7 +114,7 @@ namespace Take_Time_BangPhra
         }
 
         /// <summary>
-        /// Get total pending charges for a reservation
+        /// Get total pending charges for a reservation (PENDING only)
         /// </summary>
         public decimal GetTotalPendingCharges(int reservationId)
         {
@@ -133,6 +133,29 @@ namespace Take_Time_BangPhra
             if (result.Rows.Count > 0)
             {
                 return Convert.ToDecimal(result.Rows[0]["TotalPending"]);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Get total product charges for a reservation (ALL statuses except CANCELLED)
+        /// Uses fn_GetTotalProductCharges SQL function
+        /// </summary>
+        public decimal GetTotalProductCharges(int reservationId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@reservationId", reservationId }
+            };
+
+            var result = _code.DatabaseQuerySafe(_connectionString,
+                @"SELECT dbo.fn_GetTotalProductCharges(@reservationId) as TotalCharges",
+                parameters);
+
+            if (result.Rows.Count > 0 && result.Rows[0]["TotalCharges"] != DBNull.Value)
+            {
+                return Convert.ToDecimal(result.Rows[0]["TotalCharges"]);
             }
 
             return 0;

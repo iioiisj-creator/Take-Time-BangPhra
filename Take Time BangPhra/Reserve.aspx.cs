@@ -504,25 +504,26 @@ namespace Take_Time_BangPhra
 
             Session["PriceItems"] = PriceItems;
 
-            // 🏨 เพิ่มสินค้าค้างชำระ (Pending Product Charges)
-            double PendingCharges = 0;
+            // 🏨 เพิ่มสินค้าชาร์จเข้าห้อง (Product Charges - ทั้งหมด ไม่ใช่เฉพาะที่ค้างชำระ)
+            double ProductCharges = 0;
             try
             {
                 if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
                 {
                     int reservationId = Convert.ToInt32(id);
-                    decimal pendingCharges = _roomChargeDA.GetTotalPendingCharges(reservationId);
-                    PendingCharges = Convert.ToDouble(pendingCharges);
+                    // 🔧 FIX: Use GetTotalProductCharges (all charges) instead of GetTotalPendingCharges (pending only)
+                    decimal productCharges = _roomChargeDA.GetTotalProductCharges(reservationId);
+                    ProductCharges = Convert.ToDouble(productCharges);
                 }
             }
             catch
             {
-                PendingCharges = 0;
+                ProductCharges = 0;
             }
 
-            totalPrice = PriceAccom + PriceItems + PendingCharges;
+            totalPrice = PriceAccom + PriceItems + ProductCharges;
             Session["totalPrice"] = totalPrice;
-            Session["PendingCharges"] = PendingCharges;
+            Session["ProductCharges"] = ProductCharges;
 
             // ⚠️ DON'T set TextBox4.Text here - it will be set later in edit/checkin/rentmore section
             // TextBox4.Text = Session["totalPrice"].ToString();
