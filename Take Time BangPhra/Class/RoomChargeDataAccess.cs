@@ -140,7 +140,7 @@ namespace Take_Time_BangPhra
 
         /// <summary>
         /// Get total product charges for a reservation (ALL statuses except CANCELLED)
-        /// Uses fn_GetTotalProductCharges SQL function
+        /// Queries directly from Reservation_Product_Charges table
         /// </summary>
         public decimal GetTotalProductCharges(int reservationId)
         {
@@ -150,7 +150,10 @@ namespace Take_Time_BangPhra
             };
 
             var result = _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT dbo.fn_GetTotalProductCharges(@reservationId) as TotalCharges",
+                @"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                  FROM Reservation_Product_Charges
+                  WHERE Reservation_ID = @reservationId
+                  AND Status <> 'CANCELLED'",
                 parameters);
 
             if (result.Rows.Count > 0 && result.Rows[0]["TotalCharges"] != DBNull.Value)

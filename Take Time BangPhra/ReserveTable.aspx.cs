@@ -491,7 +491,9 @@ namespace Take_Time_BangPhra
                     @"SELECT r.ID, r.Customer_MobilePhone, c.Name, c.NickName,
                       ra.Accommodation_ID, a.AccomName, r.CheckinDate, r.CheckoutDate,
                       r.StayDays, r.TotalPrice,
-                      dbo.fn_GetTotalPaid(r.ID) AS TotalPaid
+                      ISNULL((SELECT SUM(PaymentAmount)
+                              FROM Payment_History
+                              WHERE Reservation_ID = r.ID AND Status = 'COMPLETED'), 0) AS TotalPaid
                       FROM [Reservation] r
                       INNER JOIN Reservation_Accommodation ra ON r.ID = ra.Reservation_ID
                       INNER JOIN Accommodation a ON a.ID = ra.Accommodation_ID

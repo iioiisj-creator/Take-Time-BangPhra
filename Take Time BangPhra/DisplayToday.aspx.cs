@@ -73,16 +73,40 @@ namespace Take_Time_BangPhra
                 }
                 dtReservation.Rows[i]["Items"] = Items;
 
-                // Calculate remaining amount using Payment_History (via SQL function)
+                // Calculate remaining balance using direct query
                 int reservationId = Convert.ToInt32(dtReservation.Rows[i]["ID"]);
-                DataTable dtRemain = code.DatabaseQuery(conn,
-                    "SELECT dbo.fn_GetRemainingBalance(" + reservationId + ") as RemainingBalance");
 
-                decimal remainingBalance = 0;
-                if (dtRemain.Rows.Count > 0 && dtRemain.Rows[0]["RemainingBalance"] != DBNull.Value)
+                // Get base total price
+                decimal baseTotalPrice = Convert.ToDecimal(dtReservation.Rows[i]["TotalPrice"]);
+
+                // Get product charges (excluding cancelled)
+                decimal productCharges = 0;
+                DataTable dtProductCharges = code.DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                       FROM Reservation_Product_Charges
+                       WHERE Reservation_ID = {reservationId}
+                       AND Status <> 'CANCELLED'");
+                if (dtProductCharges.Rows.Count > 0 && dtProductCharges.Rows[0]["TotalCharges"] != DBNull.Value)
                 {
-                    remainingBalance = Convert.ToDecimal(dtRemain.Rows[0]["RemainingBalance"]);
+                    productCharges = Convert.ToDecimal(dtProductCharges.Rows[0]["TotalCharges"]);
                 }
+
+                // Get total paid
+                decimal totalPaid = 0;
+                DataTable dtPaid = code.DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(PaymentAmount), 0) as TotalPaid
+                       FROM Payment_History
+                       WHERE Reservation_ID = {reservationId}
+                       AND Status = 'COMPLETED'");
+                if (dtPaid.Rows.Count > 0 && dtPaid.Rows[0]["TotalPaid"] != DBNull.Value)
+                {
+                    totalPaid = Convert.ToDecimal(dtPaid.Rows[0]["TotalPaid"]);
+                }
+
+                // Calculate remaining balance
+                decimal totalPrice = baseTotalPrice + productCharges;
+                decimal remainingBalance = totalPrice - totalPaid;
+
                 dtReservation.Rows[i]["Remain"] = remainingBalance.ToString("N0");
             }
 
