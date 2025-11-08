@@ -140,12 +140,17 @@ namespace Take_Time_BangPhra
                 }
 
                 // 2. Get product charges from Reservation_Product_Charges
+                // 🔧 FIX: Use code2.DatabaseQuerySafe instead of local DatabaseQuery (which has bugs)
                 decimal productCharges = 0;
-                DataTable dtProductCharges2 = DatabaseQuery(conn,
+                var productChargesParams = new Dictionary<string, object>
+                {
+                    { "@reservationId", reservationId }
+                };
+                DataTable dtProductCharges2 = code2.DatabaseQuerySafe(conn,
                     @"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
                       FROM Reservation_Product_Charges
-                      WHERE Reservation_ID = @ReservationId AND Status <> 'CANCELLED'",
-                    new SqlParameter("@ReservationId", reservationId));
+                      WHERE Reservation_ID = @reservationId AND Status <> 'CANCELLED'",
+                    productChargesParams);
                 if (dtProductCharges2.Rows.Count > 0 && dtProductCharges2.Rows[0]["TotalCharges"] != DBNull.Value)
                 {
                     productCharges = Convert.ToDecimal(dtProductCharges2.Rows[0]["TotalCharges"]);
@@ -155,12 +160,17 @@ namespace Take_Time_BangPhra
                 decimal totalPrice = baseTotalPrice + productCharges;
 
                 // 5. Get total paid from Payment_History
+                // 🔧 FIX: Use code2.DatabaseQuerySafe instead of local DatabaseQuery (which has bugs)
                 decimal totalPaid = 0;
-                DataTable dtPaid = DatabaseQuery(conn,
+                var totalPaidParams = new Dictionary<string, object>
+                {
+                    { "@reservationId", reservationId }
+                };
+                DataTable dtPaid = code2.DatabaseQuerySafe(conn,
                     @"SELECT ISNULL(SUM(PaymentAmount), 0) as TotalPaid
                       FROM Payment_History
-                      WHERE Reservation_ID = @ReservationId AND Status = 'COMPLETED'",
-                    new SqlParameter("@ReservationId", reservationId));
+                      WHERE Reservation_ID = @reservationId AND Status = 'COMPLETED'",
+                    totalPaidParams);
                 if (dtPaid.Rows.Count > 0 && dtPaid.Rows[0]["TotalPaid"] != DBNull.Value)
                 {
                     totalPaid = Convert.ToDecimal(dtPaid.Rows[0]["TotalPaid"]);
