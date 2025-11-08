@@ -300,7 +300,7 @@ namespace Take_Time_BangPhra.Account.Report
                 dtBusinessinfoReport = dtbusinessinfo.Copy();
                 try
                 {
-                    if (dtbusinessinfo.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    if (dtbusinessinfo.Rows[0]["Province"].ToString().Contains("กรุงเทพ"))
                     {
                         dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " แขวง " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " เขต " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
                     }
@@ -313,16 +313,16 @@ namespace Take_Time_BangPhra.Account.Report
                 {
                     dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString();
                 }
-                
+
                 DataTable dtVendor = code.DatabaseQuery(conn, "Select * from Vendor left join Customer_Type on Customer_Type.ID = Vendor_Type_ID left join Address on Address.ID = Address_ID Where Vendor.ID = '" + DropDownList1.SelectedValue + "'");
 
                 DataTable dtVendorReport = new DataTable();
                 dtVendorReport = dtVendor.Copy();
 
-                
+
                 try
                 {
-                    if (dtVendorReport.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    if (dtVendorReport.Rows[0]["Province"].ToString().Contains("กรุงเทพ"))
                     {
                         dtVendorReport.Rows[0]["Address"] = dtVendorReport.Rows[0]["Address"].ToString() + " " + dtVendorReport.Rows[0]["Address1"].ToString() + " แขวง " + dtVendorReport.Rows[0]["SubDistrict"].ToString() + " เขต " + dtVendorReport.Rows[0]["District"].ToString() + " " + dtVendorReport.Rows[0]["Province"].ToString() + " " + dtVendorReport.Rows[0]["PostalCode"].ToString();
                     }

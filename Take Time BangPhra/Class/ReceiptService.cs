@@ -679,7 +679,7 @@ namespace Take_Time_BangPhra.Services
                     string province = dtBusinessInfoReport.Rows[0]["Province"].ToString();
                     string postalCode = dtBusinessInfoReport.Rows[0]["PostalCode"].ToString();
 
-                    if (postalCode.StartsWith("10"))
+                    if (province.Contains("กรุงเทพ"))
                     {
                         dtBusinessInfoReport.Rows[0]["Address"] = $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                     }
@@ -736,7 +736,7 @@ namespace Take_Time_BangPhra.Services
                         string province = dtCustomerReport.Rows[0]["Province"].ToString();
                         string postalCode = dtCustomerReport.Rows[0]["PostalCode"].ToString();
 
-                        if (postalCode.StartsWith("10"))
+                        if (province.Contains("กรุงเทพ"))
                         {
                             dtCustomerReport.Rows[0]["Address"] = $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                         }
@@ -930,7 +930,7 @@ namespace Take_Time_BangPhra.Services
                 string province = dataRow["Province"].ToString();
                 string postalCode = dataRow["PostalCode"].ToString();
 
-                if (postalCode.StartsWith("10"))
+                if (province.Contains("กรุงเทพ"))
                 {
                     return $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                 }

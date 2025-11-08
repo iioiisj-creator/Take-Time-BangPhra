@@ -1727,7 +1727,7 @@ namespace Take_Time_BangPhra
                 catch { }
                 try
                 {
-                    if (dtcustomer.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    if (dtcustomer.Rows[0]["Province"].ToString().Contains("กรุงเทพ"))
                     {
                         dtCustomerReport.Rows[0]["Address"] = dtcustomer.Rows[0]["Address"].ToString() + " " + dtcustomer.Rows[0]["Address1"].ToString() + " แขวง " + dtcustomer.Rows[0]["SubDistrict"].ToString() + " เขต " + dtcustomer.Rows[0]["District"].ToString() + " " + dtcustomer.Rows[0]["Province"].ToString() + " " + dtcustomer.Rows[0]["PostalCode"].ToString();
                     }
@@ -1745,7 +1745,7 @@ namespace Take_Time_BangPhra
                 dtCustomerReport.Rows[0]["Email"] = TextBox13.Text;
                 try
                 {
-                    if (dtbusinessinfo.Rows[0]["PostalCode"].ToString().Substring(0, 2) == "10")
+                    if (dtbusinessinfo.Rows[0]["Province"].ToString().Contains("กรุงเทพ"))
                     {
                         dtBusinessinfoReport.Rows[0]["Address"] = dtbusinessinfo.Rows[0]["Address"].ToString() + " " + dtbusinessinfo.Rows[0]["Address1"].ToString() + " แขวง " + dtbusinessinfo.Rows[0]["SubDistrict"].ToString() + " เขต " + dtbusinessinfo.Rows[0]["District"].ToString() + " " + dtbusinessinfo.Rows[0]["Province"].ToString() + " " + dtbusinessinfo.Rows[0]["PostalCode"].ToString();
                     }
