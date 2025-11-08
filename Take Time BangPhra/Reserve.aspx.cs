@@ -511,13 +511,32 @@ namespace Take_Time_BangPhra
                 if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
                 {
                     int reservationId = Convert.ToInt32(id);
-                    // 🔧 FIX: Use GetTotalProductCharges (all charges) instead of GetTotalPendingCharges (pending only)
-                    decimal productCharges = _roomChargeDA.GetTotalProductCharges(reservationId);
-                    ProductCharges = Convert.ToDouble(productCharges);
+
+                    // 🔧 FIX: Query directly from database (same as ReserveTable and Reservation_Confirmed)
+                    // This ensures we always get the latest data without caching issues
+                    var productChargesParams = new Dictionary<string, object>
+                    {
+                        { "@reservationId", reservationId }
+                    };
+                    DataTable dtProductCharges = code2.DatabaseQuerySafe(conn,
+                        @"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                          FROM Reservation_Product_Charges
+                          WHERE Reservation_ID = @reservationId
+                          AND Status <> 'CANCELLED'",
+                        productChargesParams);
+
+                    if (dtProductCharges.Rows.Count > 0 && dtProductCharges.Rows[0]["TotalCharges"] != DBNull.Value)
+                    {
+                        ProductCharges = Convert.ToDouble(dtProductCharges.Rows[0]["TotalCharges"]);
+                    }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                // Log error for debugging
+                code2.Logs(conn, "Reserve - Get Product Charges Error",
+                    $"Reservation ID: {id}, Error: {ex.Message}",
+                    Session["User"]?.ToString());
                 ProductCharges = 0;
             }
 
