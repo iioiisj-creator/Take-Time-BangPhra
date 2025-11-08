@@ -98,8 +98,60 @@ namespace Take_Time_BangPhra
                     lblCheckinDate.Text = Convert.ToDateTime(row["CheckinDate"]).ToString("dd/MM/yyyy");
                     lblCheckoutDate.Text = Convert.ToDateTime(row["CheckoutDate"]).ToString("dd/MM/yyyy");
 
-                    decimal totalPrice = Convert.ToDecimal(row["TotalPrice"]);
+                    // 🔧 Calculate total price including ALL product charges
+                    decimal baseTotalPrice = Convert.ToDecimal(row["TotalPrice"]);
                     decimal deposit = row["Deposit"] != DBNull.Value ? Convert.ToDecimal(row["Deposit"]) : 0;
+
+                    // Get product charges from Reservation_Product_Charges (new method)
+                    decimal productChargesNew = 0;
+                    try
+                    {
+                        var chargesParamsNew = new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "@reservationId", reservationId }
+                        };
+                        string chargesQueryNew = @"
+                            SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                            FROM Reservation_Product_Charges
+                            WHERE Reservation_ID = @reservationId
+                            AND Status <> 'CANCELLED'";
+                        DataTable dtChargesNew = codeInstance.DatabaseQuerySafe(connectionString, chargesQueryNew, chargesParamsNew);
+                        if (dtChargesNew.Rows.Count > 0 && dtChargesNew.Rows[0]["TotalCharges"] != DBNull.Value)
+                        {
+                            productChargesNew = Convert.ToDecimal(dtChargesNew.Rows[0]["TotalCharges"]);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if table doesn't exist
+                    }
+
+                    // Get product charges from Reserve_Detail (old method - ProductType_ID = 3)
+                    decimal productChargesOld = 0;
+                    try
+                    {
+                        var chargesParamsOld = new System.Collections.Generic.Dictionary<string, object>
+                        {
+                            { "@reservationId", reservationId }
+                        };
+                        string chargesQueryOld = @"
+                            SELECT ISNULL(SUM(Price_Amount), 0) as TotalCharges
+                            FROM Reserve_Detail
+                            WHERE Reservation_ID = @reservationId
+                            AND ProductType_ID = 3";
+                        DataTable dtChargesOld = codeInstance.DatabaseQuerySafe(connectionString, chargesQueryOld, chargesParamsOld);
+                        if (dtChargesOld.Rows.Count > 0 && dtChargesOld.Rows[0]["TotalCharges"] != DBNull.Value)
+                        {
+                            productChargesOld = Convert.ToDecimal(dtChargesOld.Rows[0]["TotalCharges"]);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if table doesn't exist
+                    }
+
+                    // Calculate total price with ALL product charges
+                    decimal totalPriceWithCharges = baseTotalPrice + productChargesNew + productChargesOld;
 
                     // Get accurate total paid from Payment_History
                     decimal totalPaid = 0;
@@ -113,29 +165,26 @@ namespace Take_Time_BangPhra
                         totalPaid = deposit;
                     }
 
-                    // ✅ Check for pending product charges
+                    // Calculate remaining balance
+                    decimal remainingBalance = totalPriceWithCharges - totalPaid;
+
+                    // Check for pending product charges (for warning message)
                     decimal pendingCharges = 0;
                     try
                     {
-                        var chargesParams = new System.Collections.Generic.Dictionary<string, object>
+                        var pendingParams = new System.Collections.Generic.Dictionary<string, object>
                         {
                             { "@reservationId", reservationId }
                         };
-                        string chargesQuery = @"
-                            SELECT ISNULL(SUM(rd.Price_Amount), 0) as PendingCharges
-                            FROM Reserve_Detail rd
-                            WHERE rd.Reservation_ID = @reservationId
-                            AND rd.ProductType_ID = 3
-                            AND rd.ID NOT IN (
-                                SELECT ISNULL(Reserve_Detail_ID, 0)
-                                FROM Payment_History
-                                WHERE Reservation_ID = @reservationId
-                                AND Status = 'COMPLETED'
-                            )";
-                        DataTable dtCharges = codeInstance.DatabaseQuerySafe(connectionString, chargesQuery, chargesParams);
-                        if (dtCharges.Rows.Count > 0 && dtCharges.Rows[0]["PendingCharges"] != DBNull.Value)
+                        string pendingQuery = @"
+                            SELECT ISNULL(SUM(TotalAmount), 0) as PendingCharges
+                            FROM Reservation_Product_Charges
+                            WHERE Reservation_ID = @reservationId
+                            AND Status = 'PENDING'";
+                        DataTable dtPending = codeInstance.DatabaseQuerySafe(connectionString, pendingQuery, pendingParams);
+                        if (dtPending.Rows.Count > 0 && dtPending.Rows[0]["PendingCharges"] != DBNull.Value)
                         {
-                            pendingCharges = Convert.ToDecimal(dtCharges.Rows[0]["PendingCharges"]);
+                            pendingCharges = Convert.ToDecimal(dtPending.Rows[0]["PendingCharges"]);
                         }
                     }
                     catch
@@ -143,9 +192,7 @@ namespace Take_Time_BangPhra
                         // Ignore if table doesn't exist
                     }
 
-                    decimal remainingBalance = totalPrice - totalPaid + pendingCharges;
-
-                    lblTotalPrice.Text = (totalPrice + pendingCharges).ToString("N2");
+                    lblTotalPrice.Text = totalPriceWithCharges.ToString("N2");
                     lblPaidAmount.Text = totalPaid.ToString("N2");
                     lblTotalPaid.Text = totalPaid.ToString("N2");
                     lblRemainingBalance.Text = remainingBalance.ToString("N2");
@@ -158,8 +205,8 @@ namespace Take_Time_BangPhra
                     }
 
                     // Check payment status
-                    // ✅ STRICT VALIDATION: Must pay FULL amount before checkout (including pending charges)
-                    if (remainingBalance <= 0 && pendingCharges == 0)
+                    // ✅ STRICT VALIDATION: Must pay FULL amount before checkout
+                    if (remainingBalance <= 0)
                     {
                         pnlPaymentComplete.Visible = true;
                         pnlPaymentIncomplete.Visible = false;
