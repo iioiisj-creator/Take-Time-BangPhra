@@ -557,30 +557,22 @@ namespace Take_Time_BangPhra
                 DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
 
                 // 💰 Load payment amounts (needed for PostBack validation)
-                // ✅ FIX: Use calculated totalPrice on PostBack (when user changes rooms/prices)
-                //         Only use DB price on initial load
+                // ✅ FIX: Use calculated totalPrice (includes ProductCharges) for both initial load and PostBack
                 decimal dbTotalPrice = Convert.ToDecimal(dtCustomer.Rows[0]["TotalPrice"]);
                 decimal calculatedTotalPrice = Convert.ToDecimal(Session["totalPrice"]);
 
+                // 🔧 ALWAYS use calculatedTotalPrice (which includes ProductCharges)
+                // This ensures ProductCharges are displayed immediately on first load
+                TextBox4.Text = calculatedTotalPrice.ToString();
+                Session["OldPrice"] = calculatedTotalPrice.ToString();
+
                 if (!IsPostBack)
                 {
-                    // First load: Use database price
-                    TextBox4.Text = dbTotalPrice.ToString();
-                    Session["OldPrice"] = dbTotalPrice.ToString();
                     Session["PriceModified"] = "false";  // Track if user modified prices
                 }
                 else
                 {
-                    // 🔧 FIX: On PostBack, ALWAYS use calculated price from GridView
-                    // This ensures that if user edits prices in GridView and then ticks payment checkbox,
-                    // the edited prices are preserved (not overwritten by DB prices)
-
-                    // 🎯 IMPORTANT: Use calculatedTotalPrice from Session["totalPrice"]
-                    // This was just calculated above (line 502) from current GridView values
-                    TextBox4.Text = calculatedTotalPrice.ToString();
-                    Session["OldPrice"] = calculatedTotalPrice.ToString();
-
-                    // Mark as modified if price differs from DB
+                    // Mark as modified if price differs from DB (on PostBack)
                     if (calculatedTotalPrice != dbTotalPrice)
                     {
                         Session["PriceModified"] = "true";

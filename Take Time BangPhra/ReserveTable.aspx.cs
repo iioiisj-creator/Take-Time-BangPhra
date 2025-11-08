@@ -89,6 +89,8 @@ namespace Take_Time_BangPhra
                 dtReservation.Columns.Add("Order", typeof(int));
             if (!dtReservation.Columns.Contains("CountReserved"))
                 dtReservation.Columns.Add("CountReserved");
+            if (!dtReservation.Columns.Contains("TotalPriceWithCharges"))
+                dtReservation.Columns.Add("TotalPriceWithCharges");
 
             for (int i = 0; i < dtReservation.Rows.Count; i++)
             {
@@ -158,6 +160,10 @@ namespace Take_Time_BangPhra
 
                 // 3. Calculate total price with charges
                 decimal totalPrice = baseTotalPrice + productCharges;
+
+                // 🔧 FIX: Update TotalPrice column to show calculated value (includes ProductCharges)
+                dtReservation.Rows[i]["TotalPrice"] = totalPrice;
+                dtReservation.Rows[i]["TotalPriceWithCharges"] = totalPrice.ToString("N0");
 
                 // 5. Get total paid from Payment_History
                 // 🔧 FIX: Use code2.DatabaseQuerySafe instead of local DatabaseQuery (which has bugs)
