@@ -126,27 +126,70 @@ namespace Take_Time_BangPhra
 
                 Label9.Text = string.IsNullOrEmpty(Items) ? "ไม่มีรายการ" : Items;
 
-                // Set payment information using Payment_History
-                // 🔧 FIX: Use fn_GetTotalPriceWithCharges to include product charges
-                DataTable dtPayment = code.DatabaseQuery(conn,
-                    $@"SELECT
-                        dbo.fn_GetTotalPriceWithCharges({id}) as TotalPriceWithCharges,
-                        dbo.fn_GetTotalPaid({id}) as TotalPaid,
-                        dbo.fn_GetRemainingBalance({id}) as RemainingBalance");
+                // Set payment information
+                // 🔧 Calculate total price including product charges
 
-                decimal totalPrice = 0;
-                decimal totalPaid = 0;
-                decimal remainingBalance = 0;
-
-                if (dtPayment.Rows.Count > 0)
+                // 1. Get base total price from Reservation
+                decimal baseTotalPrice = 0;
+                DataTable dtReservationPrice = code.DatabaseQuery(conn,
+                    $"SELECT TotalPrice FROM Reservation WHERE ID = {id}");
+                if (dtReservationPrice.Rows.Count > 0 && dtReservationPrice.Rows[0]["TotalPrice"] != DBNull.Value)
                 {
-                    totalPrice = dtPayment.Rows[0]["TotalPriceWithCharges"] != DBNull.Value
-                        ? Convert.ToDecimal(dtPayment.Rows[0]["TotalPriceWithCharges"]) : 0;
-                    totalPaid = dtPayment.Rows[0]["TotalPaid"] != DBNull.Value
-                        ? Convert.ToDecimal(dtPayment.Rows[0]["TotalPaid"]) : 0;
-                    remainingBalance = dtPayment.Rows[0]["RemainingBalance"] != DBNull.Value
-                        ? Convert.ToDecimal(dtPayment.Rows[0]["RemainingBalance"]) : totalPrice;
+                    baseTotalPrice = Convert.ToDecimal(dtReservationPrice.Rows[0]["TotalPrice"]);
                 }
+
+                // 2. Get product charges from Reservation_Product_Charges (new method)
+                decimal productChargesNew = 0;
+                DataTable dtProductChargesNew = code.DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                       FROM Reservation_Product_Charges
+                       WHERE Reservation_ID = {id}
+                       AND Status <> 'CANCELLED'");
+                if (dtProductChargesNew.Rows.Count > 0 && dtProductChargesNew.Rows[0]["TotalCharges"] != DBNull.Value)
+                {
+                    productChargesNew = Convert.ToDecimal(dtProductChargesNew.Rows[0]["TotalCharges"]);
+                }
+
+                // 3. Get product charges from Reserve_Detail (old method - ProductType_ID = 3)
+                decimal productChargesOld = 0;
+                DataTable dtProductChargesOld = code.DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(Price_Amount), 0) as TotalCharges
+                       FROM Reserve_Detail
+                       WHERE Reservation_ID = {id}
+                       AND ProductType_ID = 3");
+                if (dtProductChargesOld.Rows.Count > 0 && dtProductChargesOld.Rows[0]["TotalCharges"] != DBNull.Value)
+                {
+                    productChargesOld = Convert.ToDecimal(dtProductChargesOld.Rows[0]["TotalCharges"]);
+                }
+
+                // 4. Calculate total price with charges
+                decimal totalPrice = baseTotalPrice + productChargesNew + productChargesOld;
+
+                // 5. Get total paid from Payment_History
+                decimal totalPaid = 0;
+                DataTable dtPaid = code.DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(PaymentAmount), 0) as TotalPaid
+                       FROM Payment_History
+                       WHERE Reservation_ID = {id}
+                       AND Status = 'COMPLETED'");
+                if (dtPaid.Rows.Count > 0 && dtPaid.Rows[0]["TotalPaid"] != DBNull.Value)
+                {
+                    totalPaid = Convert.ToDecimal(dtPaid.Rows[0]["TotalPaid"]);
+                }
+
+                // 6. If no payment history, fallback to Deposit column
+                if (totalPaid == 0)
+                {
+                    DataTable dtDeposit = code.DatabaseQuery(conn,
+                        $"SELECT ISNULL(Deposit, 0) as Deposit FROM Reservation WHERE ID = {id}");
+                    if (dtDeposit.Rows.Count > 0 && dtDeposit.Rows[0]["Deposit"] != DBNull.Value)
+                    {
+                        totalPaid = Convert.ToDecimal(dtDeposit.Rows[0]["Deposit"]);
+                    }
+                }
+
+                // 7. Calculate remaining balance
+                decimal remainingBalance = totalPrice - totalPaid;
 
                 Label11.Text = totalPrice.ToString("n0");
                 Label12.Text = totalPaid.ToString("n0");
