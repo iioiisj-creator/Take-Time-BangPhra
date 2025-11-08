@@ -36,14 +36,7 @@ BEGIN
     WHERE Reservation_ID = @ReservationID
       AND Status <> 'CANCELLED';
 
-    -- Also sum from Reserve_Detail where ProductType_ID = 3 (old method)
-    DECLARE @OldCharges decimal(18,2) = 0;
-    SELECT @OldCharges = ISNULL(SUM(Price_Amount), 0)
-    FROM [dbo].[Reserve_Detail]
-    WHERE Reservation_ID = @ReservationID
-      AND ProductType_ID = 3;
-
-    RETURN @TotalCharges + @OldCharges;
+    RETURN @TotalCharges;
 END
 GO
 
