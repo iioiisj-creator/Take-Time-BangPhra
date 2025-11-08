@@ -1904,18 +1904,23 @@ namespace Take_Time_BangPhra
                                                 // ส่งข้อความถ้ามีการเปลี่ยนแปลงใดๆ
                                                 if (hasAnyChanges)
                                                 {
-                                                    string message = $@"✏️ *แก้ไขการจองหมายเลข: {id}*
+                                                    string message = $@"✏️ ═══ แก้ไขการจอง ═══
 
-📞 โทรศัพท์: {TextBox1.Text}
-👤 ชื่อ: {TextBox2.Text}
-📅 เช็คอิน: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy")}
-📅 เช็คเอ้าท์: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy")}
-🕐 จำนวนคืน: {DropDownList1.SelectedValue} คืน
-💰 ราคารวม: {TextBox4.Text} บาท
+📋 หมายเลขการจอง: {id}
+👤 ชื่อผู้จอง: {TextBox2.Text}
+📞 เบอร์โทร: {TextBox1.Text}
 
+📅 วันที่เข้าพัก: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("th-TH"))}
+📅 วันที่ออก: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("th-TH"))}
+🌙 จำนวนคืน: {DropDownList1.SelectedValue} คืน
+
+💰 ยอดรวมทั้งหมด: {Convert.ToDecimal(TextBox4.Text):N2} บาท
+
+📝 รายละเอียดการเปลี่ยนแปลง:
 {changeDetails}
 
-👤 แก้ไขโดย: {Session["UserName"]?.ToString() ?? "System"}";
+👨‍💼 แก้ไขโดย: {Session["UserName"]?.ToString() ?? "System"}
+━━━━━━━━━━━━━━━━━";
 
                                                     var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
                                                     await bot.SendMessageAsync("-4969611371", message);
@@ -2618,20 +2623,24 @@ namespace Take_Time_BangPhra
                                             //                                    Response.Redirect("./Reservation_Confirmed?id=" + ID + "&check=" + TextBox1.Text+"&sendline=ok", false);
                                             //                                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                                             // สำหรับการจองใหม่ (command == "reserve") ให้แทนที่ส่วนส่งข้อความด้วย:
-                                            string message = $@"🎉 *การจองใหม่หมายเลข: {Reservation_ID}*
+                                            string message = $@"🎉 ═══ การจองใหม่ ═══
 
-📞 โทรศัพท์: {TextBox1.Text}
-👤 ชื่อ: {TextBox2.Text}
-📅 เช็คอิน: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy")}
-📅 เช็คเอ้าท์: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy")}
-🕐 จำนวนคืน: {DropDownList1.SelectedValue} คืน
-💰 ยอดรวม: {TextBox4.Text} บาท
-💰 มัดจำ: {TextBox5.Text} บาท
+📋 หมายเลขการจอง: {Reservation_ID}
+👤 ชื่อผู้จอง: {TextBox2.Text}
+📞 เบอร์โทร: {TextBox1.Text}
 
-🏨 *รายการห้องพัก:*
+📅 วันที่เข้าพัก: {code2.ParseDate(TextBox12.Text).Value.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("th-TH"))}
+📅 วันที่ออก: {code2.ParseDate(TextBox12.Text).Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("th-TH"))}
+🌙 จำนวนคืน: {DropDownList1.SelectedValue} คืน
+
+🏨 รายการห้องพัก:
 {msg}
 
-💬 หมายเหตุ: {TextBox6.Text}";
+💰 ยอดรวมทั้งหมด: {Convert.ToDecimal(TextBox4.Text):N2} บาท
+💵 มัดจำ: {Convert.ToDecimal(TextBox5.Text):N2} บาท
+💳 ยอดคงเหลือ: {(Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text)):N2} บาท
+
+{(!string.IsNullOrWhiteSpace(TextBox6.Text) ? $"💬 หมายเหตุ: {TextBox6.Text}\n" : "")}━━━━━━━━━━━━━━━━━";
 
                                             var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
                                             await bot.SendMessageAsync("-4969611371", message);
