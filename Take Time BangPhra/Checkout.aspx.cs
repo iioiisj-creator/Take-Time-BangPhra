@@ -134,6 +134,12 @@ namespace Take_Time_BangPhra
                     try
                     {
                         totalPaid = paymentDataAccess.GetTotalPaidAmount(reservationId);
+
+                        // ✅ FIX: Fallback to Deposit if no payment history (same as ReserveTable)
+                        if (totalPaid == 0 && deposit > 0)
+                        {
+                            totalPaid = deposit;
+                        }
                     }
                     catch
                     {
