@@ -214,7 +214,7 @@ namespace Take_Time_BangPhra
                 WHERE
                     CAST(@searchDate AS DATE) >= CAST(R.CheckinDate AS DATE)
                     AND CAST(@searchDate AS DATE) <= CAST(R.CheckoutDate AS DATE)
-                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว')
+                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')
                 ORDER BY R.CheckinDate DESC",
                 parameters);
         }
@@ -275,7 +275,7 @@ namespace Take_Time_BangPhra
                     R.ID = @reservationId
                     AND CAST(@searchDate AS DATE) >= CAST(R.CheckinDate AS DATE)
                     AND CAST(@searchDate AS DATE) <= CAST(R.CheckoutDate AS DATE)
-                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว')",
+                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')",
                 parameters);
         }
 

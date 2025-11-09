@@ -1,37 +1,13 @@
 -- =============================================
--- All-in-one Script: Function + View for Active Guest Reservations
--- Purpose: Display active guest reservations for room charge dropdown
--- Created: 2025-11-06
---
--- This script creates:
---   1. fn_GetReservationRoomNames - Helper function to get room names
---   2. vw_ActiveGuestReservations - View for active guests
+-- Migration: Fix Product Page - Hide Completed Reservations
+-- Purpose: Update vw_ActiveGuestReservations to exclude "เสร็จสิ้น" status
+-- Created: 2025-11-09
 -- =============================================
 
--- Step 1: Create helper function to get room names
-IF OBJECT_ID('dbo.fn_GetReservationRoomNames', 'FN') IS NOT NULL
-    DROP FUNCTION dbo.fn_GetReservationRoomNames;
+USE [Taketime]
 GO
 
-CREATE FUNCTION dbo.fn_GetReservationRoomNames(@ReservationID INT)
-RETURNS NVARCHAR(MAX)
-AS
-BEGIN
-    DECLARE @RoomNames NVARCHAR(MAX);
-
-    SELECT @RoomNames = STUFF((
-        SELECT ', ' + A.AccomName
-        FROM Reservation_Accommodation RA
-        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-        WHERE RA.Reservation_ID = @ReservationID
-        FOR XML PATH('')
-    ), 1, 2, '');
-
-    RETURN ISNULL(@RoomNames, '');
-END
-GO
-
--- Step 2: Create the view
+-- Update the view to exclude completed reservations
 IF OBJECT_ID('vw_ActiveGuestReservations', 'V') IS NOT NULL
     DROP VIEW vw_ActiveGuestReservations;
 GO
@@ -78,7 +54,7 @@ WHERE
     -- Today must be within check-in/check-out date range
     CAST(GETDATE() AS DATE) >= CAST(R.CheckinDate AS DATE)
     AND CAST(GETDATE() AS DATE) <= CAST(R.CheckoutDate AS DATE)
-    -- Exclude cancelled, checked-out, and completed reservations
+    -- 🔒 Exclude cancelled, checked-out, and completed reservations
     AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น');
 GO
 
@@ -86,6 +62,5 @@ GO
 GRANT SELECT ON vw_ActiveGuestReservations TO PUBLIC;
 GO
 
--- Test the function and view (uncomment to test)
--- SELECT dbo.fn_GetReservationRoomNames(1);  -- Replace 1 with real reservation ID
--- SELECT * FROM vw_ActiveGuestReservations;
+PRINT '✅ View vw_ActiveGuestReservations updated successfully - Completed reservations are now excluded';
+GO
