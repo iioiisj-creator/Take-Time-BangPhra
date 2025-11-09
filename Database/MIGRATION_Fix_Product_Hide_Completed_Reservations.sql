@@ -44,7 +44,7 @@ INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
 LEFT JOIN (
     SELECT
         Reservation_ID,
-        SUM(TotalPrice) AS PendingTotal
+        SUM(TotalAmount) AS PendingTotal
     FROM Reservation_Product_Charges
     WHERE Status = 'PENDING'
     GROUP BY Reservation_ID
