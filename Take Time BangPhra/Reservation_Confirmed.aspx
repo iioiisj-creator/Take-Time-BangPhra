@@ -255,6 +255,12 @@
                 margin-bottom: 8px;
                 font-size: 0.75em;
             }
+
+            /* 📱 ปรับขนาด h3 ในมือถือให้สมส่วนกับข้อความอื่น */
+            .info-card h3, .slip-card h3, .detail-card h3 {
+                font-size: 0.85em;
+                margin-bottom: 6px;
+            }
             
             .info-row {
                 flex-direction: column;
@@ -294,10 +300,16 @@
             .confirmation-container {
                 min-height: 98vh;
             }
-            
+
             .info-card, .slip-card, .detail-card {
                 padding: 8px;
                 margin-bottom: 6px;
+            }
+
+            /* 📱 ปรับขนาด h3 ในมือถือหน้าจอเล็กให้เล็กลงอีก */
+            .info-card h3, .slip-card h3, .detail-card h3 {
+                font-size: 0.8em;
+                margin-bottom: 5px;
             }
             
             .content-box {
