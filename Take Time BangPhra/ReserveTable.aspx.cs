@@ -223,11 +223,32 @@ namespace Take_Time_BangPhra
                         bt6.Text = countReserved + " ครั้ง";
                     }
 
-                    // Check status and update buttons
+                    // 🔒 Check status and update buttons
                     string status = sortedReservation.Rows[row.RowIndex]["Status"].ToString();
                     bool isOwner = Session["User"]?.ToString() == "Owner";
 
-                    if (status == "เช็คอินแล้ว")
+                    if (status == "เสร็จสิ้น")
+                    {
+                        // Hide all buttons except "รายละเอียด" (Button7)
+                        Button btnCheckin = row.FindControl("Button1") as Button;
+                        Button btnEdit = row.FindControl("Button2") as Button;
+                        Button btnCancelNoRefund = row.FindControl("Button3") as Button;
+                        Button btnCancelRefund = row.FindControl("Button4") as Button;
+                        Button btnRentMore = row.FindControl("Button5") as Button;
+                        Button btnPayMore = row.FindControl("Button8") as Button;
+                        Button btnCheckout = row.FindControl("Button9") as Button;
+
+                        if (btnCheckin != null) btnCheckin.Visible = false;
+                        if (btnEdit != null) btnEdit.Visible = false;
+                        if (btnCancelNoRefund != null) btnCancelNoRefund.Visible = false;
+                        if (btnCancelRefund != null) btnCancelRefund.Visible = false;
+                        if (btnRentMore != null) btnRentMore.Visible = false;
+                        if (btnPayMore != null) btnPayMore.Visible = false;
+                        if (btnCheckout != null) btnCheckout.Visible = false;
+
+                        // Button7 (รายละเอียด) and Button6 (ประวัติ) remain visible
+                    }
+                    else if (status == "เช็คอินแล้ว")
                     {
                         // สำหรับการจองที่เช็คอินแล้ว
                         // Admin ทั่วไป: disable เช็คอิน/แก้ไข/ยกเลิก แต่เปิด เช่าเพิ่ม/จ่ายเพิ่ม/เช็คเอาท์/รายละเอียด
