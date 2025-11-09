@@ -236,7 +236,7 @@ namespace Take_Time_BangPhra
                         Button btnCancelRefund = row.FindControl("Button4") as Button;
                         Button btnRentMore = row.FindControl("Button5") as Button;
                         Button btnPayMore = row.FindControl("Button8") as Button;
-                        Button btnCheckout = row.FindControl("Button9") as Button;
+                        Button btnCheckout = row.FindControl("btnCheckout") as Button;
 
                         if (btnCheckin != null) btnCheckin.Visible = false;
                         if (btnEdit != null) btnEdit.Visible = false;
