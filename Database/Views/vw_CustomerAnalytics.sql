@@ -296,7 +296,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Reservation_Customer_Date_Status')
     CREATE NONCLUSTERED INDEX IX_Reservation_Customer_Date_Status
     ON Reservation(Customer_MobilePhone, Created_Date, Status)
-    INCLUDE (TotalPrice, Checkin, Checkout);
+    INCLUDE (TotalPrice, CheckInDate, CheckOutDate);
 GO
 
 -- Index สำหรับ Reservation_Accommodation
