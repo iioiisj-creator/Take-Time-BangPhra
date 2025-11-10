@@ -37,6 +37,7 @@
             vertical-align: top;
             font-size: 0.9em;
             line-height: 1.5;
+            max-width: 200px;
         }
 
         /* ปรับ GridView ให้สวยงามขึ้น */
@@ -75,6 +76,14 @@
             white-space: normal;
             font-size: 0.9em;
             line-height: 1.4;
+            vertical-align: top;
+        }
+
+        /* ชื่อผู้จอง */
+        .name-column {
+            max-width: 200px;
+            word-wrap: break-word;
+            white-space: normal;
             vertical-align: top;
         }
         
@@ -374,10 +383,24 @@
                 font-size: 10px;
             }
 
+            /* 📱 ปรับช่องสำคัญให้มีขนาดเท่ากัน - ความกว้าง 450px */
+            .name-column,
+            .room-list,
+            .items-column,
+            .remark-column {
+                max-width: 450px !important;
+                min-width: 200px;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                white-space: pre-line !important;
+                font-size: 10px;
+                line-height: 1.4;
+            }
+
             /* แสดงห้องพักคนละบรรทัดบนมือถือ */
             .room-list {
                 white-space: pre-line !important;
-                font-size: 9px;
+                font-size: 10px;
             }
 
             /* ปรับปุ่มให้เล็กแต่กดได้ */
@@ -397,14 +420,24 @@
                 font-size: 1.3rem;
             }
 
-            /* ซ่อนคอลัมน์ที่ไม่จำเป็นบนมือถือ */
+            /* ซ่อนเฉพาะคอลัมน์ที่ไม่จำเป็นบนมือถือ */
             .mydatagrid th:nth-child(4),  /* จำนวนคืน */
-            .mydatagrid td:nth-child(4),
+            .mydatagrid td:nth-child(4) {
+                display: none;
+            }
+
+            /* 📱 แสดงคอลัมน์สำคัญ: ชื่อผู้จอง, รายชื่อห้องพัก, รายการของเช่า, หมายเหตุ */
+            .mydatagrid th:nth-child(2),  /* ชื่อผู้จอง */
+            .mydatagrid td:nth-child(2),
+            .mydatagrid th:nth-child(3),  /* รายชื่อห้องพัก */
+            .mydatagrid td:nth-child(3),
             .mydatagrid th:nth-child(5),  /* รายการของเช่า */
             .mydatagrid td:nth-child(5),
-            .mydatagrid th:nth-child(9)   /* หมายเหตุ */
+            .mydatagrid th:nth-child(9),  /* หมายเหตุ */
             .mydatagrid td:nth-child(9) {
-                display: none;
+                display: table-cell !important;
+                max-width: 450px !important;
+                min-width: 200px;
             }
         }
     </style>
@@ -457,8 +490,9 @@
                                     <HeaderStyle Width="4%" CssClass="header-center" />
                                 </asp:TemplateField>
 
-                                <asp:BoundField DataField="Name" HeaderText="ชื่อผู้จอง" 
-                                    HeaderStyle-Width="12%" HeaderStyle-CssClass="header-center" />
+                                <asp:BoundField DataField="Name" HeaderText="ชื่อผู้จอง"
+                                    HeaderStyle-Width="12%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="name-column" />
 
                                 <asp:BoundField DataField="AccomName" HeaderText="รายชื่อห้องพัก"
                                     HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center"
