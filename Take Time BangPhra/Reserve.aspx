@@ -706,16 +706,6 @@
                         <asp:Image ID="Image1" runat="server" Width="90%" style="max-width: 500px; border: 1px solid #D7CCC8; border-radius: 5px;"/>
                     </div>
 
-                    <!-- Link to view all payment slips (shown in CheckIn/Edit modes when there are multiple slips) -->
-                    <div style="margin-top: 10px;" id="divSlipLink" runat="server" visible="false">
-                        <asp:HyperLink ID="hlViewAllSlips" runat="server"
-                            NavigateUrl="#"
-                            Target="_blank"
-                            style="display: inline-block; padding: 10px 20px; background-color: #5D4037; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                            📄 ดูสลิปการชำระเงินทั้งหมด
-                        </asp:HyperLink>
-                    </div>
-
                     <!-- Payment History GridView (shown in CheckIn/Edit/CheckOut modes) -->
                     <div style="margin-top: 20px;" id="divPaymentHistory" runat="server" visible="false">
                         <h4 style="color: #5D4037; margin-bottom: 10px;">📋 ประวัติการชำระเงิน</h4>
@@ -763,9 +753,7 @@
                                 <asp:BoundField DataField="ReceiptNumber" HeaderText="เลขที่ใบเสร็จ" />
                                 <asp:TemplateField HeaderText="สลิป">
                                     <ItemTemplate>
-                                        <%# (Eval("SlipFileURL") != null && !string.IsNullOrEmpty(Eval("SlipFileURL").ToString())) ?
-                                            "<a href='" + ResolveUrl("~/") + Eval("SlipFileURL") + "' target='_blank' style='color: #3498db; text-decoration: none;'><i class='fa fa-file-image-o'></i> ดูสลิป</a>" :
-                                            "<span style='color: #95a5a6;'>-</span>" %>
+                                        <%# GetSlipLink(Eval("SlipFileURL")) %>
                                     </ItemTemplate>
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="สถานะ">
