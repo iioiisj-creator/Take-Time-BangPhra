@@ -5,17 +5,76 @@
     <link rel="stylesheet" type="text/css" href="/Content/GridView2.css">
     
     <style type="text/css">
+        /* Page Background */
+        body {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important;
+            min-height: 100vh;
+        }
+
         .wrap { white-space: normal; width: 100px; }
-        th, td { padding: 5px; }
-        .header-center { text-align: center; }
+        th, td { padding: 8px; vertical-align: top; }
+        .header-center { text-align: center; background: linear-gradient(135deg, #6d4c41 0%, #8d6e63 100%); color: white; font-weight: bold; }
         .header-right { text-align: right; }
         .print-only { display: none; }
         .no-print { display: block; }
         .hidden { display: none; }
 
+        /* 📝 ล็อคความกว้างช่องหมายเหตุและตัดข้อความมาบรรทัดใหม่ */
+        .remark-column {
+            max-width: 150px;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            overflow-wrap: break-word;
+            vertical-align: top;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
         /* แสดงห้องพักคนละบรรทัด */
         .room-list {
             white-space: pre-line;
+            vertical-align: top;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        /* ปรับ GridView ให้สวยงามขึ้น */
+        .mydatagrid {
+            border-collapse: collapse;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mydatagrid th {
+            padding: 12px 8px;
+            border: 1px solid #d7ccc8;
+        }
+
+        .mydatagrid td {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .mydatagrid tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .mydatagrid tr:hover td {
+            background: #fff3e0;
+            transition: background 0.2s ease;
+        }
+
+        /* ปรับรายการของเช่า */
+        .items-column {
+            max-width: 200px;
+            word-wrap: break-word;
+            white-space: normal;
+            font-size: 0.9em;
+            line-height: 1.4;
             vertical-align: top;
         }
         
@@ -59,14 +118,131 @@
             .mydatagrid th:nth-child(7), .mydatagrid td:nth-child(7) { width: 4%; }
             .mydatagrid th:nth-child(8), .mydatagrid td:nth-child(8) { width: 4%; }
             .mydatagrid th:nth-child(9), .mydatagrid td:nth-child(9) { width: 10%; } /* หมายเหตุ - แคบลง */
+
+            /* ตัดข้อความหมายเหตุมาบรรทัดใหม่ตอน print */
+            .remark-column {
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                white-space: normal !important;
+            }
+
+            /* ตัดข้อความรายการของเช่าตอน print */
+            .items-column {
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                white-space: normal !important;
+            }
         }
-        
-        .action-buttons { margin: 10px 0; }
-        .calendar-container { margin-bottom: 20px; }
-        .legend { font-size: 12px; margin: 10px 0; }
-        .legend-red { color: red; font-weight: bold; }
-        .btn-group-vertical .btn { margin-bottom: 2px; }
-        .calendar-style { font-size: 14px; }
+
+        /* ปรับ Action Buttons ให้สวยงาม */
+        .action-buttons {
+            margin: 15px 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 8px;
+        }
+
+        .action-buttons .btn-primary {
+            background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+            border: none;
+            padding: 10px 25px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .action-buttons .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Calendar Container */
+        .calendar-container {
+            margin-bottom: 20px;
+        }
+
+        .calendar-container .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .calendar-container .card-body {
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+            padding: 20px;
+        }
+
+        /* Legend */
+        .legend {
+            font-size: 13px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+        }
+
+        .legend-red {
+            color: #d32f2f;
+            font-weight: bold;
+            background: #ffebee;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Button Group ใน GridView */
+        .btn-group-vertical .btn {
+            margin-bottom: 3px;
+            font-size: 0.85em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-group-vertical .btn:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Calendar Style */
+        .calendar-style {
+            font-size: 14px;
+            border: 1px solid #d7ccc8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Page Header */
+        .container-fluid h2 {
+            color: #5d4037;
+            font-weight: bold;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Table Container */
+        .table-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Label ที่แสดงวันที่ */
+        .h4.text-primary {
+            color: #1976d2 !important;
+            font-weight: bold;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
 
         /* 📱 Mobile-Friendly Design - Simple & Easy to Use */
         @media screen and (max-width: 768px) {
@@ -194,26 +370,28 @@
                                     HeaderStyle-Width="5%" HeaderStyle-CssClass="header-center" 
                                     ItemStyle-CssClass="header-center" />
 
-                                <asp:BoundField DataField="Items" HeaderText="รายการของเช่า" 
-                                    HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center" />
+                                <asp:BoundField DataField="Items" HeaderText="รายการของเช่า"
+                                    HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="items-column" />
 
-                                <asp:BoundField DataField="TotalPrice" HeaderText="ราคาทั้งหมด" 
-                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center" 
-                                    ItemStyle-CssClass="header-center" 
+                                <asp:BoundField DataField="TotalPrice" HeaderText="ราคาทั้งหมด"
+                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="header-center"
                                     DataFormatString="{0:N0}" HtmlEncode="false" />
 
-                                <asp:BoundField DataField="Deposit" HeaderText="ยอดเงินรับมา" 
-                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center" 
-                                    ItemStyle-CssClass="header-center" 
+                                <asp:BoundField DataField="Deposit" HeaderText="ยอดเงินรับมา"
+                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="header-center"
                                     DataFormatString="{0:N0}" HtmlEncode="false" />
 
-                                <asp:BoundField DataField="Remain" HeaderText="ส่วนที่เหลือ" 
-                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center" 
-                                    ItemStyle-CssClass="header-center" 
+                                <asp:BoundField DataField="Remain" HeaderText="ส่วนที่เหลือ"
+                                    HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="header-center"
                                     DataFormatString="{0:N0}" HtmlEncode="false" />
 
-                                <asp:BoundField DataField="Remark" HeaderText="หมายเหตุ" 
-                                    HeaderStyle-Width="10%" HeaderStyle-CssClass="header-center" />
+                                <asp:BoundField DataField="Remark" HeaderText="หมายเหตุ"
+                                    HeaderStyle-Width="10%" HeaderStyle-CssClass="header-center"
+                                    ItemStyle-CssClass="remark-column" />
 
                                 <asp:BoundField DataField="Reserve_By" HeaderText="จองโดย" 
                                     HeaderStyle-Width="6%" HeaderStyle-CssClass="header-center" 
@@ -481,6 +659,8 @@
                                 padding: 2px;
                                 text-align: center;
                                 word-wrap: break-word;
+                                word-break: break-word;
+                                white-space: normal;
                                 overflow: hidden;
                             }
                             th {
