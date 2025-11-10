@@ -303,10 +303,10 @@ namespace Take_Time_BangPhra.Account
                 System.Diagnostics.Debug.WriteLine($"   💵 Totals: Cash={totalCash:N2}, KBANK={totalKBANK:N2}, KTB={totalKTB:N2}, Director={totalDirector:N2}");
                 System.Diagnostics.Debug.WriteLine($"   💰 Grand Total: {(totalCash + totalKBANK + totalKTB + totalDirector):N2}");
 
-                // Get VAT and document count
+                // Get VAT and document count (count all documents regardless of status to match GridView)
                 try
                 {
-                    var allData = GetAllReceipts(startDate, endDate, status);
+                    var allData = GetAllReceipts(startDate, endDate, "%");
                     if (allData != null)
                     {
                         foreach (DataRow row in allData.Rows)
@@ -319,7 +319,7 @@ namespace Take_Time_BangPhra.Account
                     lblTotalVAT.Text = totalVAT.ToString("N2");
                     lblDocCount.Text = docCount.ToString();
 
-                    System.Diagnostics.Debug.WriteLine($"   📄 Documents: {docCount}, VAT: {totalVAT:N2}");
+                    System.Diagnostics.Debug.WriteLine($"   📄 Documents: {docCount} (all status), VAT: {totalVAT:N2}");
                 }
                 catch (Exception ex)
                 {
@@ -363,14 +363,16 @@ namespace Take_Time_BangPhra.Account
         private DataTable GetCategory1Revenue(DateTime startDate, DateTime endDate, string status)
         {
             // Category 1: รายได้จากการจองพัก (เช็คอินในช่วง)
-            // ยอดรวมของใบกำกับภาษีที่เป็นของการจองที่วันที่เช็คอิน อยู่ในช่วงที่ค้นหา
-            // ไม่สนใจว่าออกใบกำกับภาษีหรือโอนเงินเมื่อไหร่ สนใจเฉพาะวันเช็คอิน
+            // เงื่อนไขอันดับ 1: ใบกำกับภาษีออกในช่วงที่ค้นหา (Account_Receipt.Created_Date)
+            // เงื่อนไขอันดับ 2: การจองมีวันเช็คอินในช่วงที่ค้นหา (Reservation.CheckinDate)
             string query = @"
                 SELECT DISTINCT ph.ID as PaymentHistoryID, ph.PaymentMethod, ph.PaymentAmount, ar.ID as ReceiptID
                 FROM Payment_History ph
                 INNER JOIN Reservation r ON ph.Reservation_ID = r.ID
                 INNER JOIN Account_Receipt ar ON ph.Receipt_ID = ar.ID
-                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ph.Status = 'COMPLETED'
@@ -475,12 +477,15 @@ namespace Take_Time_BangPhra.Account
         {
             // Category 1 Fallback: รายได้จากการจองพัก (เช็คอินในช่วง)
             // ใช้ Account_Receipt สำหรับระบบเก่าที่ยังไม่มี Payment_History
-            // ดูเฉพาะวันเช็คอิน ไม่สนใจวันที่ออกใบกำกับภาษี
+            // เงื่อนไขอันดับ 1: ใบกำกับภาษีออกในช่วง (Created_Date)
+            // เงื่อนไขอันดับ 2: วันเช็คอินในช่วง (CheckinDate)
             string query = @"
                 SELECT ar.ID, ar.Paid_Type, ar.Total_Amount
                 FROM Account_Receipt ar
                 INNER JOIN Reservation r ON ar.Reservation_ID = r.ID
-                WHERE CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
+                WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
+                  AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
+                  AND CAST(r.CheckinDate AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(r.CheckinDate AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
                   AND ar.Reservation_ID > 0";
