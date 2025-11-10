@@ -156,6 +156,104 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
+        /* 🎨 Bootstrap-style button colors - เพิ่มสีปุ่มให้ชัดเจน */
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.42857143;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+        }
+
+        /* Primary Button - สีน้ำเงิน */
+        .btn-primary {
+            color: white;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            border-color: #004085;
+        }
+
+        /* Success Button - สีเขียว */
+        .btn-success {
+            color: white;
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            border-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #1e7e34 0%, #155724 100%);
+            border-color: #155724;
+        }
+
+        /* Info Button - สีฟ้า */
+        .btn-info {
+            color: white;
+            background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);
+            border-color: #17a2b8;
+        }
+
+        .btn-info:hover {
+            background: linear-gradient(135deg, #117a8b 0%, #0c5460 100%);
+            border-color: #0c5460;
+        }
+
+        /* Warning Button - สีเหลือง/ส้ม */
+        .btn-warning {
+            color: #212529;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            border-color: #ffc107;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            border-color: #f57c00;
+        }
+
+        /* Danger Button - สีแดง */
+        .btn-danger {
+            color: white;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+            border-color: #bd2130;
+        }
+
+        /* Secondary Button - สีเทา */
+        .btn-secondary {
+            color: white;
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #545b62 0%, #3d4246 100%);
+            border-color: #3d4246;
+        }
+
+        /* Button sizes */
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            border-radius: 3px;
+        }
+
         /* Calendar Container */
         .calendar-container {
             margin-bottom: 20px;
