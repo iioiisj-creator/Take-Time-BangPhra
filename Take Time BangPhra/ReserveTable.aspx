@@ -85,7 +85,7 @@
             transition: background 0.2s ease;
         }
 
-        /* ปรับรายการของเช่า */
+        /* ปรับรายการของเช่า/สินค้า */
         .items-column {
             max-width: 200px;
             word-wrap: break-word;
@@ -138,7 +138,7 @@
             .mydatagrid th:nth-child(2), .mydatagrid td:nth-child(2) { width: 14%; }
             .mydatagrid th:nth-child(3), .mydatagrid td:nth-child(3) { width: 10%; } /* รายชื่อห้องพัก - แคบลง */
             .mydatagrid th:nth-child(4), .mydatagrid td:nth-child(4) { width: 3%; }
-            .mydatagrid th:nth-child(5), .mydatagrid td:nth-child(5) { width: 24%; } /* รายการของเช่า - กว้างขึ้น */
+            .mydatagrid th:nth-child(5), .mydatagrid td:nth-child(5) { width: 24%; } /* รายการของเช่า/สินค้า - กว้างขึ้น */
             .mydatagrid th:nth-child(6), .mydatagrid td:nth-child(6) { width: 4%; }
             .mydatagrid th:nth-child(7), .mydatagrid td:nth-child(7) { width: 4%; }
             .mydatagrid th:nth-child(8), .mydatagrid td:nth-child(8) { width: 4%; }
@@ -151,7 +151,7 @@
                 white-space: normal !important;
             }
 
-            /* ตัดข้อความรายการของเช่าตอน print */
+            /* ตัดข้อความรายการของเช่า/สินค้าตอน print */
             .items-column {
                 word-wrap: break-word !important;
                 word-break: break-word !important;
@@ -442,12 +442,12 @@
                 display: none;
             }
 
-            /* 📱 แสดงคอลัมน์สำคัญ: ชื่อผู้จอง, รายชื่อห้องพัก, รายการของเช่า, หมายเหตุ */
+            /* 📱 แสดงคอลัมน์สำคัญ: ชื่อผู้จอง, รายชื่อห้องพัก, รายการของเช่า/สินค้า, หมายเหตุ */
             .mydatagrid th:nth-child(2),  /* ชื่อผู้จอง */
             .mydatagrid td:nth-child(2),
             .mydatagrid th:nth-child(3),  /* รายชื่อห้องพัก */
             .mydatagrid td:nth-child(3),
-            .mydatagrid th:nth-child(5),  /* รายการของเช่า */
+            .mydatagrid th:nth-child(5),  /* รายการของเช่า/สินค้า */
             .mydatagrid td:nth-child(5),
             .mydatagrid th:nth-child(9),  /* หมายเหตุ */
             .mydatagrid td:nth-child(9) {
@@ -518,7 +518,7 @@
                                     HeaderStyle-Width="5%" HeaderStyle-CssClass="header-center" 
                                     ItemStyle-CssClass="header-center" />
 
-                                <asp:BoundField DataField="Items" HeaderText="รายการของเช่า"
+                                <asp:BoundField DataField="Items" HeaderText="รายการของเช่า/สินค้า"
                                     HeaderStyle-Width="15%" HeaderStyle-CssClass="header-center"
                                     ItemStyle-CssClass="items-column" />
 
@@ -648,7 +648,7 @@
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 14%;">ชื่อผู้จอง</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 10%;">รายชื่อห้องพัก</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 3%;">จำนวนคืน</th>';
-                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 24%;">รายการของเช่า</th>';
+                tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 24%;">รายการของเช่า/สินค้า</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">ราคาทั้งหมด</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">เงินมัดจำ</th>';
                 tableHTML += '<th style="border: 1px solid #000; padding: 2px; text-align: center; font-weight: bold; width: 4%;">ส่วนที่เหลือ</th>';
@@ -718,7 +718,7 @@
                         if (headerText === 'ชื่อผู้จอง') data.name = cellContent;
                         else if (headerText === 'รายชื่อห้องพัก') data.accomName = cellContent;
                         else if (headerText === 'จำนวนคืน') data.stayDays = cellContent;
-                        else if (headerText === 'รายการของเช่า') data.items = cellContent;
+                        else if (headerText === 'รายการของเช่า/สินค้า') data.items = cellContent;
                         else if (headerText === 'ราคาทั้งหมด') data.totalPrice = cellContent;
                         else if (headerText === 'ยอดเงินรับมา') data.deposit = cellContent;
                         else if (headerText === 'ส่วนที่เหลือ') data.remain = cellContent;

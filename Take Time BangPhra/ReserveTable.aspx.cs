@@ -71,11 +71,25 @@ namespace Take_Time_BangPhra
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
             DataTable dtReservation_Items = DatabaseQuery(conn,
-                @"SELECT * FROM Reservation 
-                  RIGHT JOIN Reservation_Items ON Reservation.ID = Reservation_Items.Reservation_ID 
-                  INNER JOIN Items ON Items.ID = Reservation_Items.Items_ID  
-                  WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate 
+                @"SELECT * FROM Reservation
+                  RIGHT JOIN Reservation_Items ON Reservation.ID = Reservation_Items.Reservation_ID
+                  INNER JOIN Items ON Items.ID = Reservation_Items.Items_ID
+                  WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate
                   ORDER BY Items_ID ASC",
+                new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
+
+            // Query สินค้าที่ชาร์จเข้าห้อง (Room Charges)
+            DataTable dtProductCharges = DatabaseQuery(conn,
+                @"SELECT r.ID as Reservation_ID,
+                         p.ProductName,
+                         rpc.Quantity,
+                         rpc.Status
+                  FROM Reservation r
+                  INNER JOIN Reservation_Product_Charges rpc ON r.ID = rpc.Reservation_ID
+                  INNER JOIN Product p ON rpc.Product_ID = p.ID
+                  WHERE @SelectedDate >= r.CheckinDate AND @SelectedDate < r.CheckoutDate
+                    AND rpc.Status <> 'CANCELLED'
+                  ORDER BY rpc.ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
             // Add additional columns if they don't exist
@@ -121,11 +135,21 @@ namespace Take_Time_BangPhra
                 dtReservation.Rows[i]["AccomName"] = AccomName.Trim();
 
                 string Items = "";
+                // ของเช่า (Reservation Items)
                 for (int j = 0; j < dtReservation_Items.Rows.Count; j++)
                 {
                     if (dtReservation.Rows[i]["ID"].ToString() == dtReservation_Items.Rows[j]["Reservation_ID"].ToString())
                     {
                         Items += $"[{dtReservation_Items.Rows[j]["ItemName"]} : ({dtReservation_Items.Rows[j]["Amount"]}ชิ้น)] ";
+                    }
+                }
+
+                // สินค้าที่ชาร์จเข้าห้อง (Product Charges)
+                for (int j = 0; j < dtProductCharges.Rows.Count; j++)
+                {
+                    if (dtReservation.Rows[i]["ID"].ToString() == dtProductCharges.Rows[j]["Reservation_ID"].ToString())
+                    {
+                        Items += $"[{dtProductCharges.Rows[j]["ProductName"]} : ({dtProductCharges.Rows[j]["Quantity"]}ชิ้น)] ";
                     }
                 }
 
