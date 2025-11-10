@@ -292,6 +292,9 @@
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Helpers, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\System-Web-Helpers.dll.1.0.0\lib\Net40\System.Web.Helpers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
@@ -364,6 +367,7 @@
     <Content Include="Admin\ProductImages.aspx" />
     <Content Include="Admin\Report.aspx" />
     <Content Include="Admin\Report\CustomerAnalytics.aspx" />
+    <Content Include="Admin\Report\ProfitLoss.aspx" />
     <Content Include="Admin\Vendor.aspx" />
     <Content Include="Admin\CustomerManagement.aspx" />
     <Content Include="Affiliate\Default.aspx" />
@@ -436,6 +440,8 @@
     <Content Include="Scripts\bootstrap.esm.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\chart.js" />
+    <Content Include="Scripts\chart.min.js" />
     <Content Include="Scripts\images\ui-icons_444444_256x240.png" />
     <Content Include="Scripts\jquery-1.12.4.js" />
     <None Include="Scripts\jquery-3.3.1.intellisense.js" />
@@ -613,6 +619,13 @@
     </Compile>
     <Compile Include="Admin\Report\CustomerAnalytics.aspx.designer.cs">
       <DependentUpon>CustomerAnalytics.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Report\ProfitLoss.aspx.cs">
+      <DependentUpon>ProfitLoss.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Report\ProfitLoss.aspx.designer.cs">
+      <DependentUpon>ProfitLoss.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\Vendor.aspx.cs">
       <DependentUpon>Vendor.aspx</DependentUpon>
