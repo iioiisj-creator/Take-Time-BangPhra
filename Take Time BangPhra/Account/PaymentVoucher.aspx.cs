@@ -11,12 +11,12 @@ using Microsoft.Reporting.WebForms;
 using System.Globalization;
 using iTextSharp.text.pdf.parser;
 using Take_Time_BangPhra.Class;
-using Take_Time_BangPhra.Helpers;
 
 namespace Take_Time_BangPhra.Account.Report
 {
     public partial class PaymentVoucher : System.Web.UI.Page
     {
+
         _Default code = new _Default();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
@@ -565,7 +565,7 @@ namespace Take_Time_BangPhra.Account.Report
 
         /// <summary>
         /// 🔗 Get file URL for viewing attachment
-        /// Returns virtual path to file in Documents/Payment folder
+        /// ค้นหาไฟล์จริงในโฟลเดอร์และส่ง URL ที่ถูกต้อง
         /// </summary>
         protected string GetFileUrl(object fileName)
         {
@@ -577,15 +577,43 @@ namespace Take_Time_BangPhra.Account.Report
                 DateTime createDate = Convert.ToDateTime(TextBox8.Text);
                 string year = createDate.Year.ToString();
                 string month = createDate.Month.ToString();
-                string file = fileName.ToString();
+                string searchPattern = fileName.ToString(); // filename ที่ถูก strip แล้ว (เช่น "ใบเสร็จ.pdf")
 
-                // Return virtual path for file viewing
-                string virtualPath = $"~/Documents/Payment/{year}/{month}/{file}";
-                return ResolveUrl(virtualPath);
+                // Get payment folder path
+                string basePath = System.Configuration.ConfigurationSettings.AppSettings["PaymentFolderPath"]?.ToString();
+                if (string.IsNullOrEmpty(basePath))
+                    return "#";
+
+                string folderPath = System.IO.Path.Combine(basePath, year, month);
+
+                // ตรวจสอบว่าโฟลเดอร์มีอยู่จริง
+                if (!Directory.Exists(folderPath))
+                    return "#";
+
+                // ค้นหาไฟล์ที่ลงท้ายด้วย filename ที่ระบุ
+                // เพราะไฟล์จริงมีรูปแบบ: PAY2501-0001_uid_description.ext
+                // แต่ fileName ที่ได้มาคือ: description.ext
+                string[] matchingFiles = Directory.GetFiles(folderPath, "*" + searchPattern);
+
+                if (matchingFiles.Length > 0)
+                {
+                    // ใช้ไฟล์แรกที่พบ
+                    string actualFileName = System.IO.Path.GetFileName(matchingFiles[0]);
+                    string virtualPath = $"~/Documents/Payment/{year}/{month}/{actualFileName}";
+
+                    System.Diagnostics.Debug.WriteLine($"📂 GetFileUrl: Searched='{searchPattern}', Found='{actualFileName}'");
+
+                    return ResolveUrl(virtualPath);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ GetFileUrl: File not found for pattern '*{searchPattern}' in {folderPath}");
+                    return "#";
+                }
             }
             catch (Exception ex)
             {
-               
+                System.Diagnostics.Debug.WriteLine($"❌ GetFileUrl Error: {ex.Message}");
                 return "#";
             }
         }

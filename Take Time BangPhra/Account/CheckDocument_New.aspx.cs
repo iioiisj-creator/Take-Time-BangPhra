@@ -1178,29 +1178,108 @@ namespace Take_Time_BangPhra.Account
                 try
                 {
                     int rowIndex = Convert.ToInt32(e.CommandArgument);
-                    string docNum = gvDetails.Rows[rowIndex].Cells[3].Text;
-                    string docType = docNum.Remove(3, 9);
+                    string docNum = gvDetails.Rows[rowIndex].Cells[3].Text; // Column index: ลบ(0), ดูPDF(1), แก้ไข(2), ดูสลิป(3), เลขที่เอกสาร(4)
 
-                    if (docType.Length > 3)
-                    {
-                        docType = docNum.Remove(3, 12);
-                    }
+                    System.Diagnostics.Debug.WriteLine($"📝 Edit document: {docNum}, RowIndex: {rowIndex}");
+
+                    // Parse document type
+                    string docType = docNum.Length >= 3 ? docNum.Substring(0, 3) : "";
 
                     if (docType == "REC")
                     {
-                        string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'").Rows[0][0].ToString();
-                        Response.Redirect("/Account/Receipt?command=edit&uid=" + uid);
+                        var uidResult = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'");
+                        if (uidResult != null && uidResult.Rows.Count > 0)
+                        {
+                            string uid = uidResult.Rows[0][0].ToString();
+                            System.Diagnostics.Debug.WriteLine($"   Redirecting to Receipt edit page, UID={uid}");
+                            Response.Redirect("/Account/Receipt?command=edit&uid=" + uid);
+                        }
+                        else
+                        {
+                            throw new Exception($"ไม่พบใบเสร็จ {docNum} ในฐานข้อมูล");
+                        }
                     }
                     else if (docType == "PAY")
                     {
-                        string uid = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'").Rows[0][0].ToString();
-                        Response.Redirect("/Account/PaymentVoucher?command=edit&uid=" + uid);
+                        var uidResult = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'");
+                        if (uidResult != null && uidResult.Rows.Count > 0)
+                        {
+                            string uid = uidResult.Rows[0][0].ToString();
+                            System.Diagnostics.Debug.WriteLine($"   Redirecting to PaymentVoucher edit page, UID={uid}");
+                            Response.Redirect("/Account/PaymentVoucher?command=edit&uid=" + uid);
+                        }
+                        else
+                        {
+                            throw new Exception($"ไม่พบใบสำคัญจ่าย {docNum} ในฐานข้อมูล");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"ประเภทเอกสารไม่ถูกต้อง: {docType}");
                     }
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"   ❌ Error editing document: {ex.Message}");
                     ShowError("แก้ไขเอกสารไม่สำเร็จ: " + ex.Message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Handle RowEditing event (for compatibility with CommandField EditButton)
+        /// Redirects to RowCommand handler
+        /// </summary>
+        protected void gvDetails_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            try
+            {
+                int rowIndex = e.NewEditIndex;
+                string docNum = gvDetails.Rows[rowIndex].Cells[3].Text; // Column index matches RowCommand
+
+                System.Diagnostics.Debug.WriteLine($"📝 RowEditing triggered: {docNum}, RowIndex: {rowIndex}");
+
+                // Parse document type
+                string docType = docNum.Length >= 3 ? docNum.Substring(0, 3) : "";
+
+                if (docType == "REC")
+                {
+                    var uidResult = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Receipt] Where ID = '" + docNum + "'");
+                    if (uidResult != null && uidResult.Rows.Count > 0)
+                    {
+                        string uid = uidResult.Rows[0][0].ToString();
+                        System.Diagnostics.Debug.WriteLine($"   Redirecting to Receipt edit page, UID={uid}");
+                        Response.Redirect("/Account/Receipt?command=edit&uid=" + uid);
+                    }
+                    else
+                    {
+                        throw new Exception($"ไม่พบใบเสร็จ {docNum} ในฐานข้อมูล");
+                    }
+                }
+                else if (docType == "PAY")
+                {
+                    var uidResult = codeInstance.DatabaseQuery(conn, "SELECT [UID] FROM [Taketime].[dbo].[Account_Payment] Where ID = '" + docNum + "'");
+                    if (uidResult != null && uidResult.Rows.Count > 0)
+                    {
+                        string uid = uidResult.Rows[0][0].ToString();
+                        System.Diagnostics.Debug.WriteLine($"   Redirecting to PaymentVoucher edit page, UID={uid}");
+                        Response.Redirect("/Account/PaymentVoucher?command=edit&uid=" + uid);
+                    }
+                    else
+                    {
+                        throw new Exception($"ไม่พบใบสำคัญจ่าย {docNum} ในฐานข้อมูล");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"ประเภทเอกสารไม่ถูกต้อง: {docType}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"   ❌ Error in RowEditing: {ex.Message}");
+                ShowError("แก้ไขเอกสารไม่สำเร็จ: " + ex.Message);
+                e.Cancel = true; // Cancel edit mode
             }
         }
 
