@@ -13,7 +13,23 @@
 
         .wrap { white-space: normal; width: 100px; }
         th, td { padding: 8px; vertical-align: top; }
-        .header-center { text-align: center; background: linear-gradient(135deg, #6d4c41 0%, #8d6e63 100%); color: white; font-weight: bold; }
+
+        /* 🎨 Header styles - สำหรับ header เท่านั้น */
+        th.header-center {
+            text-align: center;
+            background: linear-gradient(135deg, #6d4c41 0%, #8d6e63 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 📝 Cell center style - สำหรับเซลล์ปกติ (ไม่ใช่ header) */
+        td.header-center {
+            text-align: center;
+            color: #2c3e50;
+            font-weight: normal;
+            background: transparent;
+        }
+
         .header-right { text-align: right; }
         .print-only { display: none; }
         .no-print { display: block; }
@@ -383,13 +399,13 @@
                 font-size: 10px;
             }
 
-            /* 📱 ปรับช่องสำคัญให้มีขนาดเท่ากัน - ความกว้าง 450px */
+            /* 📱 ปรับช่องสำคัญให้มีขนาดเท่ากัน - ลดความกว้างลง 25% (450px → 340px) */
             .name-column,
             .room-list,
             .items-column,
             .remark-column {
-                max-width: 450px !important;
-                min-width: 200px;
+                max-width: 340px !important;
+                min-width: 150px;
                 word-wrap: break-word !important;
                 word-break: break-word !important;
                 white-space: pre-line !important;
@@ -436,8 +452,8 @@
             .mydatagrid th:nth-child(9),  /* หมายเหตุ */
             .mydatagrid td:nth-child(9) {
                 display: table-cell !important;
-                max-width: 450px !important;
-                min-width: 200px;
+                max-width: 340px !important;
+                min-width: 150px;
             }
         }
     </style>
