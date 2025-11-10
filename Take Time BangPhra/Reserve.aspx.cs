@@ -2690,7 +2690,8 @@ namespace Take_Time_BangPhra
 💵 มัดจำ: {Convert.ToDecimal(TextBox5.Text):N2} บาท
 💳 ยอดคงเหลือ: {(Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text)):N2} บาท
 
-{(!string.IsNullOrWhiteSpace(TextBox6.Text) ? $"💬 หมายเหตุ: {TextBox6.Text}\n" : "")}━━━━━━━━━━━━━━━━━";
+{(!string.IsNullOrWhiteSpace(TextBox6.Text) ? $"💬 หมายเหตุ: {TextBox6.Text}\n" : "")}👨‍💼 ลงจองโดย: {Session["UserName"]?.ToString() ?? "System"}
+━━━━━━━━━━━━━━━━━";
 
                                             var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
                                             await bot.SendMessageAsync("-4969611371", message);
