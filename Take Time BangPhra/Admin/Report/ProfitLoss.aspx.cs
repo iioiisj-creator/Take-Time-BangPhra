@@ -6,6 +6,7 @@ using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Configuration;
 using Take_Time_BangPhra;
 using Newtonsoft.Json;
 
@@ -14,11 +15,10 @@ namespace Take_Time_BangPhra.Admin.Report
     public partial class ProfitLoss : System.Web.UI.Page
     {
         code codeInstance = new code();
-        string conn = "";
+        string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            conn = codeInstance.getMSSQLConnection();
 
             if (!IsPostBack)
             {
