@@ -78,7 +78,7 @@ namespace Take_Time_BangPhra
                   ORDER BY Items_ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
-            // Query สินค้าที่ชาร์จเข้าห้อง (Room Charges)
+            // Query สินค้าที่ชาร์จเข้าห้อง (Room Charges) - แสดงทุกสถานะ (รอชำระ, ชำระแล้ว, etc.)
             DataTable dtProductCharges = DatabaseQuery(conn,
                 @"SELECT r.ID as Reservation_ID,
                          p.ProductName,
@@ -88,7 +88,6 @@ namespace Take_Time_BangPhra
                   INNER JOIN Reservation_Product_Charges rpc ON r.ID = rpc.Reservation_ID
                   INNER JOIN Product p ON rpc.Product_ID = p.ID
                   WHERE @SelectedDate >= r.CheckinDate AND @SelectedDate < r.CheckoutDate
-                    AND rpc.Status <> 'CANCELLED'
                   ORDER BY rpc.ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
