@@ -803,50 +803,95 @@ namespace Take_Time_BangPhra
                         }
                     }
 
-                    // Load slip image and remark
-                    // ✅ FIX: Load most recent slip from Payment_Slips table (new format with PaymentHistoryId)
+                    // Load slip image and link
+                    // 🔧 FIX: For CheckIn/Edit modes - don't show image (may have multiple slips), show link to Payment History instead
                     try
                     {
-                        string slipQuery = @"
-                            SELECT TOP 1 SlipFileURL
-                            FROM Payment_Slips
-                            WHERE Reservation_ID = @ReservationId
-                            AND IsActive = 1
-                            ORDER BY UploadedDate DESC";
+                        string command = Request.QueryString["command"];
 
-                        var slipParams = new Dictionary<string, object>
+                        if (command == "checkin" || command == "edit")
                         {
-                            { "@ReservationId", Convert.ToInt32(id) }
-                        };
+                            // Hide image, show link to PaymentHistory page instead
+                            Image1.Visible = false;
 
-                        DataTable dtSlip = code2.DatabaseQuerySafe(conn, slipQuery, slipParams);
-                        if (dtSlip.Rows.Count > 0)
-                        {
-                            // Use slip URL from database (new format)
-                            Image1.ImageUrl = "./" + dtSlip.Rows[0]["SlipFileURL"].ToString();
-                            Image1.Visible = true;
+                            // Check if there are any slips
+                            string slipCountQuery = @"
+                                SELECT COUNT(*) as SlipCount
+                                FROM Payment_Slips
+                                WHERE Reservation_ID = @ReservationId
+                                AND IsActive = 1";
+
+                            var slipCountParams = new Dictionary<string, object>
+                            {
+                                { "@ReservationId", Convert.ToInt32(id) }
+                            };
+
+                            DataTable dtSlipCount = code2.DatabaseQuerySafe(conn, slipCountQuery, slipCountParams);
+                            int slipCount = dtSlipCount.Rows.Count > 0 ? Convert.ToInt32(dtSlipCount.Rows[0]["SlipCount"]) : 0;
+
+                            if (slipCount > 0)
+                            {
+                                // Show link to PaymentHistory with reservationId
+                                divSlipLink.Visible = true;
+                                hlViewAllSlips.NavigateUrl = $"./Payment/PaymentHistory.aspx?reservationId={id}";
+                                hlViewAllSlips.Text = $"📄 ดูสลิปการชำระเงินทั้งหมด ({slipCount} รูป)";
+                            }
+                            else
+                            {
+                                // No slips - show placeholder image
+                                divSlipLink.Visible = false;
+                                Image1.ImageUrl = "./Images/บัญชี.png";
+                                Image1.Visible = true;
+                                Image1.DataBind();
+                            }
                         }
                         else
                         {
-                            // Fall back to old pattern for legacy slips
-                            string legacySlipPath = "./Upload/Slip/" + id + "_" + check + ".jpg";
-                            if (File.Exists(Server.MapPath(legacySlipPath)))
+                            // For other modes (reserve, rentmore, etc.) - show image as before
+                            divSlipLink.Visible = false;
+
+                            string slipQuery = @"
+                                SELECT TOP 1 SlipFileURL
+                                FROM Payment_Slips
+                                WHERE Reservation_ID = @ReservationId
+                                AND IsActive = 1
+                                ORDER BY UploadedDate DESC";
+
+                            var slipParams = new Dictionary<string, object>
                             {
-                                Image1.ImageUrl = legacySlipPath;
+                                { "@ReservationId", Convert.ToInt32(id) }
+                            };
+
+                            DataTable dtSlip = code2.DatabaseQuerySafe(conn, slipQuery, slipParams);
+                            if (dtSlip.Rows.Count > 0)
+                            {
+                                // Use slip URL from database (new format)
+                                Image1.ImageUrl = "./" + dtSlip.Rows[0]["SlipFileURL"].ToString();
                                 Image1.Visible = true;
                             }
                             else
                             {
-                                // No slip found - show placeholder
-                                Image1.ImageUrl = "./Images/บัญชี.png";
-                                Image1.Visible = true;
+                                // Fall back to old pattern for legacy slips
+                                string legacySlipPath = "./Upload/Slip/" + id + "_" + check + ".jpg";
+                                if (File.Exists(Server.MapPath(legacySlipPath)))
+                                {
+                                    Image1.ImageUrl = legacySlipPath;
+                                    Image1.Visible = true;
+                                }
+                                else
+                                {
+                                    // No slip found - show placeholder
+                                    Image1.ImageUrl = "./Images/บัญชี.png";
+                                    Image1.Visible = true;
+                                }
                             }
+                            Image1.DataBind();
                         }
-                        Image1.DataBind();
                     }
                     catch
                     {
                         // Error loading slip - show placeholder
+                        divSlipLink.Visible = false;
                         Image1.ImageUrl = "./Images/บัญชี.png";
                         Image1.Visible = true;
                         Image1.DataBind();
