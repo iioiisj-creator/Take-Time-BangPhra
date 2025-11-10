@@ -225,6 +225,37 @@
             border-radius: 10px;
             text-align: center;
         }
+
+        /* Slip View Button Styles */
+        .btn-view-slip {
+            background: #3498db;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .btn-view-slip:hover {
+            background: #2980b9;
+            text-decoration: none;
+        }
+
+        .btn-no-slip {
+            background: #95a5a6;
+            color: #ecf0f1 !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 
     <div class="accounting-dashboard">
@@ -379,6 +410,17 @@
                     <asp:CommandField ButtonType="Button" HeaderText="ลบ" ShowDeleteButton="True" />
                     <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="View" ShowSelectButton="True" />
                     <asp:ButtonField ButtonType="Button" CommandName="edit" Text="แก้ไข" HeaderText="แก้ไข" />
+                    <asp:TemplateField HeaderText="ดูสลิป">
+                        <ItemTemplate>
+                            <asp:HyperLink ID="lnkViewSlip" runat="server"
+                                NavigateUrl='<%# GetSlipURL(Eval("ID")) %>'
+                                Text='<%# HasSlip(Eval("ID")) ? "🔗 ดูสลิป" : "ไม่มีสลิป" %>'
+                                Enabled='<%# HasSlip(Eval("ID")) %>'
+                                Target="_blank"
+                                CssClass='<%# HasSlip(Eval("ID")) ? "btn-view-slip" : "btn-no-slip" %>'>
+                            </asp:HyperLink>
+                        </ItemTemplate>
+                    </asp:TemplateField>
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />
                     <asp:BoundField DataField="Reservation_ID" HeaderText="รหัสจอง" />
                     <asp:BoundField DataField="Created_Date" HeaderText="วันที่สร้าง" DataFormatString="{0:dd/MM/yyyy HH:mm}" />

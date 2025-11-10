@@ -2906,15 +2906,86 @@ namespace Take_Time_BangPhra
         {
             try
             {
-                // 🆕 Get PaymentHistoryId for linking (if available)
+                // 🔧 FIX: Always create Payment_History record if uploading slip
                 long? paymentHistoryId = null;
+
+                // Check if PaymentHistoryId already exists in session
                 if (Session["PaymentHistoryId"] != null)
                 {
                     paymentHistoryId = Convert.ToInt64(Session["PaymentHistoryId"]);
                 }
+                else if (FileUpload1.HasFile && Convert.ToInt32(reservationID) > 0)
+                {
+                    // No existing PaymentHistoryId → Create new Payment_History record
+                    try
+                    {
+                        decimal depositAmount = CheckBox2.Checked ? Convert.ToDecimal(TextBox10.Text ?? "0") : 0;
+                        string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                        int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                        // Determine payment type
+                        decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                        string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                        // Insert Payment_History record
+                        string insertPaymentQuery = @"
+                            INSERT INTO [dbo].[Payment_History] (
+                                Reservation_ID,
+                                PaymentDate,
+                                PaymentAmount,
+                                PaymentType,
+                                PaymentMethod,
+                                Account_Receipt_ID,
+                                ProcessedBy_AdminID,
+                                PaidBy_CustomerPhone,
+                                Status,
+                                Notes,
+                                CreatedDate,
+                                UpdatedDate
+                            ) OUTPUT INSERTED.ID VALUES (
+                                @ReservationId,
+                                GETDATE(),
+                                @PaymentAmount,
+                                @PaymentType,
+                                @PaymentMethod,
+                                @ReceiptId,
+                                @AdminId,
+                                @CustomerPhone,
+                                'COMPLETED',
+                                N'อัพโหลดสลิปการโอนเงิน',
+                                GETDATE(),
+                                GETDATE()
+                            )";
+
+                        var paymentParams = new Dictionary<string, object>
+                        {
+                            { "@ReservationId", reservationID },
+                            { "@PaymentAmount", depositAmount },
+                            { "@PaymentType", paymentType },
+                            { "@PaymentMethod", paymentMethod },
+                            { "@ReceiptId", string.IsNullOrEmpty(receiptID) ? (object)DBNull.Value : receiptID },
+                            { "@AdminId", adminId ?? (object)DBNull.Value },
+                            { "@CustomerPhone", TextBox1.Text }
+                        };
+
+                        DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                        if (dtPaymentId.Rows.Count > 0)
+                        {
+                            paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                            Session["PaymentHistoryId"] = paymentHistoryId;
+                            System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} for slip upload");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        code2.Logs(conn, "uploadSlip - Payment_History Insert Error",
+                            $"Reservation {reservationID}: {ex.Message}", "SYSTEM");
+                        // Continue with upload even if Payment_History fails (use timestamp as fallback)
+                    }
+                }
 
                 // Generate unique filename pattern: {ReservationID}_{Phone}_{PaymentHistoryId}.jpg
-                string uniqueSuffix = paymentHistoryId.HasValue ? $"_{paymentHistoryId.Value}" : "";
+                string uniqueSuffix = paymentHistoryId.HasValue ? $"_{paymentHistoryId.Value}" : $"_{DateTime.Now:yyyyMMddHHmmss}";
                 string tempFilename = TextBox1.Text + ".jpg";
                 string finalFilename = reservationID + "_" + TextBox1.Text + uniqueSuffix + ".jpg";
 

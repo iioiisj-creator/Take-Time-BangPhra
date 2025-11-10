@@ -1230,5 +1230,85 @@ namespace Take_Time_BangPhra.Account
                 default: return "";
             }
         }
+
+        /// <summary>
+        /// Check if receipt has a payment slip
+        /// </summary>
+        protected bool HasSlip(object receiptId)
+        {
+            try
+            {
+                if (receiptId == null || string.IsNullOrEmpty(receiptId.ToString()))
+                    return false;
+
+                string query = @"
+                    SELECT COUNT(*) as SlipCount
+                    FROM Payment_History ph
+                    INNER JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    WHERE ph.Account_Receipt_ID = @ReceiptId
+                      AND ps.SlipFileURL IS NOT NULL
+                      AND ps.IsActive = 1";
+
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@ReceiptId", receiptId.ToString() }
+                };
+
+                DataTable dt = codeInstance.DatabaseQuerySafe(conn, query, parameters);
+                if (dt.Rows.Count > 0)
+                {
+                    int slipCount = Convert.ToInt32(dt.Rows[0]["SlipCount"]);
+                    return slipCount > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                codeInstance.Logs(conn, "HasSlip Error", $"ReceiptID: {receiptId}, Error: {ex.Message}", "SYSTEM");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get slip file URL for receipt
+        /// Returns first slip if multiple slips exist
+        /// </summary>
+        protected string GetSlipURL(object receiptId)
+        {
+            try
+            {
+                if (receiptId == null || string.IsNullOrEmpty(receiptId.ToString()))
+                    return "#";
+
+                string query = @"
+                    SELECT TOP 1 ps.SlipFileURL
+                    FROM Payment_History ph
+                    INNER JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    WHERE ph.Account_Receipt_ID = @ReceiptId
+                      AND ps.SlipFileURL IS NOT NULL
+                      AND ps.IsActive = 1
+                    ORDER BY ph.PaymentDate DESC";
+
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@ReceiptId", receiptId.ToString() }
+                };
+
+                DataTable dt = codeInstance.DatabaseQuerySafe(conn, query, parameters);
+                if (dt.Rows.Count > 0)
+                {
+                    string slipFileURL = dt.Rows[0]["SlipFileURL"].ToString();
+                    if (!string.IsNullOrEmpty(slipFileURL))
+                    {
+                        // Return relative URL (already in correct format: Upload/Slip/xxx.jpg)
+                        return ResolveUrl("~/" + slipFileURL);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                codeInstance.Logs(conn, "GetSlipURL Error", $"ReceiptID: {receiptId}, Error: {ex.Message}", "SYSTEM");
+            }
+            return "#";
+        }
     }
 }
