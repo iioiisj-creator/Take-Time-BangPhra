@@ -807,8 +807,7 @@ namespace Take_Time_BangPhra
                     // 🔧 FIX: For CheckIn/Edit/RentMore modes - don't show image (may have multiple slips), show link to Payment History instead
                     try
                     {
-                        string command = Request.QueryString["command"];
-
+                        // Use command variable from line 192 (already declared)
                         if (command == "checkin" || command == "edit" || command == "rentmore")
                         {
                             // Hide image, show link to PaymentHistory page instead
