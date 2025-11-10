@@ -78,17 +78,17 @@ namespace Take_Time_BangPhra
                   ORDER BY Items_ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
-            // Query สินค้าที่ชาร์จเข้าห้อง (Room Charges) - แสดงเฉพาะ รอชำระ และ ชำระแล้ว (ไม่แสดงที่ยกเลิก)
+            // Query สินค้าที่ชาร์จเข้าห้อง (Room Charges) - แสดงเฉพาะที่ไม่ถูกยกเลิก
             DataTable dtProductCharges = DatabaseQuery(conn,
                 @"SELECT r.ID as Reservation_ID,
-                         p.ProductName,
+                         p.Product_Name,
                          rpc.Quantity,
                          rpc.Status
                   FROM Reservation r
                   INNER JOIN Reservation_Product_Charges rpc ON r.ID = rpc.Reservation_ID
                   INNER JOIN Product p ON rpc.Product_ID = p.ID
                   WHERE @SelectedDate >= r.CheckInDate AND @SelectedDate < r.CheckOutDate
-                    AND rpc.Status IN (N'รอชำระ', N'ชำระแล้ว', 'PENDING', 'PAID')
+                    AND rpc.Status <> 'CANCELLED'
                   ORDER BY rpc.ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
@@ -149,7 +149,7 @@ namespace Take_Time_BangPhra
                 {
                     if (dtReservation.Rows[i]["ID"].ToString() == dtProductCharges.Rows[j]["Reservation_ID"].ToString())
                     {
-                        Items += $"[{dtProductCharges.Rows[j]["ProductName"]} : ({dtProductCharges.Rows[j]["Quantity"]}ชิ้น)] ";
+                        Items += $"[{dtProductCharges.Rows[j]["Product_Name"]} : ({dtProductCharges.Rows[j]["Quantity"]}ชิ้น)] ";
                     }
                 }
 
