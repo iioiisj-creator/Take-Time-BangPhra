@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace Take_Time_BangPhra.Admin
 {
-    public partial class Report : System.Web.UI.Page
+    public partial class ReportMain : System.Web.UI.Page
     {
         private readonly DatabaseHelper databaseHelper = new DatabaseHelper();
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;

@@ -11,7 +11,7 @@ namespace Take_Time_BangPhra.Admin
 {
 
 
-    public partial class Report
+    public partial class ReportMain
     {
 
         /// <summary>
