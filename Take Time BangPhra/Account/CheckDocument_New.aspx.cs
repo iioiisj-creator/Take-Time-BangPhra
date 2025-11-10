@@ -613,6 +613,8 @@ namespace Take_Time_BangPhra.Account
             // Note: This may not match revenue totals because:
             // - Category 1 includes receipts where CheckinDate is in range (even if Created_Date is outside)
             // - This detail list only shows receipts where Created_Date is in range
+
+            // 🚀 PERFORMANCE FIX: Include slip data in main query to avoid N+1 query problem
             string query = @"
                 SELECT ar.ID, ar.Reservation_ID, ar.Created_Date, ar.Paid_Type,
                        ar.Total_Amount, ar.Vat, ar.IsDeposit, ar.UseDeposit,
@@ -620,11 +622,22 @@ namespace Take_Time_BangPhra.Account
                        c.FullName as CustomerName,
                        r.Customer_MobilePhone,
                        r.Remark,
-                       a.Username as Created_By
+                       a.Username as Created_By,
+                       -- Slip information (prevents N+1 queries by including in main query)
+                       ps.SlipFileURL,
+                       CASE WHEN ps.SlipFileURL IS NOT NULL THEN 1 ELSE 0 END as HasSlip
                 FROM Account_Receipt ar
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                 LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
+                -- LEFT JOIN to get slip data (only one slip per receipt, most recent)
+                LEFT JOIN (
+                    SELECT ph.Account_Receipt_ID, ps.SlipFileURL,
+                           ROW_NUMBER() OVER (PARTITION BY ph.Account_Receipt_ID ORDER BY ph.PaymentDate DESC) as RowNum
+                    FROM Payment_History ph
+                    INNER JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    WHERE ps.SlipFileURL IS NOT NULL AND ps.IsActive = 1
+                ) ps ON ar.ID = ps.Account_Receipt_ID AND ps.RowNum = 1
                 WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status

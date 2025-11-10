@@ -228,33 +228,74 @@
 
         /* Slip View Button Styles */
         .btn-view-slip {
-            background: #3498db;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white !important;
-            padding: 5px 12px;
-            border-radius: 4px;
+            padding: 6px 14px;
+            border-radius: 5px;
             text-decoration: none;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             display: inline-block;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
         }
 
         .btn-view-slip:hover {
-            background: #2980b9;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .btn-no-slip {
-            background: #95a5a6;
-            color: #ecf0f1 !important;
-            padding: 5px 12px;
-            border-radius: 4px;
+            background: #bdc3c7;
+            color: #7f8c8d !important;
+            padding: 6px 14px;
+            border-radius: 5px;
             text-decoration: none;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             display: inline-block;
             cursor: not-allowed;
-            opacity: 0.6;
+            opacity: 0.7;
+        }
+
+        /* GridView Button Styles */
+        .gridview-custom input[type="button"] {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .gridview-custom input[type="button"]:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Delete button - Red theme */
+        .gridview-custom td:first-child input[type="button"] {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .gridview-custom td:first-child input[type="button"]:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+        }
+
+        /* Edit button - Orange theme */
+        .gridview-custom td:nth-child(3) input[type="button"] {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .gridview-custom td:nth-child(3) input[type="button"]:hover {
+            background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
         }
     </style>
 
@@ -407,17 +448,19 @@
                 OnSelectedIndexChanging="gvDetails_SelectedIndexChanging"
                 OnRowCommand="gvDetails_RowCommand">
                 <Columns>
-                    <asp:CommandField ButtonType="Button" HeaderText="ลบ" ShowDeleteButton="True" />
-                    <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="View" ShowSelectButton="True" />
-                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="แก้ไข" HeaderText="แก้ไข" />
+                    <asp:CommandField ButtonType="Button" HeaderText="ลบ" DeleteText="🗑️ ลบ" ShowDeleteButton="True" />
+                    <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="📄 ดู PDF" ShowSelectButton="True" />
+                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="✏️ แก้ไข" HeaderText="แก้ไข" />
                     <asp:TemplateField HeaderText="ดูสลิป">
                         <ItemTemplate>
+                            <%-- 🚀 PERFORMANCE FIX: Use data-bound fields instead of method calls to avoid N+1 queries --%>
                             <asp:HyperLink ID="lnkViewSlip" runat="server"
-                                NavigateUrl='<%# GetSlipURL(Eval("ID")) %>'
-                                Text='<%# HasSlip(Eval("ID")) ? "🔗 ดูสลิป" : "ไม่มีสลิป" %>'
-                                Enabled='<%# HasSlip(Eval("ID")) %>'
+                                NavigateUrl='<%# Eval("SlipFileURL") != DBNull.Value && !string.IsNullOrEmpty(Eval("SlipFileURL").ToString())
+                                    ? ResolveUrl("~/" + Eval("SlipFileURL").ToString()) : "#" %>'
+                                Text='<%# Convert.ToInt32(Eval("HasSlip")) == 1 ? "🔗 ดูสลิป" : "ไม่มีสลิป" %>'
+                                Enabled='<%# Convert.ToInt32(Eval("HasSlip")) == 1 %>'
                                 Target="_blank"
-                                CssClass='<%# HasSlip(Eval("ID")) ? "btn-view-slip" : "btn-no-slip" %>'>
+                                CssClass='<%# Convert.ToInt32(Eval("HasSlip")) == 1 ? "btn-view-slip" : "btn-no-slip" %>'>
                             </asp:HyperLink>
                         </ItemTemplate>
                     </asp:TemplateField>
