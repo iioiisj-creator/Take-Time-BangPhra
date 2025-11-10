@@ -200,8 +200,8 @@ namespace Take_Time_BangPhra
                     (R.TotalPrice - ISNULL(R.Deposit, 0)) AS RemainingBalance,
                     dbo.fn_GetReservationRoomNames(R.ID) AS RoomNames,
                     ISNULL(PC.PendingTotal, 0) AS PendingCharges,
-                    C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
-                    CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
+                    C.Name + N' (' + dbo.fn_GetReservationRoomNames(R.ID) + N') - เข้า: ' +
+                    CONVERT(VARCHAR, R.CheckinDate, 103) + N' ออก: ' +
                     CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
                 FROM Reservation R
                 INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
@@ -214,7 +214,7 @@ namespace Take_Time_BangPhra
                 WHERE
                     CAST(@searchDate AS DATE) >= CAST(R.CheckinDate AS DATE)
                     AND CAST(@searchDate AS DATE) <= CAST(R.CheckoutDate AS DATE)
-                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')
+                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น', N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')
                 ORDER BY R.CheckinDate DESC",
                 parameters);
         }
@@ -260,8 +260,8 @@ namespace Take_Time_BangPhra
                     (R.TotalPrice - ISNULL(R.Deposit, 0)) AS RemainingBalance,
                     dbo.fn_GetReservationRoomNames(R.ID) AS RoomNames,
                     ISNULL(PC.PendingTotal, 0) AS PendingCharges,
-                    C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
-                    CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
+                    C.Name + N' (' + dbo.fn_GetReservationRoomNames(R.ID) + N') - เข้า: ' +
+                    CONVERT(VARCHAR, R.CheckinDate, 103) + N' ออก: ' +
                     CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
                 FROM Reservation R
                 INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
@@ -275,7 +275,7 @@ namespace Take_Time_BangPhra
                     R.ID = @reservationId
                     AND CAST(@searchDate AS DATE) >= CAST(R.CheckinDate AS DATE)
                     AND CAST(@searchDate AS DATE) <= CAST(R.CheckoutDate AS DATE)
-                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')",
+                    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น', N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')",
                 parameters);
         }
 

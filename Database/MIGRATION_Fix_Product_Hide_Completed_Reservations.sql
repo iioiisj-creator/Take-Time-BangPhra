@@ -33,8 +33,8 @@ SELECT
     ISNULL(PC.PendingTotal, 0) AS PendingCharges,
 
     -- Formatted display text for dropdown (using + instead of CONCAT, CONVERT instead of FORMAT)
-    C.Name + ' (' + dbo.fn_GetReservationRoomNames(R.ID) + ') - เข้า: ' +
-    CONVERT(VARCHAR, R.CheckinDate, 103) + ' ออก: ' +
+    C.Name + N' (' + dbo.fn_GetReservationRoomNames(R.ID) + N') - เข้า: ' +
+    CONVERT(VARCHAR, R.CheckinDate, 103) + N' ออก: ' +
     CONVERT(VARCHAR, R.CheckoutDate, 103) AS DisplayText
 
 FROM Reservation R
@@ -55,7 +55,7 @@ WHERE
     CAST(GETDATE() AS DATE) >= CAST(R.CheckinDate AS DATE)
     AND CAST(GETDATE() AS DATE) <= CAST(R.CheckoutDate AS DATE)
     -- 🔒 Exclude cancelled, checked-out, and completed reservations
-    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น');
+    AND R.Status NOT IN (N'ยกเลิก', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น', N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน');
 GO
 
 -- Grant permissions
