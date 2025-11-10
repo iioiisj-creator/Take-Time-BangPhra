@@ -562,5 +562,49 @@ namespace Take_Time_BangPhra.Account.Report
                 TextBox9.Text = "";
             }
         }
+
+        /// <summary>
+        /// 🔗 Get file URL for viewing attachment
+        /// Returns virtual path to file in Documents/Payment folder
+        /// </summary>
+        protected string GetFileUrl(object fileName)
+        {
+            try
+            {
+                if (fileName == null || string.IsNullOrEmpty(fileName.ToString()))
+                    return "#";
+
+                DateTime createDate = Convert.ToDateTime(TextBox8.Text);
+                string year = createDate.Year.ToString();
+                string month = createDate.Month.ToString();
+                string file = fileName.ToString();
+
+                // Return virtual path for file viewing
+                string virtualPath = $"~/Documents/Payment/{year}/{month}/{file}";
+                return ResolveUrl(virtualPath);
+            }
+            catch (Exception ex)
+            {
+                code.Logs(conn, "GetFileUrl Error", $"FileName: {fileName}, Error: {ex.Message}", "SYSTEM");
+                return "#";
+            }
+        }
+
+        /// <summary>
+        /// 🎨 GridView2 RowDataBound event handler for custom styling
+        /// </summary>
+        protected void GridView2_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                // Style the delete button
+                Button deleteButton = e.Row.Cells[1].Controls[0] as Button;
+                if (deleteButton != null)
+                {
+                    deleteButton.CssClass = "btn-delete-file";
+                    deleteButton.OnClientClick = "return confirm('คุณต้องการลบไฟล์นี้หรือไม่?');";
+                }
+            }
+        }
     }
 }
