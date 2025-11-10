@@ -11,12 +11,12 @@ using Microsoft.Reporting.WebForms;
 using System.Globalization;
 using iTextSharp.text.pdf.parser;
 using Take_Time_BangPhra.Class;
+using Take_Time_BangPhra.Helpers;
 
 namespace Take_Time_BangPhra.Account.Report
 {
     public partial class PaymentVoucher : System.Web.UI.Page
     {
-
         _Default code = new _Default();
         string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
@@ -583,9 +583,9 @@ namespace Take_Time_BangPhra.Account.Report
                 string virtualPath = $"~/Documents/Payment/{year}/{month}/{file}";
                 return ResolveUrl(virtualPath);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // If error occurs, return empty link
+               
                 return "#";
             }
         }
