@@ -310,6 +310,26 @@ namespace Take_Time_BangPhra
         }
 
         /// <summary>
+        /// Update reservation accommodation (price and amount)
+        /// </summary>
+        public void UpdateReservationAccommodation(int reservationId, int accommodationId, int amount, decimal price)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@amount", amount },
+                { "@price", price },
+                { "@accommodationId", accommodationId },
+                { "@reservationId", reservationId }
+            };
+
+            _code.DatabaseInsertSafe(_connectionString,
+                @"UPDATE [dbo].[Reservation_Accommodation]
+                  SET [Amount] = @amount, [Price] = @price
+                  WHERE Accommodation_ID = @accommodationId AND Reservation_ID = @reservationId",
+                parameters);
+        }
+
+        /// <summary>
         /// Update reservation item
         /// </summary>
         public void UpdateReservationItem(int reservationId, int itemId, int amount, decimal price)

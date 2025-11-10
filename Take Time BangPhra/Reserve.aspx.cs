@@ -1296,14 +1296,43 @@ namespace Take_Time_BangPhra
                                             TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
                                             CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
                                             bool checkdup = false;
+                                            int oldAccomIndex = -1;
                                             for (int x = 0; x < dtoldAccom.Rows.Count; x++)
                                             {
                                                 if (chk != null && chk.Checked && dtoldAccom.Rows[x]["Accommodation_ID"].ToString() == dtAccommodation.Rows[row.RowIndex]["ID"].ToString())
                                                 {
                                                     checkdup = true;
+                                                    oldAccomIndex = x;
                                                 }
                                             }
-                                            if (checkdup == false && chk != null && chk.Checked)
+
+                                            // 🔧 FIX: UPDATE existing room's price and amount
+                                            if (checkdup == true && chk != null && chk.Checked && command == "edit")
+                                            {
+                                                // This is an existing room - UPDATE its price and amount
+                                                int newAmount;
+                                                if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
+                                                {
+                                                    // Room charged by people count
+                                                    newAmount = Convert.ToInt32(txtPeopleStay.Text);
+                                                }
+                                                else
+                                                {
+                                                    // Room charged by nights
+                                                    newAmount = Convert.ToInt32(DropDownList1.SelectedValue);
+                                                }
+
+                                                decimal newPrice = Convert.ToDecimal(row.Cells[4].Text);
+
+                                                // UPDATE Reservation_Accommodation with new price and amount
+                                                reservationDA.UpdateReservationAccommodation(
+                                                    Convert.ToInt32(id),
+                                                    Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]),
+                                                    newAmount,
+                                                    newPrice
+                                                );
+                                            }
+                                            else if (checkdup == false && chk != null && chk.Checked)
                                             {
                                                 int checkusecoupon = checkAccomUseCoupon(dtAccommodation.Rows[row.RowIndex]["ID"].ToString(), code2.ParseDate(TextBox12.Text).Value);
                                                 if (dtAccommodation.Rows[row.RowIndex]["LimitWithPeople"].ToString() == "True")
