@@ -363,6 +363,7 @@
     <Content Include="Admin\Login.aspx" />
     <Content Include="Admin\ProductImages.aspx" />
     <Content Include="Admin\Report.aspx" />
+    <Content Include="Admin\Report\CustomerAnalytics.aspx" />
     <Content Include="Admin\Vendor.aspx" />
     <Content Include="Admin\CustomerManagement.aspx" />
     <Content Include="Affiliate\Default.aspx" />
@@ -545,6 +546,9 @@
       <DependentUpon>Dashboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="Admin\Dashboard.aspx.designer.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\Edit_Data.aspx.cs">
       <DependentUpon>Edit_Data.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -586,6 +590,13 @@
     </Compile>
     <Compile Include="Admin\Report.aspx.designer.cs">
       <DependentUpon>Report.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Report\CustomerAnalytics.aspx.cs">
+      <DependentUpon>CustomerAnalytics.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\Report\CustomerAnalytics.aspx.designer.cs">
+      <DependentUpon>CustomerAnalytics.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\Vendor.aspx.cs">
       <DependentUpon>Vendor.aspx</DependentUpon>
