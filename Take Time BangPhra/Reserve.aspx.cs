@@ -6036,7 +6036,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                         ps.SlipFileURL,
                         a.Username as ProcessedBy
                     FROM Payment_History ph
-                    LEFT JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    LEFT JOIN Payment_Slips ps ON ph.Receipt_ID = ps.Account_Receipt_ID AND ps.IsActive = 1
                     LEFT JOIN Admin a ON ph.ProcessedBy_AdminID = a.ID
                     WHERE ph.Reservation_ID = @ReservationId
                       AND ph.Status = 'COMPLETED'

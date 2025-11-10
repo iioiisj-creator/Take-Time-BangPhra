@@ -630,14 +630,13 @@ namespace Take_Time_BangPhra.Account
                 LEFT JOIN Reservation r ON ar.Reservation_ID = r.ID
                 LEFT JOIN Customer c ON r.Customer_MobilePhone = c.MobilePhone
                 LEFT JOIN Admin a ON ar.Created_By_ID = a.ID
-                -- LEFT JOIN to get slip data (only one slip per receipt, most recent)
+                -- LEFT JOIN to get slip data directly from Payment_Slips by Account_Receipt_ID
                 LEFT JOIN (
-                    SELECT ph.Receipt_ID, ps.SlipFileURL,
-                           ROW_NUMBER() OVER (PARTITION BY ph.Receipt_ID ORDER BY ph.PaymentDate DESC) as RowNum
-                    FROM Payment_History ph
-                    INNER JOIN Payment_Slips ps ON ph.PaymentSlip_ID = ps.ID
+                    SELECT ps.Account_Receipt_ID, ps.SlipFileURL,
+                           ROW_NUMBER() OVER (PARTITION BY ps.Account_Receipt_ID ORDER BY ps.UploadedDate DESC) as RowNum
+                    FROM Payment_Slips ps
                     WHERE ps.SlipFileURL IS NOT NULL AND ps.IsActive = 1
-                ) ps ON ar.ID = ps.Receipt_ID AND ps.RowNum = 1
+                ) ps ON ar.ID = ps.Account_Receipt_ID AND ps.RowNum = 1
                 WHERE CAST(ar.Created_Date AS DATE) >= CAST(@StartDate AS DATE)
                   AND CAST(ar.Created_Date AS DATE) <= CAST(@EndDate AS DATE)
                   AND ar.Status LIKE @Status
