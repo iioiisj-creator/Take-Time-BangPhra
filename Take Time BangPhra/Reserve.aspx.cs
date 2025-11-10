@@ -804,12 +804,12 @@ namespace Take_Time_BangPhra
                     }
 
                     // Load slip image and link
-                    // 🔧 FIX: For CheckIn/Edit modes - don't show image (may have multiple slips), show link to Payment History instead
+                    // 🔧 FIX: For CheckIn/Edit/RentMore modes - don't show image (may have multiple slips), show link to Payment History instead
                     try
                     {
                         string command = Request.QueryString["command"];
 
-                        if (command == "checkin" || command == "edit")
+                        if (command == "checkin" || command == "edit" || command == "rentmore")
                         {
                             // Hide image, show link to PaymentHistory page instead
                             Image1.Visible = false;
@@ -847,7 +847,7 @@ namespace Take_Time_BangPhra
                         }
                         else
                         {
-                            // For other modes (reserve, rentmore, etc.) - show image as before
+                            // For other modes (reserve, etc.) - show image as before
                             divSlipLink.Visible = false;
 
                             string slipQuery = @"
