@@ -763,7 +763,7 @@
                                 <asp:BoundField DataField="ReceiptNumber" HeaderText="เลขที่ใบเสร็จ" />
                                 <asp:TemplateField HeaderText="สลิป">
                                     <ItemTemplate>
-                                        <%# !string.IsNullOrEmpty(Eval("SlipFileURL")?.ToString()) ?
+                                        <%# (Eval("SlipFileURL") != null && !string.IsNullOrEmpty(Eval("SlipFileURL").ToString())) ?
                                             "<a href='" + ResolveUrl("~/") + Eval("SlipFileURL") + "' target='_blank' style='color: #3498db; text-decoration: none;'><i class='fa fa-file-image-o'></i> ดูสลิป</a>" :
                                             "<span style='color: #95a5a6;'>-</span>" %>
                                     </ItemTemplate>
