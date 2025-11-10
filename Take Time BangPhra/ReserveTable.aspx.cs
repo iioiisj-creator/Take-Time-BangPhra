@@ -159,11 +159,20 @@ namespace Take_Time_BangPhra
                 // Calculate remaining amount (Total Price + Product Charges - Total Paid)
                 int reservationId = Convert.ToInt32(dtReservation.Rows[i]["ID"]);
 
-                // 1. Get base total price
+                // 1. Get base total price from Reservation table (same as Reservation_Confirmed and Checkout)
                 decimal baseTotalPrice = 0;
-                if (dtReservation.Rows[i]["TotalPrice"] != DBNull.Value)
+                var priceParams = new Dictionary<string, object>
                 {
-                    baseTotalPrice = Convert.ToDecimal(dtReservation.Rows[i]["TotalPrice"]);
+                    { "@reservationId", reservationId }
+                };
+                DataTable dtReservationPrice = code2.DatabaseQuerySafe(conn,
+                    @"SELECT ISNULL(TotalPrice, 0) as TotalPrice
+                      FROM Reservation
+                      WHERE ID = @reservationId",
+                    priceParams);
+                if (dtReservationPrice.Rows.Count > 0 && dtReservationPrice.Rows[0]["TotalPrice"] != DBNull.Value)
+                {
+                    baseTotalPrice = Convert.ToDecimal(dtReservationPrice.Rows[0]["TotalPrice"]);
                 }
 
                 // 2. Get product charges from Reservation_Product_Charges (same as Checkout page)
