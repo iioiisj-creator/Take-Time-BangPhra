@@ -583,9 +583,9 @@ namespace Take_Time_BangPhra.Account.Report
                 string virtualPath = $"~/Documents/Payment/{year}/{month}/{file}";
                 return ResolveUrl(virtualPath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                code.Logs(conn, "GetFileUrl Error", $"FileName: {fileName}, Error: {ex.Message}", "SYSTEM");
+                // If error occurs, return empty link
                 return "#";
             }
         }
