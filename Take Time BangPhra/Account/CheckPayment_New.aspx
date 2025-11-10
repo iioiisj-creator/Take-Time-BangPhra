@@ -202,6 +202,44 @@
             border-radius: 10px;
             text-align: center;
         }
+
+        /* GridView Button Styles */
+        .gridview-custom input[type="button"] {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .gridview-custom input[type="button"]:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Delete button - Red theme */
+        .gridview-custom td:first-child input[type="button"] {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .gridview-custom td:first-child input[type="button"]:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+        }
+
+        /* Edit button - Orange theme */
+        .gridview-custom td:nth-child(3) input[type="button"] {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .gridview-custom td:nth-child(3) input[type="button"]:hover {
+            background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        }
     </style>
 
     <div class="payment-dashboard">
@@ -335,9 +373,9 @@
                 OnSelectedIndexChanging="gvDetails_SelectedIndexChanging"
                 OnRowCommand="gvDetails_RowCommand">
                 <Columns>
-                    <asp:CommandField ButtonType="Button" HeaderText="ลบ" ShowDeleteButton="True" />
-                    <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="View" ShowSelectButton="True" />
-                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="แก้ไข" HeaderText="แก้ไข" />
+                    <asp:CommandField ButtonType="Button" HeaderText="ลบ" DeleteText="🗑️ ลบ" ShowDeleteButton="True" />
+                    <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="📄 ดู PDF" ShowSelectButton="True" />
+                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="✏️ แก้ไข" HeaderText="แก้ไข" />
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />
                     <asp:BoundField DataField="Created_Date" HeaderText="วันที่สร้าง" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
                     <asp:BoundField DataField="Vendor_Name" HeaderText="ผู้รับเงิน/ผู้ขาย" />
