@@ -1616,6 +1616,70 @@ namespace Take_Time_BangPhra
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
 
+                                                        // ✅ Create Payment_History record (without Receipt_ID)
+                                                        try
+                                                        {
+                                                            decimal depositAmount = Convert.ToDecimal(additionalDeposit);
+                                                            string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                                                            int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                                            // Determine payment type
+                                                            decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                                                            string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                            string insertPaymentQuery = @"
+                                                                INSERT INTO [dbo].[Payment_History] (
+                                                                    Reservation_ID,
+                                                                    PaymentDate,
+                                                                    PaymentAmount,
+                                                                    PaymentType,
+                                                                    PaymentMethod,
+                                                                    Receipt_ID,
+                                                                    ProcessedBy_AdminID,
+                                                                    PaidBy_CustomerPhone,
+                                                                    Status,
+                                                                    Notes,
+                                                                    CreatedDate,
+                                                                    UpdatedDate
+                                                                ) OUTPUT INSERTED.ID VALUES (
+                                                                    @ReservationId,
+                                                                    GETDATE(),
+                                                                    @PaymentAmount,
+                                                                    @PaymentType,
+                                                                    @PaymentMethod,
+                                                                    NULL,
+                                                                    @AdminId,
+                                                                    @CustomerPhone,
+                                                                    'COMPLETED',
+                                                                    N'ชำระเงินเพิ่มเติม (ไม่ออกใบเสร็จ)',
+                                                                    GETDATE(),
+                                                                    GETDATE()
+                                                                )";
+
+                                                            var paymentParams = new Dictionary<string, object>
+                                                            {
+                                                                { "@ReservationId", id },
+                                                                { "@PaymentAmount", depositAmount },
+                                                                { "@PaymentType", paymentType },
+                                                                { "@PaymentMethod", paymentMethod },
+                                                                { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                                { "@CustomerPhone", TextBox1.Text }
+                                                            };
+
+                                                            DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                            if (dtPaymentId.Rows.Count > 0)
+                                                            {
+                                                                long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                                Session["PaymentHistoryId"] = paymentHistoryId;
+                                                                System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (no receipt)");
+                                                            }
+                                                        }
+                                                        catch (Exception exPayment)
+                                                        {
+                                                            code2.Logs(conn, "Reserve Edit - Payment_History Insert Error",
+                                                                $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                        }
+
                                                         // ✅ Upload slip without receipt (NULL Receipt_ID)
                                                         uploadSlip(id, null);
                                                     }
@@ -2035,6 +2099,70 @@ namespace Take_Time_BangPhra
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
 
+                                                            // ✅ Create Payment_History record (without Receipt_ID)
+                                                            try
+                                                            {
+                                                                decimal depositAmount = Convert.ToDecimal(TextBox10.Text);
+                                                                string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                                                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                                                // Determine payment type
+                                                                decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                                                                string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                                string insertPaymentQuery = @"
+                                                                    INSERT INTO [dbo].[Payment_History] (
+                                                                        Reservation_ID,
+                                                                        PaymentDate,
+                                                                        PaymentAmount,
+                                                                        PaymentType,
+                                                                        PaymentMethod,
+                                                                        Receipt_ID,
+                                                                        ProcessedBy_AdminID,
+                                                                        PaidBy_CustomerPhone,
+                                                                        Status,
+                                                                        Notes,
+                                                                        CreatedDate,
+                                                                        UpdatedDate
+                                                                    ) OUTPUT INSERTED.ID VALUES (
+                                                                        @ReservationId,
+                                                                        GETDATE(),
+                                                                        @PaymentAmount,
+                                                                        @PaymentType,
+                                                                        @PaymentMethod,
+                                                                        NULL,
+                                                                        @AdminId,
+                                                                        @CustomerPhone,
+                                                                        'COMPLETED',
+                                                                        N'เช่าเพิ่ม (ไม่ออกใบเสร็จ)',
+                                                                        GETDATE(),
+                                                                        GETDATE()
+                                                                    )";
+
+                                                                var paymentParams = new Dictionary<string, object>
+                                                                {
+                                                                    { "@ReservationId", id },
+                                                                    { "@PaymentAmount", depositAmount },
+                                                                    { "@PaymentType", paymentType },
+                                                                    { "@PaymentMethod", paymentMethod },
+                                                                    { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                                    { "@CustomerPhone", TextBox1.Text }
+                                                                };
+
+                                                                DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                                if (dtPaymentId.Rows.Count > 0)
+                                                                {
+                                                                    long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                                    Session["PaymentHistoryId"] = paymentHistoryId;
+                                                                    System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (rentmore, no receipt)");
+                                                                }
+                                                            }
+                                                            catch (Exception exPayment)
+                                                            {
+                                                                code2.Logs(conn, "Reserve RentMore - Payment_History Insert Error",
+                                                                    $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                            }
+
                                                             // ✅ Upload slip without receipt (NULL Receipt_ID)
                                                             uploadSlip(id, null);
                                                         }
@@ -2183,6 +2311,70 @@ namespace Take_Time_BangPhra
                                                             $"Marked charges as PAID without receipt for Reservation {id}",
                                                             Session["User"]?.ToString());
 
+                                                        // ✅ Create Payment_History record (without Receipt_ID)
+                                                        try
+                                                        {
+                                                            decimal depositAmount = Convert.ToDecimal(paymentAmount);
+                                                            string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                                                            int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                                            // Determine payment type
+                                                            decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                                                            string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                            string insertPaymentQuery = @"
+                                                                INSERT INTO [dbo].[Payment_History] (
+                                                                    Reservation_ID,
+                                                                    PaymentDate,
+                                                                    PaymentAmount,
+                                                                    PaymentType,
+                                                                    PaymentMethod,
+                                                                    Receipt_ID,
+                                                                    ProcessedBy_AdminID,
+                                                                    PaidBy_CustomerPhone,
+                                                                    Status,
+                                                                    Notes,
+                                                                    CreatedDate,
+                                                                    UpdatedDate
+                                                                ) OUTPUT INSERTED.ID VALUES (
+                                                                    @ReservationId,
+                                                                    GETDATE(),
+                                                                    @PaymentAmount,
+                                                                    @PaymentType,
+                                                                    @PaymentMethod,
+                                                                    NULL,
+                                                                    @AdminId,
+                                                                    @CustomerPhone,
+                                                                    'COMPLETED',
+                                                                    N'เช็คอิน (ไม่ออกใบเสร็จ)',
+                                                                    GETDATE(),
+                                                                    GETDATE()
+                                                                )";
+
+                                                            var paymentParams = new Dictionary<string, object>
+                                                            {
+                                                                { "@ReservationId", id },
+                                                                { "@PaymentAmount", depositAmount },
+                                                                { "@PaymentType", paymentType },
+                                                                { "@PaymentMethod", paymentMethod },
+                                                                { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                                { "@CustomerPhone", TextBox1.Text }
+                                                            };
+
+                                                            DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                            if (dtPaymentId.Rows.Count > 0)
+                                                            {
+                                                                long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                                Session["PaymentHistoryId"] = paymentHistoryId;
+                                                                System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (checkin, no receipt, no deposit)");
+                                                            }
+                                                        }
+                                                        catch (Exception exPayment)
+                                                        {
+                                                            code2.Logs(conn, "Reserve CheckIn - Payment_History Insert Error",
+                                                                $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                        }
+
                                                         // ✅ Upload slip without receipt (NULL Receipt_ID)
                                                         uploadSlip(id, null);
                                                     }
@@ -2234,6 +2426,70 @@ namespace Take_Time_BangPhra
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
 
+                                                            // ✅ Create Payment_History record (without Receipt_ID)
+                                                            try
+                                                            {
+                                                                decimal depositAmount = Convert.ToDecimal(paymentAmount);
+                                                                string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                                                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+
+                                                                // Determine payment type
+                                                                decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                                                                string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                                string insertPaymentQuery = @"
+                                                                    INSERT INTO [dbo].[Payment_History] (
+                                                                        Reservation_ID,
+                                                                        PaymentDate,
+                                                                        PaymentAmount,
+                                                                        PaymentType,
+                                                                        PaymentMethod,
+                                                                        Receipt_ID,
+                                                                        ProcessedBy_AdminID,
+                                                                        PaidBy_CustomerPhone,
+                                                                        Status,
+                                                                        Notes,
+                                                                        CreatedDate,
+                                                                        UpdatedDate
+                                                                    ) OUTPUT INSERTED.ID VALUES (
+                                                                        @ReservationId,
+                                                                        GETDATE(),
+                                                                        @PaymentAmount,
+                                                                        @PaymentType,
+                                                                        @PaymentMethod,
+                                                                        NULL,
+                                                                        @AdminId,
+                                                                        @CustomerPhone,
+                                                                        'COMPLETED',
+                                                                        N'เช็คอิน (ไม่ออกใบเสร็จ)',
+                                                                        GETDATE(),
+                                                                        GETDATE()
+                                                                    )";
+
+                                                                var paymentParams = new Dictionary<string, object>
+                                                                {
+                                                                    { "@ReservationId", id },
+                                                                    { "@PaymentAmount", depositAmount },
+                                                                    { "@PaymentType", paymentType },
+                                                                    { "@PaymentMethod", paymentMethod },
+                                                                    { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                                    { "@CustomerPhone", TextBox1.Text }
+                                                                };
+
+                                                                DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                                if (dtPaymentId.Rows.Count > 0)
+                                                                {
+                                                                    long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                                    Session["PaymentHistoryId"] = paymentHistoryId;
+                                                                    System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (checkin, no receipt, exact deposit)");
+                                                                }
+                                                            }
+                                                            catch (Exception exPayment)
+                                                            {
+                                                                code2.Logs(conn, "Reserve CheckIn - Payment_History Insert Error",
+                                                                    $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                            }
+
                                                             // ✅ Upload slip without receipt (NULL Receipt_ID)
                                                             uploadSlip(id, null);
                                                         }
@@ -2269,6 +2525,51 @@ namespace Take_Time_BangPhra
                                                         try
                                                         {
                                                             MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
+
+                                                            // ✅ Create Payment_History record (without Receipt_ID)
+                                                            try
+                                                            {
+                                                                decimal depositAmount = Convert.ToDecimal(paymentAmount);
+                                                                string paymentMethod = DropDownList2.SelectedItem?.Text ?? "TRANSFER";
+                                                                int? adminId = Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null;
+                                                                decimal totalPrice = Convert.ToDecimal(Session["totalPrice"]?.ToString() ?? TextBox4.Text ?? "0");
+                                                                string paymentType = depositAmount >= totalPrice ? "FULL" : "DEPOSIT";
+
+                                                                string insertPaymentQuery = @"
+                                                                    INSERT INTO [dbo].[Payment_History] (
+                                                                        Reservation_ID, PaymentDate, PaymentAmount, PaymentType,
+                                                                        PaymentMethod, Receipt_ID, ProcessedBy_AdminID,
+                                                                        PaidBy_CustomerPhone, Status, Notes, CreatedDate, UpdatedDate
+                                                                    ) OUTPUT INSERTED.ID VALUES (
+                                                                        @ReservationId, GETDATE(), @PaymentAmount, @PaymentType,
+                                                                        @PaymentMethod, NULL, @AdminId, @CustomerPhone,
+                                                                        'COMPLETED', N'เช็คอินพร้อมส่วนลด (ไม่ออกใบเสร็จ)', GETDATE(), GETDATE()
+                                                                    )";
+
+                                                                var paymentParams = new Dictionary<string, object>
+                                                                {
+                                                                    { "@ReservationId", id },
+                                                                    { "@PaymentAmount", depositAmount },
+                                                                    { "@PaymentType", paymentType },
+                                                                    { "@PaymentMethod", paymentMethod },
+                                                                    { "@AdminId", adminId ?? (object)DBNull.Value },
+                                                                    { "@CustomerPhone", TextBox1.Text }
+                                                                };
+
+                                                                DataTable dtPaymentId = code2.DatabaseQuerySafe(conn, insertPaymentQuery, paymentParams);
+                                                                if (dtPaymentId.Rows.Count > 0)
+                                                                {
+                                                                    long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
+                                                                    Session["PaymentHistoryId"] = paymentHistoryId;
+                                                                }
+                                                            }
+                                                            catch (Exception exPayment)
+                                                            {
+                                                                code2.Logs(conn, "Reserve CheckIn (Discount) - Payment_History Insert Error",
+                                                                    $"Reservation {id}, Error: {exPayment.Message}",
+                                                                    Session["User"]?.ToString());
+                                                            }
+
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment (With Discount)",
                                                                 $"Marked charges as PAID without receipt for Reservation {id}",
                                                                 Session["User"]?.ToString());
