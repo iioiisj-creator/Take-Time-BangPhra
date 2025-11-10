@@ -183,7 +183,7 @@ SELECT
 
     -- Booking Metrics
     COUNT(r.ID) as TotalBookings,
-    SUM(DATEDIFF(DAY, r.Checkin, r.Checkout)) as TotalNights,
+    SUM(DATEDIFF(DAY, r.CheckInDate, r.CheckOutDate)) as TotalNights,
 
     -- Financial Metrics
     SUM(r.TotalPrice) as LifetimeValue,

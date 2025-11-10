@@ -6,14 +6,14 @@ using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Take_Time_BangPhra.Class;
+using Take_Time_BangPhra;
 using Newtonsoft.Json;
 
 namespace Take_Time_BangPhra.Admin.Report
 {
     public partial class ProfitLoss : System.Web.UI.Page
     {
-        Code codeInstance = new Code();
+        code codeInstance = new code();
         string conn = "";
 
         protected void Page_Load(object sender, EventArgs e)
