@@ -446,11 +446,21 @@
                 AutoGenerateColumns="False" EmptyDataText="ไม่พบข้อมูล"
                 OnRowDeleting="gvDetails_RowDeleting"
                 OnSelectedIndexChanging="gvDetails_SelectedIndexChanging"
-                OnRowCommand="gvDetails_RowCommand">
+                OnRowCommand="gvDetails_RowCommand"
+                OnRowEditing="gvDetails_RowEditing">
                 <Columns>
                     <asp:CommandField ButtonType="Button" HeaderText="ลบ" DeleteText="🗑️ ลบ" ShowDeleteButton="True" />
                     <asp:CommandField ButtonType="Button" HeaderText="ดู PDF" SelectText="📄 ดู PDF" ShowSelectButton="True" />
-                    <asp:ButtonField ButtonType="Button" CommandName="edit" Text="✏️ แก้ไข" HeaderText="แก้ไข" />
+                    <asp:TemplateField HeaderText="แก้ไข">
+                        <ItemTemplate>
+                            <asp:Button ID="btnEdit" runat="server"
+                                Text="✏️ แก้ไข"
+                                CommandName="edit"
+                                CommandArgument='<%# Container.DataItemIndex %>'
+                                CssClass="btn-edit"
+                                CausesValidation="false" />
+                        </ItemTemplate>
+                    </asp:TemplateField>
                     <asp:TemplateField HeaderText="ดูสลิป">
                         <ItemTemplate>
                             <%-- 🚀 PERFORMANCE FIX: Use data-bound fields instead of method calls to avoid N+1 queries --%>
