@@ -19,7 +19,18 @@ namespace Take_Time_BangPhra
             string telNum = Request.QueryString["telnum"];
             string conn = ConfigurationManager.ConnectionStrings["TaketimeConnectionString"].ConnectionString;
 
-            DataTable dt = code.DatabaseQuery(conn, "SELECT MobilePhone,[Name],[NickName],AccomName,CheckinDate,CheckoutDate,StayDays,Reservation_Accommodation.Price,TotalPrice FROM [Taketime].[dbo].[Reservation] right join Reservation_Accommodation on Reservation.ID = Reservation_Accommodation.Reservation_ID inner join Accommodation on Accommodation.ID = Accommodation_ID inner join Customer on Customer.MobilePhone=Customer_MobilePhone Where Customer_MobilePhone = '"+telNum+"'  AND Reservation.Status = N'เช็คอินแล้ว' order by CheckinDate desc");
+            // 🔧 FIX: Include checked-out and completed status + use parameterized query for security
+            DataTable dt = code.DatabaseQuery(conn,
+                @"SELECT MobilePhone, [Name], [NickName], AccomName, CheckinDate, CheckoutDate, StayDays,
+                         Reservation_Accommodation.Price, TotalPrice
+                  FROM [Taketime].[dbo].[Reservation]
+                  RIGHT JOIN Reservation_Accommodation ON Reservation.ID = Reservation_Accommodation.Reservation_ID
+                  INNER JOIN Accommodation ON Accommodation.ID = Accommodation_ID
+                  INNER JOIN Customer ON Customer.MobilePhone = Customer_MobilePhone
+                  WHERE Customer_MobilePhone = @MobilePhone
+                    AND Reservation.Status IN (N'เช็คอินแล้ว', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')
+                  ORDER BY CheckinDate DESC",
+                new SqlParameter("@MobilePhone", telNum));
             GridView1.DataSource = dt;
             GridView1.DataBind();
         }

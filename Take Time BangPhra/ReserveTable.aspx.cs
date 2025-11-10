@@ -193,10 +193,10 @@ namespace Take_Time_BangPhra
 
                 dtReservation.Rows[i]["Remain"] = remainingBalance.ToString("N0");
 
-                // Get reservation count
+                // Get reservation count (include checked-in, checked-out, and completed reservations)
                 string mobilePhone = dtReservation.Rows[i]["Customer_MobilePhone"].ToString();
                 DataTable dtCount = DatabaseQuery(conn,
-                    "SELECT COUNT([Customer_MobilePhone]) as CountReserved FROM [Reservation] WHERE Customer_MobilePhone = @MobilePhone AND Status = N'เช็คอินแล้ว'",
+                    "SELECT COUNT([Customer_MobilePhone]) as CountReserved FROM [Reservation] WHERE Customer_MobilePhone = @MobilePhone AND Status IN (N'เช็คอินแล้ว', N'เช็คเอาท์แล้ว', N'เสร็จสิ้น')",
                     new SqlParameter("@MobilePhone", mobilePhone));
 
                 dtReservation.Rows[i]["CountReserved"] = dtCount.Rows[0]["CountReserved"].ToString();
