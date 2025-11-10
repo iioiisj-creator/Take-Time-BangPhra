@@ -1402,5 +1402,38 @@ namespace Take_Time_BangPhra.Account
             }
             return "#";
         }
+
+        // Helper method to generate slip link button HTML
+        protected string GetSlipLinkButton(object slipFileURL, object hasSlip)
+        {
+            try
+            {
+                // Check if slip exists
+                int hasSlipValue = 0;
+                if (hasSlip != null && hasSlip != DBNull.Value)
+                {
+                    hasSlipValue = Convert.ToInt32(hasSlip);
+                }
+
+                if (hasSlipValue == 0 || slipFileURL == null || slipFileURL == DBNull.Value)
+                {
+                    return "<span style='color: #95a5a6; font-size: 12px;'>ไม่มีสลิป</span>";
+                }
+
+                string slipPath = slipFileURL.ToString();
+                if (string.IsNullOrEmpty(slipPath))
+                {
+                    return "<span style='color: #95a5a6; font-size: 12px;'>ไม่มีสลิป</span>";
+                }
+
+                // Build full URL
+                string fullUrl = ResolveUrl("~/" + slipPath);
+                return $"<a href='{fullUrl}' target='_blank' class='btn-view-slip' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>🔗 ดูสลิป</a>";
+            }
+            catch
+            {
+                return "<span style='color: #e74c3c; font-size: 12px;'>ข้อผิดพลาด</span>";
+            }
+        }
     }
 }

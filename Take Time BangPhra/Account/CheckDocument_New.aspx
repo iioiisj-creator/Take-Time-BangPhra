@@ -463,15 +463,7 @@
                     </asp:TemplateField>
                     <asp:TemplateField HeaderText="ดูสลิป">
                         <ItemTemplate>
-                            <%-- 🚀 PERFORMANCE FIX: Use data-bound fields instead of method calls to avoid N+1 queries --%>
-                            <asp:HyperLink ID="lnkViewSlip" runat="server"
-                                NavigateUrl='<%# Eval("SlipFileURL") != DBNull.Value && !string.IsNullOrEmpty(Eval("SlipFileURL").ToString())
-                                    ? ResolveUrl("~/" + Eval("SlipFileURL").ToString()) : "#" %>'
-                                Text='<%# Convert.ToInt32(Eval("HasSlip")) == 1 ? "🔗 ดูสลิป" : "ไม่มีสลิป" %>'
-                                Enabled='<%# Convert.ToInt32(Eval("HasSlip")) == 1 %>'
-                                Target="_blank"
-                                CssClass='<%# Convert.ToInt32(Eval("HasSlip")) == 1 ? "btn-view-slip" : "btn-no-slip" %>'>
-                            </asp:HyperLink>
+                            <%# GetSlipLinkButton(Eval("SlipFileURL"), Eval("HasSlip")) %>
                         </ItemTemplate>
                     </asp:TemplateField>
                     <asp:BoundField DataField="ID" HeaderText="เลขที่เอกสาร" />

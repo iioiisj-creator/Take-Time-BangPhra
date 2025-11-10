@@ -6080,20 +6080,30 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         // Helper method to generate slip link HTML
         protected string GetSlipLink(object slipFileURL)
         {
-            if (slipFileURL == null || slipFileURL == DBNull.Value)
+            try
             {
-                return "<span style='color: #95a5a6;'>-</span>";
-            }
+                if (slipFileURL == null || slipFileURL == DBNull.Value)
+                {
+                    return "<span style='color: #95a5a6;'>-</span>";
+                }
 
-            string slipPath = slipFileURL.ToString();
-            if (string.IsNullOrEmpty(slipPath))
+                string slipPath = slipFileURL.ToString().Trim();
+                if (string.IsNullOrEmpty(slipPath))
+                {
+                    return "<span style='color: #95a5a6;'>-</span>";
+                }
+
+                // Remove leading "./" or "/" if present
+                slipPath = slipPath.TrimStart('.', '/');
+
+                // Build full URL
+                string fullUrl = ResolveUrl("~/" + slipPath);
+                return $"<a href='{fullUrl}' target='_blank' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>📄 ดูสลิป</a>";
+            }
+            catch
             {
-                return "<span style='color: #95a5a6;'>-</span>";
+                return "<span style='color: #e74c3c;'>ข้อผิดพลาด</span>";
             }
-
-            // Build full URL
-            string fullUrl = ResolveUrl("~/" + slipPath);
-            return $"<a href='{fullUrl}' target='_blank' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>📄 ดูสลิป</a>";
         }
 
         // 🏨 Load Product Charges for CheckIn/Edit/RentMore modes
