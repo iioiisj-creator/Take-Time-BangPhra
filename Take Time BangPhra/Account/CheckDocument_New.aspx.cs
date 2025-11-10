@@ -1030,8 +1030,8 @@ namespace Take_Time_BangPhra.Account
         {
             try
             {
-                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[13].Text; // Status column
-                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[3].Text; // ID column
+                string docStatus = gvDetails.Rows[e.NewSelectedIndex].Cells[14].Text; // Status column
+                string docNum = gvDetails.Rows[e.NewSelectedIndex].Cells[4].Text; // ID column
 
                 System.Diagnostics.Debug.WriteLine($"📄 Opening document: {docNum}, Status: {docStatus}");
 
@@ -1178,7 +1178,7 @@ namespace Take_Time_BangPhra.Account
                 try
                 {
                     int rowIndex = Convert.ToInt32(e.CommandArgument);
-                    string docNum = gvDetails.Rows[rowIndex].Cells[3].Text; // Column index: ลบ(0), ดูPDF(1), แก้ไข(2), ดูสลิป(3), เลขที่เอกสาร(4)
+                    string docNum = gvDetails.Rows[rowIndex].Cells[4].Text; // Column index: ลบ(0), ดูPDF(1), แก้ไข(2), ดูสลิป(3), เลขที่เอกสาร(4)
 
                     System.Diagnostics.Debug.WriteLine($"📝 Edit document: {docNum}, RowIndex: {rowIndex}");
 

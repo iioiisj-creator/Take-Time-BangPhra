@@ -356,6 +356,7 @@
     <Content Include="Account\PaymentVoucher.aspx" />
     <Content Include="Account\SlipVerification.aspx" />
     <Content Include="Account\Report\Report.aspx" />
+    <Content Include="Admin\Dashboard.aspx" />
     <Content Include="Admin\Edit_Data.aspx" />
     <Content Include="Admin\Edit_Home.aspx" />
     <Content Include="Admin\HolidayPrice.aspx" />
@@ -539,6 +540,10 @@
     </Compile>
     <Compile Include="Account\Report\Report.aspx.designer.cs">
       <DependentUpon>Report.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\Dashboard.aspx.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Admin\Edit_Data.aspx.cs">
       <DependentUpon>Edit_Data.aspx</DependentUpon>
