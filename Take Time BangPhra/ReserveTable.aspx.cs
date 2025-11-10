@@ -149,7 +149,8 @@ namespace Take_Time_BangPhra
                 {
                     if (dtReservation.Rows[i]["ID"].ToString() == dtProductCharges.Rows[j]["Reservation_ID"].ToString())
                     {
-                        Items += $"[{dtProductCharges.Rows[j]["Product_Name"]} : ({dtProductCharges.Rows[j]["Quantity"]}ชิ้น)] ";
+                        int quantity = Convert.ToInt32(dtProductCharges.Rows[j]["Quantity"]);
+                        Items += $"[{dtProductCharges.Rows[j]["Product_Name"]} : ({quantity}ชิ้น)] ";
                     }
                 }
 
