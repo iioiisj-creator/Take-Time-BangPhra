@@ -803,52 +803,19 @@ namespace Take_Time_BangPhra
                         }
                     }
 
-                    // Load slip image and link
-                    // 🔧 FIX: For CheckIn/Edit/RentMore modes - don't show image (may have multiple slips), show link to Payment History instead
+                    // Load slip image
+                    // 🔧 FIX: For CheckIn/Edit/RentMore modes - don't show image (shown in GridView instead)
                     try
                     {
                         // Use command variable from line 192 (already declared)
                         if (command == "checkin" || command == "edit" || command == "rentmore")
                         {
-                            // Hide image, show link to PaymentHistory page instead
+                            // Hide image - payment history GridView shows slips instead
                             Image1.Visible = false;
-
-                            // Check if there are any slips
-                            string slipCountQuery = @"
-                                SELECT COUNT(*) as SlipCount
-                                FROM Payment_Slips
-                                WHERE Reservation_ID = @ReservationId
-                                AND IsActive = 1";
-
-                            var slipCountParams = new Dictionary<string, object>
-                            {
-                                { "@ReservationId", Convert.ToInt32(id) }
-                            };
-
-                            DataTable dtSlipCount = code2.DatabaseQuerySafe(conn, slipCountQuery, slipCountParams);
-                            int slipCount = dtSlipCount.Rows.Count > 0 ? Convert.ToInt32(dtSlipCount.Rows[0]["SlipCount"]) : 0;
-
-                            if (slipCount > 0)
-                            {
-                                // Show link to PaymentHistory with reservationId
-                                divSlipLink.Visible = true;
-                                hlViewAllSlips.NavigateUrl = $"./Payment/PaymentHistory.aspx?reservationId={id}";
-                                hlViewAllSlips.Text = $"📄 ดูสลิปการชำระเงินทั้งหมด ({slipCount} รูป)";
-                            }
-                            else
-                            {
-                                // No slips - show placeholder image
-                                divSlipLink.Visible = false;
-                                Image1.ImageUrl = "./Images/บัญชี.png";
-                                Image1.Visible = true;
-                                Image1.DataBind();
-                            }
                         }
                         else
                         {
                             // For other modes (reserve, etc.) - show image as before
-                            divSlipLink.Visible = false;
-
                             string slipQuery = @"
                                 SELECT TOP 1 SlipFileURL
                                 FROM Payment_Slips
@@ -890,7 +857,6 @@ namespace Take_Time_BangPhra
                     catch
                     {
                         // Error loading slip - show placeholder
-                        divSlipLink.Visible = false;
                         Image1.ImageUrl = "./Images/บัญชี.png";
                         Image1.Visible = true;
                         Image1.DataBind();
@@ -6109,6 +6075,25 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 divPaymentHistory.Visible = false;
                 Image1.Visible = true;
             }
+        }
+
+        // Helper method to generate slip link HTML
+        protected string GetSlipLink(object slipFileURL)
+        {
+            if (slipFileURL == null || slipFileURL == DBNull.Value)
+            {
+                return "<span style='color: #95a5a6;'>-</span>";
+            }
+
+            string slipPath = slipFileURL.ToString();
+            if (string.IsNullOrEmpty(slipPath))
+            {
+                return "<span style='color: #95a5a6;'>-</span>";
+            }
+
+            // Build full URL
+            string fullUrl = ResolveUrl("~/" + slipPath);
+            return $"<a href='{fullUrl}' target='_blank' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>📄 ดูสลิป</a>";
         }
 
         // 🏨 Load Product Charges for CheckIn/Edit/RentMore modes
