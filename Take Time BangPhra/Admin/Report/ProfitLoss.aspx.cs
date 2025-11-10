@@ -7,6 +7,7 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Take_Time_BangPhra.Class;
+using Newtonsoft.Json;
 
 namespace Take_Time_BangPhra.Admin.Report
 {
@@ -465,10 +466,10 @@ namespace Take_Time_BangPhra.Admin.Report
             }
 
             // Convert to JSON
-            hfComparisonLabels.Value = System.Web.Helpers.Json.Encode(labels);
-            hfComparisonRevenue.Value = System.Web.Helpers.Json.Encode(revenues);
-            hfComparisonExpenses.Value = System.Web.Helpers.Json.Encode(expenses);
-            hfComparisonProfit.Value = System.Web.Helpers.Json.Encode(profits);
+            hfComparisonLabels.Value = JsonConvert.SerializeObject(labels);
+            hfComparisonRevenue.Value = JsonConvert.SerializeObject(revenues);
+            hfComparisonExpenses.Value = JsonConvert.SerializeObject(expenses);
+            hfComparisonProfit.Value = JsonConvert.SerializeObject(profits);
         }
 
         private void ExportToExcel()
