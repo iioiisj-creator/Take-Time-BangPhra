@@ -18,6 +18,14 @@ namespace Take_Time_BangPhra.Payment
 
             if (!IsPostBack)
             {
+                // Check if reservationId is passed via QueryString
+                string reservationIdParam = Request.QueryString["reservationId"];
+                if (!string.IsNullOrEmpty(reservationIdParam))
+                {
+                    // Auto-fill the reservation ID textbox
+                    txtReservationID.Text = reservationIdParam;
+                }
+
                 LoadPaymentHistory();
                 LoadSummary();
             }
