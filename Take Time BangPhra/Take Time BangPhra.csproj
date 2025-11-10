@@ -365,7 +365,7 @@
     <Content Include="Admin\HolidayPrice.aspx" />
     <Content Include="Admin\Login.aspx" />
     <Content Include="Admin\ProductImages.aspx" />
-    <Content Include="Admin\Report.aspx" />
+    <Content Include="Admin\Report\Report.aspx" />
     <Content Include="Admin\Report\CustomerAnalytics.aspx" />
     <Content Include="Admin\Report\ProfitLoss.aspx" />
     <Content Include="Admin\Vendor.aspx" />
@@ -618,11 +618,11 @@
     <Compile Include="Admin\ProductImages.aspx.designer.cs">
       <DependentUpon>ProductImages.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Admin\Report.aspx.cs">
+    <Compile Include="Admin\Report\Report.aspx.cs">
       <DependentUpon>Report.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="Admin\Report.aspx.designer.cs">
+    <Compile Include="Admin\Report\Report.aspx.designer.cs">
       <DependentUpon>Report.aspx</DependentUpon>
     </Compile>
     <Compile Include="Admin\Report\CustomerAnalytics.aspx.cs">

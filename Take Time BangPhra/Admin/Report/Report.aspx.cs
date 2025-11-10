@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace Take_Time_BangPhra.Admin
+namespace Take_Time_BangPhra.Admin.Report
 {
     public partial class ReportMain : System.Web.UI.Page
     {

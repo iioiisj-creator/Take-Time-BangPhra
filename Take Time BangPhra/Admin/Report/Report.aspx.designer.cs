@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Take_Time_BangPhra.Admin
+namespace Take_Time_BangPhra.Admin.Report
 {
 
 

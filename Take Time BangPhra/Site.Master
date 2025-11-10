@@ -439,7 +439,7 @@
                                         
                                         <!-- System Section - Owner Only -->
                                         <li class="dropdown-header owner-only">ระบบ (Owner Only)</li>
-                                        <li class="owner-only"><a runat="server" href="~/Admin/Report">
+                                        <li class="owner-only"><a runat="server" href="~/Admin/Report/Report">
     <i class="fas fa-chart-bar"></i> 
     <asp:Label ID="Label4" runat="server" Text="รายงานระบบ"></asp:Label>
 </a></li>

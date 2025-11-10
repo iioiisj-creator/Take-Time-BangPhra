@@ -1,6 +1,6 @@
 ﻿<%@ Page Title="รายงานระบบ" Language="C#" MaintainScrollPositionOnPostback="true"
     MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="Report.aspx.cs" Inherits="Take_Time_BangPhra.Admin.ReportMain" %>
+    CodeBehind="Report.aspx.cs" Inherits="Take_Time_BangPhra.Admin.Report.ReportMain" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <div class="report-container">
