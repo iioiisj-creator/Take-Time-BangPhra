@@ -56,17 +56,17 @@ namespace Take_Time_BangPhra
             Label1.Text = Calendar1.SelectedDate.ToString("dd MMMM yyyy");
 
             DataTable dtReservation = DatabaseQuery(conn,
-                @"SELECT * FROM Reservation 
-                  INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone 
-                  WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate 
+                @"SELECT * FROM Reservation
+                  INNER JOIN Customer ON Customer.MobilePhone = Reservation.Customer_MobilePhone
+                  WHERE @SelectedDate >= CheckInDate AND @SelectedDate < CheckOutDate
                   AND (Reservation.Status != N'ยกเลิกคืนเงิน' AND Reservation.Status != N'ยกเลิกไม่คืนเงิน')",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
             DataTable dtReservation_Accom = DatabaseQuery(conn,
-                @"SELECT * FROM Reservation 
-                  RIGHT JOIN Reservation_Accommodation ON Reservation.ID = Reservation_Accommodation.Reservation_ID 
-                  INNER JOIN Accommodation ON Accommodation.ID = Reservation_Accommodation.Accommodation_ID  
-                  WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate 
+                @"SELECT * FROM Reservation
+                  RIGHT JOIN Reservation_Accommodation ON Reservation.ID = Reservation_Accommodation.Reservation_ID
+                  INNER JOIN Accommodation ON Accommodation.ID = Reservation_Accommodation.Accommodation_ID
+                  WHERE @SelectedDate >= CheckInDate AND @SelectedDate < CheckOutDate
                   ORDER BY Accommodation.orderID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
@@ -74,7 +74,7 @@ namespace Take_Time_BangPhra
                 @"SELECT * FROM Reservation
                   RIGHT JOIN Reservation_Items ON Reservation.ID = Reservation_Items.Reservation_ID
                   INNER JOIN Items ON Items.ID = Reservation_Items.Items_ID
-                  WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate
+                  WHERE @SelectedDate >= CheckInDate AND @SelectedDate < CheckOutDate
                   ORDER BY Items_ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
 
@@ -87,7 +87,7 @@ namespace Take_Time_BangPhra
                   FROM Reservation r
                   INNER JOIN Reservation_Product_Charges rpc ON r.ID = rpc.Reservation_ID
                   INNER JOIN Product p ON rpc.Product_ID = p.ID
-                  WHERE @SelectedDate >= r.CheckinDate AND @SelectedDate < r.CheckoutDate
+                  WHERE @SelectedDate >= r.CheckInDate AND @SelectedDate < r.CheckOutDate
                     AND rpc.Status IN (N'รอชำระ', N'ชำระแล้ว', 'PENDING', 'PAID')
                   ORDER BY rpc.ID ASC",
                 new SqlParameter("@SelectedDate", Calendar1.SelectedDate.ToString("yyyy-MM-dd")));
