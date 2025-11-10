@@ -167,17 +167,12 @@ namespace Take_Time_BangPhra
                 }
 
                 // 2. Get product charges from Reservation_Product_Charges
-                // 🔧 FIX: Use code2.DatabaseQuerySafe instead of local DatabaseQuery (which has bugs)
                 decimal productCharges = 0;
-                var productChargesParams = new Dictionary<string, object>
-                {
-                    { "@reservationId", reservationId }
-                };
-                DataTable dtProductCharges2 = code2.DatabaseQuerySafe(conn,
-                    @"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
-                      FROM Reservation_Product_Charges
-                      WHERE Reservation_ID = @reservationId AND Status <> 'CANCELLED'",
-                    productChargesParams);
+                DataTable dtProductCharges2 = DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(TotalAmount), 0) as TotalCharges
+                       FROM Reservation_Product_Charges
+                       WHERE Reservation_ID = {reservationId}
+                       AND Status <> 'CANCELLED'");
                 if (dtProductCharges2.Rows.Count > 0 && dtProductCharges2.Rows[0]["TotalCharges"] != DBNull.Value)
                 {
                     productCharges = Convert.ToDecimal(dtProductCharges2.Rows[0]["TotalCharges"]);
@@ -191,26 +186,26 @@ namespace Take_Time_BangPhra
                 dtReservation.Rows[i]["TotalPriceWithCharges"] = totalPrice.ToString("N0");
 
                 // 5. Get total paid from Payment_History
-                // 🔧 FIX: Use code2.DatabaseQuerySafe instead of local DatabaseQuery (which has bugs)
                 decimal totalPaid = 0;
-                var totalPaidParams = new Dictionary<string, object>
-                {
-                    { "@reservationId", reservationId }
-                };
-                DataTable dtPaid = code2.DatabaseQuerySafe(conn,
-                    @"SELECT ISNULL(SUM(PaymentAmount), 0) as TotalPaid
-                      FROM Payment_History
-                      WHERE Reservation_ID = @reservationId AND Status = 'COMPLETED'",
-                    totalPaidParams);
+                DataTable dtPaid = DatabaseQuery(conn,
+                    $@"SELECT ISNULL(SUM(PaymentAmount), 0) as TotalPaid
+                       FROM Payment_History
+                       WHERE Reservation_ID = {reservationId}
+                       AND Status = 'COMPLETED'");
                 if (dtPaid.Rows.Count > 0 && dtPaid.Rows[0]["TotalPaid"] != DBNull.Value)
                 {
                     totalPaid = Convert.ToDecimal(dtPaid.Rows[0]["TotalPaid"]);
                 }
 
                 // 6. If no payment history, fallback to Deposit column
-                if (totalPaid == 0 && dtReservation.Rows[i]["Deposit"] != DBNull.Value)
+                if (totalPaid == 0)
                 {
-                    totalPaid = Convert.ToDecimal(dtReservation.Rows[i]["Deposit"]);
+                    DataTable dtDeposit = DatabaseQuery(conn,
+                        $"SELECT ISNULL(Deposit, 0) as Deposit FROM Reservation WHERE ID = {reservationId}");
+                    if (dtDeposit.Rows.Count > 0 && dtDeposit.Rows[0]["Deposit"] != DBNull.Value)
+                    {
+                        totalPaid = Convert.ToDecimal(dtDeposit.Rows[0]["Deposit"]);
+                    }
                 }
 
                 // 7. Calculate remaining balance
