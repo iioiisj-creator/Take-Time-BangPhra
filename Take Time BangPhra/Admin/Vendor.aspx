@@ -28,23 +28,23 @@
                 &nbsp;<asp:DropDownList ID="DropDownList5" runat="server" Width="40%">
                     </asp:DropDownList>
                 </td>
-                <td class="auto-style2" style="color: #999; font-size: 0.9em; font-style: italic;">✓ สามารถเว้นว่างได้ถ้าไม่มีเลขผู้เสียภาษี</td>
+                <td class="auto-style2" style="color: #4caf50; font-size: 0.9em;">✓ เว้นว่างได้ถ้าไม่มีเลขผู้เสียภาษี</td>
             </tr>
             <tr class="spaceUnder">
                 <td>
                     <asp:DropDownList ID="DropDownList1" runat="server" Width="30%">
                     </asp:DropDownList>
-                    <asp:TextBox ID="TextBox2" runat="server" Width="50%" Placeholder="ชื่อผู้เสียภาษี / ชื่อบริษัท (บังคับ)" required></asp:TextBox>
+                    <asp:TextBox ID="TextBox2" runat="server" Width="50%" Placeholder="ชื่อผู้เสียภาษี / ชื่อบริษัท (บังคับ) *" required></asp:TextBox>
                 </td>
                 <td>
-                    <span style="color: #999; font-size: 0.9em; font-style: italic;">✓ ใช้สำหรับตรวจสอบข้อมูลซ้ำ</span></td>
+                    <span style="color: #d32f2f; font-weight: bold; font-size: 0.9em;">* บังคับ - ใช้เป็น unique key หลัก</span></td>
             </tr>
             <tr class="spaceUnder">
                 <td>
-                    <asp:TextBox ID="TextBox3" runat="server" Width="40%" Placeholder="เลขสาขา (00000 = สำนักงานใหญ่)" AutoPostBack="True" OnTextChanged="TextBox3_TextChanged" TextMode="Number"></asp:TextBox>
-                    &nbsp;<asp:TextBox ID="TextBox7" runat="server" Width="40%" Placeholder="เบอร์โทรศัพท์ (บังคับ)" AutoPostBack="True" OnTextChanged="TextBox7_TextChanged" required></asp:TextBox>
+                    <asp:TextBox ID="TextBox3" runat="server" Width="40%" Placeholder="เลขสาขา (00000 = สำนักงานใหญ่) *" AutoPostBack="True" OnTextChanged="TextBox3_TextChanged" TextMode="Number" required></asp:TextBox>
+                    &nbsp;<asp:TextBox ID="TextBox7" runat="server" Width="40%" Placeholder="เบอร์โทรศัพท์ (ไม่บังคับ)" AutoPostBack="True" OnTextChanged="TextBox7_TextChanged"></asp:TextBox>
                 </td>
-                <td><span style="color: #999; font-size: 0.9em; font-style: italic;">✓ ใช้สำหรับตรวจสอบข้อมูลซ้ำ</span></td>
+                <td><span style="color: #4caf50; font-size: 0.9em;">✓ เบอร์โทรเว้นว่างได้ (เลขสาขาบังคับ)</span></td>
             </tr>
             <tr class="spaceUnder">
                 <td>

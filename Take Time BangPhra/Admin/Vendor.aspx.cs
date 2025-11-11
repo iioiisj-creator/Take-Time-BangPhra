@@ -169,10 +169,17 @@ namespace Take_Time_BangPhra.Admin
 
         protected void Button2_Click(object sender, EventArgs e)
         {
-            // ✅ Validation: ต้องมีชื่อ (เบอร์โทรไม่บังคับ)
+            // ✅ Validation: ต้องมีชื่อ
             if (string.IsNullOrEmpty(TextBox2.Text.Trim()))
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกชื่อผู้เสียภาษี / ชื่อบริษัท');", true);
+                return;
+            }
+
+            // ✅ Validation: ต้องมีเลขสาขา
+            if (string.IsNullOrEmpty(TextBox3.Text.Trim()))
+            {
+                ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณากรอกเลขสาขา (00000 = สำนักงานใหญ่)');", true);
                 return;
             }
 
@@ -186,88 +193,65 @@ namespace Take_Time_BangPhra.Admin
 
             try
             {
-                DataTable dt;
-                bool isDuplicate = false;
-
-                // 🔍 Check duplicate based on available data
-                if (!string.IsNullOrEmpty(taxId))
-                {
-                    // มี Tax ID: check ด้วย IDNumber + Branch_Number
-                    dt = code.DatabaseQuery(conn,
-                        $"SELECT * FROM Vendor WHERE IDNumber = '{taxId}' AND Branch_Number = '{TextBox3.Text.Trim()}'");
-                    isDuplicate = dt.Rows.Count > 0;
-                }
-                else
-                {
-                    // ไม่มี Tax ID: check ด้วย Name เพียงอย่างเดียว (PK)
-                    dt = code.DatabaseQuery(conn,
-                        $"SELECT * FROM Vendor WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}'");
-                    isDuplicate = dt.Rows.Count > 0;
-                }
-
+                string vendorName = TextBox2.Text.Trim().Replace("'", "''");
+                string branchNumber = TextBox3.Text.Trim().Replace("'", "''");
                 string addressId = CheckAddressID(TextBox6.Text, DropDownList2.SelectedValue, DropDownList3.SelectedValue, DropDownList4.SelectedValue);
 
-                if (isDuplicate)
+                // 🔍 Check duplicate by Name + Branch_Number (Primary unique key)
+                DataTable dtCheckName = code.DatabaseQuery(conn,
+                    $"SELECT * FROM Vendor WHERE Name = N'{vendorName}' AND Branch_Number = '{branchNumber}'");
+                bool isDuplicateName = dtCheckName.Rows.Count > 0;
+
+                // 🔍 Check duplicate by IDNumber + Branch_Number (if Tax ID exists)
+                bool isDuplicateTaxId = false;
+                if (!string.IsNullOrEmpty(taxId))
                 {
-                    // 📝 UPDATE existing vendor
-                    if (!string.IsNullOrEmpty(taxId))
-                    {
-                        // Update by IDNumber + Branch_Number
-                        string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
-                            ? "NULL"
-                            : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
+                    DataTable dtCheckTax = code.DatabaseQuery(conn,
+                        $"SELECT * FROM Vendor WHERE IDNumber = '{taxId.Replace("'", "''")}' AND Branch_Number = '{branchNumber}'");
+                    isDuplicateTaxId = dtCheckTax.Rows.Count > 0;
 
-                        code.DatabaseInsert(conn,
-                            $@"UPDATE [dbo].[Vendor] SET
-                                [IDNumber] = '{taxId.Replace("'", "''")}',
-                                [Vendor_Type_ID] = {DropDownList1.SelectedValue},
-                                [Name] = N'{TextBox2.Text.Trim().Replace("'", "''")}',
-                                [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
-                                [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
-                                [Address_ID] = {addressId},
-                                [Phone_Number] = {phoneValue},
-                                [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
-                                [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
-                            WHERE IDNumber = '{taxId}' AND Branch_Number = '{TextBox3.Text.Trim()}'");
-                    }
-                    else
+                    // ⚠️ Check conflict: มี Tax ID ซ้ำแต่ชื่อไม่ตรงกัน
+                    if (isDuplicateTaxId && !isDuplicateName)
                     {
-                        // Update by Name (PK)
-                        string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
-                            ? "NULL"
-                            : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
-
-                        code.DatabaseInsert(conn,
-                            $@"UPDATE [dbo].[Vendor] SET
-                                [Vendor_Type_ID] = {DropDownList1.SelectedValue},
-                                [Name] = N'{TextBox2.Text.Trim().Replace("'", "''")}',
-                                [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
-                                [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
-                                [Address_ID] = {addressId},
-                                [Phone_Number] = {phoneValue},
-                                [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}',
-                                [Branch_Number] = '{TextBox3.Text.Trim().Replace("'", "''")}'
-                            WHERE Name = N'{TextBox2.Text.Trim().Replace("'", "''")}'");
+                        string existingName = dtCheckTax.Rows[0]["Name"].ToString();
+                        ClientScript.RegisterStartupScript(this.GetType(), "conflict",
+                            $"alert('⚠️ เลขผู้เสียภาษี {taxId} สาขา {branchNumber} มีอยู่แล้วในชื่อ \"{existingName}\"\\n\\nไม่สามารถใช้เลขผู้เสียภาษีซ้ำกับชื่อต่างกันได้');", true);
+                        return;
                     }
+                }
+
+                string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
+                    ? "NULL"
+                    : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
+                string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : $"'{taxId.Replace("'", "''")}'";
+
+                if (isDuplicateName || isDuplicateTaxId)
+                {
+                    // 📝 UPDATE existing vendor (by Name + Branch_Number)
+                    code.DatabaseInsert(conn,
+                        $@"UPDATE [dbo].[Vendor] SET
+                            [IDNumber] = {idNumberValue},
+                            [Vendor_Type_ID] = {DropDownList1.SelectedValue},
+                            [Address] = N'{TextBox4.Text.Trim().Replace("'", "''")}',
+                            [Address1] = N'{TextBox5.Text.Trim().Replace("'", "''")}',
+                            [Address_ID] = {addressId},
+                            [Phone_Number] = {phoneValue},
+                            [Vendor_Group] = N'{DropDownList5.SelectedItem.Text.Replace("'", "''")}'
+                        WHERE Name = N'{vendorName}' AND Branch_Number = '{branchNumber}'");
 
                     ClientScript.RegisterStartupScript(this.GetType(), "success", "alert('✅ อัพเดทข้อมูล Vendor สำเร็จ');", true);
                 }
                 else
                 {
                     // ➕ INSERT new vendor
-                    string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : $"'{taxId.Replace("'", "''")}'";
-                    string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
-                        ? "NULL"
-                        : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
-
                     code.DatabaseInsert(conn,
                         $@"INSERT INTO [dbo].[Vendor]
                             (IDNumber, Vendor_Type_ID, Name, Branch_Number, Phone_Number, Address, Address1, Address_ID, Vendor_Group)
                         VALUES (
                             {idNumberValue},
                             {DropDownList1.SelectedValue},
-                            N'{TextBox2.Text.Trim().Replace("'", "''")}',
-                            '{TextBox3.Text.Trim().Replace("'", "''")}',
+                            N'{vendorName}',
+                            '{branchNumber}',
                             {phoneValue},
                             N'{TextBox4.Text.Trim().Replace("'", "''")}',
                             N'{TextBox5.Text.Trim().Replace("'", "''")}',
