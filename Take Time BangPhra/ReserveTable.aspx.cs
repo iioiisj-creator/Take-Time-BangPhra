@@ -263,16 +263,25 @@ namespace Take_Time_BangPhra
             {
                 if (row.RowType == DataControlRowType.DataRow)
                 {
+                    // 🔧 FIX: Get Reservation ID from DataKeys to find correct row after sorting
+                    int reservationId = Convert.ToInt32(GridView1.DataKeys[row.RowIndex].Value);
+
+                    // Find the correct row in dtReservation by ID
+                    DataRow[] foundRows = dtReservation.Select($"ID = {reservationId}");
+                    if (foundRows.Length == 0) continue;
+
+                    DataRow currentRow = foundRows[0];
+
                     // Update button text for reservation count
                     Button bt6 = row.FindControl("Button6") as Button;
                     if (bt6 != null)
                     {
-                        string countReserved = dtReservation.Rows[row.RowIndex]["CountReserved"].ToString();
+                        string countReserved = currentRow["CountReserved"].ToString();
                         bt6.Text = countReserved + " ครั้ง";
                     }
 
                     // 🔒 Check status and update buttons
-                    string status = dtReservation.Rows[row.RowIndex]["Status"].ToString();
+                    string status = currentRow["Status"].ToString();
                     bool isOwner = Session["User"]?.ToString() == "Owner";
 
                     if (status == "เสร็จสิ้น")
