@@ -504,13 +504,19 @@ namespace Take_Time_BangPhra
                     break;
 
                 case "Detail":
-                    // สำหรับปุ่มรายละเอียดใช้ DataItemIndex
-                    int rowIndex = Convert.ToInt32(commandArg);
-                    if (rowIndex >= 0 && rowIndex < dtShow.Rows.Count)
+                    // 🔧 FIX: ใช้ Reservation ID โดยตรงแทน DataItemIndex
+                    // เพราะหลังจาก sort แล้ว index ไม่ตรงกับ original DataTable
+                    string detailReservationId = commandArg;
+
+                    // Get customer phone from database using reservation ID
+                    DataTable dtDetailCustomer = DatabaseQuery(conn,
+                        @"SELECT Customer_MobilePhone FROM [Reservation] WHERE ID = @ReservationId",
+                        new SqlParameter("@ReservationId", detailReservationId));
+
+                    if (dtDetailCustomer.Rows.Count > 0)
                     {
-                        string reservationId = dtShow.Rows[rowIndex]["ID"].ToString();
-                        string customerMobile = dtShow.Rows[rowIndex]["Customer_MobilePhone"].ToString();
-                        Response.Redirect($"./Reservation_Confirmed?id={reservationId}&check={customerMobile}", false);
+                        string detailCustomerPhone = dtDetailCustomer.Rows[0]["Customer_MobilePhone"].ToString();
+                        Response.Redirect($"./Reservation_Confirmed?id={detailReservationId}&check={detailCustomerPhone}", false);
                     }
                     break;
             }

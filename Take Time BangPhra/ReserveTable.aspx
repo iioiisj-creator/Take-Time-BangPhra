@@ -581,7 +581,7 @@
                                                 OnClientClick="return confirm('ยืนยันการเช็คเอาท์หรือไม่');" />
 
                                             <asp:Button ID="Button7" runat="server" Text="รายละเอียด"
-                                                CommandArgument='<%# Container.DataItemIndex %>' CommandName="Detail"
+                                                CommandArgument='<%# Eval("ID") %>' CommandName="Detail"
                                                 CssClass="btn btn-primary btn-sm" />
                                         </div>
                                         <div class="print-only">
