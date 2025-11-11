@@ -250,12 +250,12 @@ namespace Take_Time_BangPhra
                 dtReservation.Rows[i]["CountReserved"] = dtCount.Rows[0]["CountReserved"].ToString();
             }
 
-            DataView view = dtReservation.DefaultView;
-            view.Sort = "Order ASC";
-            DataTable sortedReservation = view.ToTable();
-            Session["dtShow"] = sortedReservation;
+            // 🔧 FIX: Sort directly on DefaultView instead of creating new table with ToTable()
+            // This ensures all modified values (Deposit, TotalPrice, Remain) are preserved
+            dtReservation.DefaultView.Sort = "Order ASC";
+            Session["dtShow"] = dtReservation;
 
-            GridView1.DataSource = sortedReservation;
+            GridView1.DataSource = dtReservation;
             GridView1.DataBind();
 
             // Update button states
@@ -267,12 +267,12 @@ namespace Take_Time_BangPhra
                     Button bt6 = row.FindControl("Button6") as Button;
                     if (bt6 != null)
                     {
-                        string countReserved = sortedReservation.Rows[row.RowIndex]["CountReserved"].ToString();
+                        string countReserved = dtReservation.Rows[row.RowIndex]["CountReserved"].ToString();
                         bt6.Text = countReserved + " ครั้ง";
                     }
 
                     // 🔒 Check status and update buttons
-                    string status = sortedReservation.Rows[row.RowIndex]["Status"].ToString();
+                    string status = dtReservation.Rows[row.RowIndex]["Status"].ToString();
                     bool isOwner = Session["User"]?.ToString() == "Owner";
 
                     if (status == "เสร็จสิ้น")
