@@ -199,7 +199,7 @@ namespace Take_Time_BangPhra
                 dtReservation.Rows[i]["TotalPrice"] = totalPrice;
                 dtReservation.Rows[i]["TotalPriceWithCharges"] = totalPrice.ToString("N0");
 
-                // 5. Get total paid from Payment_History (same as Checkout page)
+                // 4. Get total paid from Payment_History (same as Checkout page)
                 decimal totalPaid = 0;
                 var paidParams = new Dictionary<string, object>
                 {
@@ -237,6 +237,8 @@ namespace Take_Time_BangPhra
                 // 7. Calculate remaining balance
                 decimal remainingBalance = totalPrice - totalPaid;
 
+                // 🔧 FIX: Update Deposit column to show actual total paid from Payment_History
+                dtReservation.Rows[i]["Deposit"] = totalPaid;
                 dtReservation.Rows[i]["Remain"] = remainingBalance.ToString("N0");
 
                 // Get reservation count (include checked-in, checked-out, and completed reservations)

@@ -120,7 +120,7 @@ namespace Take_Time_BangPhra.Account.Report
                     DropDownList1.DataBind();
 
                     string path = System.Configuration.ConfigurationSettings.AppSettings["PaymentFolderPath"].ToString();
-                    string[] dirs = Directory.GetFiles(path+"\\"+docdate.Year+"\\"+docdate.Month, id + "*");
+                    string[] dirs = Directory.GetFiles(path+"\\"+docdate.Year+"\\"+docdate.Month, id + "_" + uid + "*");
                     foreach (string file in dirs)
                     {
                         if(System.IO.Path.GetFileName(file).Split('.')[0].Replace(id, "").Replace("_" + uid, "").Length > 0)
