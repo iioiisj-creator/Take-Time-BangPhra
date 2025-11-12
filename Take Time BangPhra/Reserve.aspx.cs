@@ -301,33 +301,36 @@ namespace Take_Time_BangPhra
                     if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
                     {
                         DepositAmount += 50* Convert.ToInt32(txtPeopleStay.Text);
+
+                        // 🔧 Calculate price for accommodation with LimitWithPeople (charged per person)
                         if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
                         {
+                            // Multi-night: Calculate price for each night
+                            double totalPriceAllNights = 0;
                             for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
                             {
-                                // คำนวณราคารวมผู้พักเสริมอัตโนมัติ
-                                PriceAccom += CalculateAccomPriceWithExtraGuests(
+                                int priceThisNight = CalculateAccomPriceWithExtraGuests(
                                     dtAccommodation.Rows[i]["ID"].ToString(),
                                     code2.ParseDate(TextBox12.Text).Value.AddDays(k),
                                     Convert.ToInt32(txtPeopleStay.Text));
+                                totalPriceAllNights += priceThisNight;
                             }
+                            PriceAccom += totalPriceAllNights;
+
+                            // Update GridView to show average price per night (for all guests)
+                            GridView1.Rows[i].Cells[4].Text = (totalPriceAllNights / Convert.ToInt32(DropDownList1.SelectedValue)).ToString("0");
                         }
                         else
                         {
-                            if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
-                            {
-                                // สำหรับห้องคิดตามคน - คำนวณรวมผู้พักเสริม
-                                int pricePerNight = CalculateAccomPriceWithExtraGuests(
-                                    dtAccommodation.Rows[i]["ID"].ToString(),
-                                    code2.ParseDate(TextBox12.Text).Value,
-                                    Convert.ToInt32(txtPeopleStay.Text));
-                                PriceAccom += pricePerNight * Convert.ToInt32(DropDownList1.SelectedValue);
-                            }
-                            else
-                            {
-                                // สำหรับห้องไม่คิดตามคน - ไม่ต้องคูณกับจำนวนคน
-                                PriceAccom += Convert.ToInt32(row.Cells[4].Text) * Convert.ToInt32(DropDownList1.SelectedValue);
-                            }
+                            // Single night or manual price mode
+                            int priceThisAccom = CalculateAccomPriceWithExtraGuests(
+                                dtAccommodation.Rows[i]["ID"].ToString(),
+                                code2.ParseDate(TextBox12.Text).Value,
+                                Convert.ToInt32(txtPeopleStay.Text));
+                            PriceAccom += priceThisAccom * Convert.ToInt32(DropDownList1.SelectedValue);
+
+                            // Update GridView to show price per night (for all guests)
+                            GridView1.Rows[i].Cells[4].Text = priceThisAccom.ToString("0");
                         }
 
                         try
