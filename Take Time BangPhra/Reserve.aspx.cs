@@ -303,6 +303,8 @@ namespace Take_Time_BangPhra
                         DepositAmount += 50* Convert.ToInt32(txtPeopleStay.Text);
 
                         // 🔧 Calculate price for accommodation with LimitWithPeople (charged per person)
+                        // ✅ ALWAYS recalculate for LimitWithPeople, even in manual price mode
+                        // because price depends on number of guests
                         if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
                         {
                             // Multi-night: Calculate price for each night
@@ -322,11 +324,12 @@ namespace Take_Time_BangPhra
                         }
                         else
                         {
-                            // Single night or manual price mode
+                            // Single night OR manual price mode: Calculate price based on number of guests
                             int priceThisAccom = CalculateAccomPriceWithExtraGuests(
                                 dtAccommodation.Rows[i]["ID"].ToString(),
                                 code2.ParseDate(TextBox12.Text).Value,
                                 Convert.ToInt32(txtPeopleStay.Text));
+
                             PriceAccom += priceThisAccom * Convert.ToInt32(DropDownList1.SelectedValue);
 
                             // Update GridView to show price per night (for all guests)
