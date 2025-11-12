@@ -312,6 +312,27 @@
     </style>
 
     <script>
+        // 🔒 Prevent double-click on submit button
+        function preventDoubleSubmit() {
+            var btn = document.getElementById('<%= Button1.ClientID %>');
+
+            // Check if already clicked
+            if (btn.getAttribute('data-clicked') === 'true') {
+                alert('⚠️ กำลังดำเนินการบันทึก กรุณารอสักครู่...');
+                return false; // Prevent form submission
+            }
+
+            // Mark as clicked
+            btn.setAttribute('data-clicked', 'true');
+            btn.disabled = true;
+            btn.value = '⏳ กำลังบันทึก...';
+            document.body.style.cursor = 'wait';
+
+            // Allow form submission
+            return true;
+        }
+
+        // Legacy function (kept for compatibility)
         function setHourglass() {
             document.getElementById("MainContent_Button1").disabled = true;
             document.body.style.cursor = 'Wait';
@@ -787,7 +808,7 @@
                 <asp:CheckBox ID="CheckBox1" runat="server" AutoPostBack="True" OnCheckedChanged="CheckBox1_CheckedChanged" CssClass="mycheckbox" style="margin-right: 10px;"/>
                 <span style="font-size: 1.1em; color: #5D4037;">***ติ๊กเลือกเพื่อยอมรับกติกาด้านบน และรับทราบเรื่องการห้ามใช้เสียงดังหลัง 22.30 น. (Accept the rule)</span>
                 <div style="margin-top: 20px;">
-                    <asp:Button ID="Button1" runat="server" Text="ยืนยันการจอง(Submit)" Height="60px" Width="300px" OnClick="Button1_Click" Enabled="False" CssClass="reservation-button" style="font-size: 1.2em;"/>
+                    <asp:Button ID="Button1" runat="server" Text="ยืนยันการจอง(Submit)" Height="60px" Width="300px" OnClick="Button1_Click" OnClientClick="return preventDoubleSubmit();" Enabled="False" CssClass="reservation-button" style="font-size: 1.2em;"/>
                 </div>
             </div>
         </div>

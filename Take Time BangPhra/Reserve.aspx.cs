@@ -1181,6 +1181,80 @@ namespace Take_Time_BangPhra
                                         int checkoldAccomRemoved = 0;
                                         List<string> cmds = new List<string>();
 
+                                        // 🔒 RACE CONDITION PREVENTION: Check NEW rooms availability before editing reservation
+                                        DateTime? checkinDate = code2.ParseDate(TextBox12.Text);
+                                        if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
+                                        {
+                                            DateTime checkoutDate = checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
+
+                                            // Check each selected room to see if it's NEW (not in old accommodations)
+                                            foreach (GridViewRow row in GridView1.Rows)
+                                            {
+                                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                if (chk != null && chk.Checked)
+                                                {
+                                                    int accommodationId = Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]);
+                                                    string accomName = dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString();
+
+                                                    // Check if this is a NEW room (not already in this reservation)
+                                                    bool isExistingRoom = false;
+                                                    for (int m = 0; m < dtoldAccom.Rows.Count; m++)
+                                                    {
+                                                        if (dtoldAccom.Rows[m]["Accommodation_ID"].ToString() == accommodationId.ToString())
+                                                        {
+                                                            isExistingRoom = true;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    // Only check availability for NEW rooms
+                                                    if (!isExistingRoom)
+                                                    {
+                                                        // Check for conflicts (exclude current reservation)
+                                                        DataTable dtConflicts = reservationDA.CheckAccommodationAvailability(
+                                                            accommodationId,
+                                                            checkinDate.Value,
+                                                            checkoutDate,
+                                                            Convert.ToInt32(id) // Exclude current reservation from conflict check
+                                                        );
+
+                                                        if (dtConflicts.Rows.Count > 0)
+                                                        {
+                                                            // Room is already booked!
+                                                            string conflictCustomer = dtConflicts.Rows[0]["CustomerName"]?.ToString() ?? "ลูกค้าท่านอื่น";
+                                                            string conflictPhone = dtConflicts.Rows[0]["MobilePhone"]?.ToString() ?? "";
+                                                            DateTime conflictCheckin = Convert.ToDateTime(dtConflicts.Rows[0]["CheckinDate"]);
+                                                            DateTime conflictCheckout = Convert.ToDateTime(dtConflicts.Rows[0]["CheckoutDate"]);
+                                                            int conflictReservationId = Convert.ToInt32(dtConflicts.Rows[0]["ReservationID"]);
+
+                                                            string errorMessage = $@"❌ ห้อง '{accomName}' ถูกจองไปแล้ว!
+
+📋 รายละเอียด:
+• ผู้จอง: {conflictCustomer}
+• เบอร์โทร: {conflictPhone}
+• วันที่เข้าพัก: {conflictCheckin:dd/MM/yyyy}
+• วันที่ออก: {conflictCheckout:dd/MM/yyyy}
+• หมายเลขการจอง: {conflictReservationId}
+
+⚠️ ไม่สามารถเพิ่มห้องนี้ได้ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
+
+                                                            ClientScript.RegisterStartupScript(this.GetType(), "editRoomConflict",
+                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+
+                                                            code2.Logs(conn, "Edit Reservation Conflict - Race Condition Prevented",
+                                                                $"Reservation ID: {id}, Room: {accomName} (ID: {accommodationId}), " +
+                                                                $"Requested: {checkinDate.Value:yyyy-MM-dd} to {checkoutDate:yyyy-MM-dd}, " +
+                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                Session["User"]?.ToString() ?? "User");
+
+                                                            return; // Stop edit process
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // ✅ All NEW rooms are available - proceed with edit
                                         // ✅ FIX: Delete old accommodations that are unchecked
                                         for (int x = 0; x < dtoldAccom.Rows.Count; x++)
                                         {
@@ -2643,6 +2717,64 @@ namespace Take_Time_BangPhra
                                             string reserveBy = Session["permission"].ToString() == "True" ?
                                                 Session["UserName"]?.ToString() ?? "User" : "User";
 
+                                            // 🔒 RACE CONDITION PREVENTION: Check room availability before creating reservation
+                                            if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
+                                            {
+                                                DateTime checkoutDate = checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
+
+                                                // Check each selected room for availability
+                                                foreach (GridViewRow row in GridView1.Rows)
+                                                {
+                                                    CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                                    if (chk != null && chk.Checked)
+                                                    {
+                                                        int accommodationId = Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]);
+                                                        string accomName = dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString();
+
+                                                        // Check for conflicts
+                                                        DataTable dtConflicts = reservationDA.CheckAccommodationAvailability(
+                                                            accommodationId,
+                                                            checkinDate.Value,
+                                                            checkoutDate,
+                                                            0 // excludeReservationId = 0 for new reservations
+                                                        );
+
+                                                        if (dtConflicts.Rows.Count > 0)
+                                                        {
+                                                            // Room is already booked!
+                                                            string conflictCustomer = dtConflicts.Rows[0]["CustomerName"]?.ToString() ?? "ลูกค้าท่านอื่น";
+                                                            string conflictPhone = dtConflicts.Rows[0]["MobilePhone"]?.ToString() ?? "";
+                                                            DateTime conflictCheckin = Convert.ToDateTime(dtConflicts.Rows[0]["CheckinDate"]);
+                                                            DateTime conflictCheckout = Convert.ToDateTime(dtConflicts.Rows[0]["CheckoutDate"]);
+                                                            int conflictReservationId = Convert.ToInt32(dtConflicts.Rows[0]["ReservationID"]);
+
+                                                            string errorMessage = $@"❌ ห้อง '{accomName}' ถูกจองไปแล้ว!
+
+📋 รายละเอียด:
+• ผู้จอง: {conflictCustomer}
+• เบอร์โทร: {conflictPhone}
+• วันที่เข้าพัก: {conflictCheckin:dd/MM/yyyy}
+• วันที่ออก: {conflictCheckout:dd/MM/yyyy}
+• หมายเลขการจอง: {conflictReservationId}
+
+⚠️ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
+
+                                                            ClientScript.RegisterStartupScript(this.GetType(), "roomConflict",
+                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+
+                                                            code2.Logs(conn, "Reservation Conflict - Race Condition Prevented",
+                                                                $"Room: {accomName} (ID: {accommodationId}), " +
+                                                                $"Requested: {checkinDate.Value:yyyy-MM-dd} to {checkoutDate:yyyy-MM-dd}, " +
+                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                Session["User"]?.ToString() ?? "User");
+
+                                                            return; // Stop reservation process
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // ✅ All rooms are available - proceed with reservation
                                             if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
                                             {
                                                 Reservation_ID = reservationDA.InsertNewReservation(

@@ -162,6 +162,50 @@ namespace Take_Time_BangPhra
         }
 
         /// <summary>
+        /// 🔒 Check if accommodation is available for a date range (prevent race condition)
+        /// Returns DataTable with conflicting reservations (empty if available)
+        /// </summary>
+        public DataTable CheckAccommodationAvailability(
+            int accommodationId,
+            DateTime checkinDate,
+            DateTime checkoutDate,
+            int excludeReservationId = 0)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "@accommodationId", accommodationId },
+                { "@checkinDate", checkinDate.ToString("yyyy-MM-dd") },
+                { "@checkoutDate", checkoutDate.ToString("yyyy-MM-dd") },
+                { "@excludeReservationId", excludeReservationId }
+            };
+
+            // ✅ Check for date range overlap:
+            // Two reservations conflict if their date ranges overlap
+            // Overlap occurs when: NewCheckin < ExistingCheckout AND NewCheckout > ExistingCheckin
+            return _code.DatabaseQuerySafe(_connectionString,
+                @"SELECT
+                    R.ID AS ReservationID,
+                    R.CheckinDate,
+                    R.CheckoutDate,
+                    R.Status,
+                    A.AccomName,
+                    C.Name AS CustomerName,
+                    C.MobilePhone
+                  FROM [Reservation_Accommodation] RA
+                  INNER JOIN [Reservation] R ON R.ID = RA.Reservation_ID
+                  INNER JOIN [Accommodation] A ON A.ID = RA.Accommodation_ID
+                  LEFT JOIN [Customer] C ON C.MobilePhone = R.Customer_MobilePhone
+                  WHERE RA.Accommodation_ID = @accommodationId
+                    AND R.ID != @excludeReservationId
+                    AND R.Status NOT IN (N'ยกเลิก', N'เสร็จสิ้น', N'ไม่มาเช็คอิน')
+                    AND (
+                        -- Check for date range overlap
+                        (@checkinDate < R.CheckoutDate AND @checkoutDate > R.CheckinDate)
+                    )",
+                parameters);
+        }
+
+        /// <summary>
         /// Get old accommodations for a reservation
         /// </summary>
         public DataTable GetOldAccommodations(int reservationId)
