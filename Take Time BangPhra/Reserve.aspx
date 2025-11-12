@@ -402,7 +402,7 @@
                             </asp:BoundField>
                             <asp:TemplateField HeaderText="จำนวนผู้เข้าพัก" HeaderStyle-Width="20%" HeaderStyle-CssClass="header-center ExampleFont" ItemStyle-CssClass="header-center ExampleFont">
                                 <ItemTemplate>
-                                    <asp:TextBox ID="txtPeopleStay" runat="server" Width="100%" Text='0' TextMode="Number" AutoPostBack="true" CssClass="rounded-textbox ExampleFont"/>
+                                    <asp:TextBox ID="txtPeopleStay" runat="server" Width="100%" Text='0' TextMode="Number" AutoPostBack="true" OnTextChanged="txtPeopleStay_TextChanged" CssClass="rounded-textbox ExampleFont"/>
                                 </ItemTemplate>
                                 <HeaderStyle Width="20%"></HeaderStyle>
                                 <ItemStyle CssClass="header-center"></ItemStyle>
