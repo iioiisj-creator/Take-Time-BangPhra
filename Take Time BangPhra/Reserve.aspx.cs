@@ -3473,10 +3473,26 @@ namespace Take_Time_BangPhra
                     {
                         if (Convert.ToInt32(reservationID) > 0)
                         {
-                            // Move temp file to final unique filename (no deletion needed - unique names)
-                            File.Move(
-                                AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
-                                AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
+                            string sourcePath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename;
+                            string destPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename;
+
+                            // ✅ Delete destination file if exists (to prevent IOException)
+                            if (File.Exists(destPath))
+                            {
+                                try
+                                {
+                                    File.Delete(destPath);
+                                }
+                                catch (Exception deleteEx)
+                                {
+                                    code2.Logs(conn, "uploadSlip - Delete Destination Warning",
+                                        $"Reservation {reservationID}: Could not delete existing file: {deleteEx.Message}",
+                                        Session["User"]?.ToString() ?? "SYSTEM");
+                                }
+                            }
+
+                            // Move temp file to final unique filename
+                            File.Move(sourcePath, destPath);
 
                             // ✅ Show uploaded image preview
                             Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
@@ -3484,16 +3500,20 @@ namespace Take_Time_BangPhra
                             Image1.DataBind();
                         }
                     }
-                    catch
+                    catch (Exception moveEx)
                     {
-                        File.Move(
-                            AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename,
-                            AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + finalFilename);
+                        code2.Logs(conn, "uploadSlip - File Move Error",
+                            $"Reservation {reservationID}: {moveEx.Message}",
+                            Session["User"]?.ToString() ?? "SYSTEM");
 
-                        // ✅ Show uploaded image preview
-                        Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
-                        Image1.Visible = true;
-                        Image1.DataBind();
+                        // If move fails, try to at least show the temp file
+                        try
+                        {
+                            Image1.ImageUrl = "./Upload/Slip/" + tempFilename;
+                            Image1.Visible = true;
+                            Image1.DataBind();
+                        }
+                        catch { }
                     }
 
                 }
@@ -3501,21 +3521,73 @@ namespace Take_Time_BangPhra
                 {
                     if (FileUpload1.HasFile)
                     {
-                        // Clean up temp file if exists
-                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename))
+                        try
                         {
-                            File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename);
+                            // 🔒 Validate file extension
+                            string fileExtension = Path.GetExtension(FileUpload1.FileName).ToLower();
+                            string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".pdf" };
+
+                            if (!allowedExtensions.Contains(fileExtension))
+                            {
+                                code2.Logs(conn, "uploadSlip - Invalid File Type",
+                                    $"Reservation {reservationID}: Attempted to upload {fileExtension}",
+                                    Session["User"]?.ToString() ?? "SYSTEM");
+                                throw new Exception($"ไม่รองรับไฟล์ประเภท {fileExtension}\nกรุณาอัพโหลด JPG, PNG, GIF หรือ PDF เท่านั้น");
+                            }
+
+                            // 🔒 Validate file size (max 10MB)
+                            int maxFileSize = 10 * 1024 * 1024; // 10MB
+                            if (FileUpload1.PostedFile.ContentLength > maxFileSize)
+                            {
+                                code2.Logs(conn, "uploadSlip - File Too Large",
+                                    $"Reservation {reservationID}: File size {FileUpload1.PostedFile.ContentLength / 1024 / 1024}MB",
+                                    Session["User"]?.ToString() ?? "SYSTEM");
+                                throw new Exception($"ไฟล์ใหญ่เกินไป ({FileUpload1.PostedFile.ContentLength / 1024 / 1024}MB)\nขนาดสูงสุดที่รองรับคือ 10MB");
+                            }
+
+                            // ✅ Ensure Upload/Slip directory exists
+                            string uploadDir = Server.MapPath("\\Upload\\Slip");
+                            if (!Directory.Exists(uploadDir))
+                            {
+                                Directory.CreateDirectory(uploadDir);
+                            }
+
+                            // Clean up temp file if exists
+                            string tempPath = AppDomain.CurrentDomain.BaseDirectory + "\\Upload\\Slip\\" + tempFilename;
+                            try
+                            {
+                                if (File.Exists(tempPath))
+                                {
+                                    File.Delete(tempPath);
+                                }
+                            }
+                            catch (Exception deleteEx)
+                            {
+                                code2.Logs(conn, "uploadSlip - Delete Temp File Warning",
+                                    $"Reservation {reservationID}: Could not delete temp file: {deleteEx.Message}",
+                                    Session["User"]?.ToString() ?? "SYSTEM");
+                                // Continue even if delete fails
+                            }
+
+                            // Save with unique filename
+                            string FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + finalFilename.Replace("/", "").Replace("\\", "").Replace("'", ""));
+                            FileUpload1.SaveAs(FileSaveWithPath);
+
+                            // ✅ Show uploaded image preview
+                            Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
+                            Image1.Visible = true;
+                            Image1.DataBind();
                         }
+                        catch (Exception saveEx)
+                        {
+                            code2.Logs(conn, "uploadSlip - SaveAs Error",
+                                $"Reservation {reservationID}: {saveEx.Message}",
+                                Session["User"]?.ToString() ?? "SYSTEM");
 
-                        // Save with unique filename (no need to check/delete final file - it's unique)
-                        string FileSaveWithPath = "";
-                        FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + finalFilename.Replace("/", "").Replace("\\", "").Replace("'", ""));
-                        FileUpload1.SaveAs(FileSaveWithPath);
-
-                        // ✅ Show uploaded image preview
-                        Image1.ImageUrl = "./Upload/Slip/" + finalFilename;
-                        Image1.Visible = true;
-                        Image1.DataBind();
+                            // Show error to user but don't crash
+                            System.Diagnostics.Debug.WriteLine($"❌ Upload error: {saveEx.Message}");
+                            // Continue processing - slip can be uploaded later
+                        }
                     }
                 }
 
