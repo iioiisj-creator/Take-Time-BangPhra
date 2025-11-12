@@ -6724,5 +6724,13 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 // Don't throw - receipt is already created, this is just supplementary
             }
         }
+
+        // 🔧 Event handler when number of guests is changed
+        protected void txtPeopleStay_TextChanged(object sender, EventArgs e)
+        {
+            // Page_Load will automatically recalculate prices when postback occurs
+            // This event handler exists to trigger the postback
+            // No additional code needed here - prices are calculated in Page_Load (lines 286-547)
+        }
     }
 }
