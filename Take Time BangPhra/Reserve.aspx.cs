@@ -380,9 +380,11 @@ namespace Take_Time_BangPhra
                         int totalPriceAllNights = basePricePerPerson * numberOfGuests * numberOfNights;
                         PriceAccom += totalPriceAllNights;
 
-                        // Display price per person per night in GridView
-                        // Or display total for all guests per night: basePricePerPerson × numberOfGuests
-                        GridView1.Rows[i].Cells[4].Text = (basePricePerPerson * numberOfGuests).ToString("0");
+                        // 🔧 IMPORTANT: Display base price per person in GridView (NOT total price)
+                        // This will be saved to database and used for recalculation later
+                        // Database will store: Amount=5 (people), Price=100 (per person per night)
+                        // When querying back: 100 × 5 × 2 = 1,000฿ ✅
+                        GridView1.Rows[i].Cells[4].Text = basePricePerPerson.ToString("0");
                     }
                     else
                     {
