@@ -313,20 +313,27 @@
 
     <script>
         // 🔒 Prevent double-click on submit button
-        function preventDoubleSubmit() {
-            var btn = document.getElementById('<%= Button1.ClientID %>');
+        var isSubmitting = false;
 
-            // Check if already clicked
-            if (btn.getAttribute('data-clicked') === 'true') {
+        function preventDoubleSubmit() {
+            // Check if already submitting
+            if (isSubmitting) {
                 alert('⚠️ กำลังดำเนินการบันทึก กรุณารอสักครู่...');
                 return false; // Prevent form submission
             }
 
-            // Mark as clicked
-            btn.setAttribute('data-clicked', 'true');
-            btn.disabled = true;
-            btn.value = '⏳ กำลังบันทึก...';
-            document.body.style.cursor = 'wait';
+            // Mark as submitting
+            isSubmitting = true;
+
+            // Use setTimeout to allow postback to start
+            setTimeout(function() {
+                var btn = document.getElementById('<%= Button1.ClientID %>');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.value = '⏳ กำลังบันทึก...';
+                }
+                document.body.style.cursor = 'wait';
+            }, 10);
 
             // Allow form submission
             return true;
