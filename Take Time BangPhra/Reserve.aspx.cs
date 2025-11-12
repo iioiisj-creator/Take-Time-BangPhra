@@ -288,18 +288,66 @@ namespace Take_Time_BangPhra
             int PriceItems = 0;
             int DepositAmount = 0;
 
+            // 🔧 FIX: Call Calendar1_SelectionChanged ONCE before looping, not for each checked row
+            // This prevents the GridView from being rebound multiple times, which resets price calculations
+            bool hasCheckedAccommodation = false;
+            foreach (GridViewRow row in GridView1.Rows)
+            {
+                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                if (chk != null && chk.Checked)
+                {
+                    hasCheckedAccommodation = true;
+                    break;
+                }
+            }
+            if (hasCheckedAccommodation)
+            {
+                Calendar1_SelectionChanged(null, null);
+                // Reload dtAccommodation after Calendar1_SelectionChanged updates it
+                dtAccommodation = (DataTable)Session["dtAccommodation"];
+                dtItems = (DataTable)Session["dtItems"];
+            }
+
+            // Reset loop counter
+            i = 0;
+
             foreach (GridViewRow row in GridView1.Rows)
             {
 
                 CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
                 if (chk != null && chk.Checked)
                 {
-                    Calendar1_SelectionChanged(null, null);
                     row.BackColor = System.Drawing.ColorTranslator.FromHtml("#8D9F7F");
                     TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
                     txtPeopleStay.Enabled = true;
                     if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
                     {
+                        // 🔧 FIX: Set default guest count if 0 (when checkbox first checked)
+                        // This ensures a reasonable starting price is calculated
+                        if (Convert.ToInt32(txtPeopleStay.Text) == 0)
+                        {
+                            txtPeopleStay.Text = dtAccommodation.Rows[i]["People"].ToString();
+                        }
+
+                        // 🔧 Validate guest count doesn't exceed max occupancy
+                        try
+                        {
+                            if (Session["permission"].ToString() != "True")
+                            {
+                                if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
+                                {
+                                    txtPeopleStay.Text = row.Cells[3].Text;
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
+                            {
+                                txtPeopleStay.Text = row.Cells[3].Text;
+                            }
+                        }
+
                         DepositAmount += 50* Convert.ToInt32(txtPeopleStay.Text);
 
                         // 🔧 Calculate price for accommodation with LimitWithPeople (charged per person)
@@ -334,28 +382,6 @@ namespace Take_Time_BangPhra
 
                             // Update GridView to show price per night (for all guests)
                             GridView1.Rows[i].Cells[4].Text = priceThisAccom.ToString("0");
-                        }
-
-                        try
-                        {
-                            if (Session["permission"].ToString() == "True")
-                            {
-
-                            }
-                            else
-                            {
-                                if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
-                                {
-                                    txtPeopleStay.Text = row.Cells[3].Text;
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            if (Convert.ToInt32(txtPeopleStay.Text) > Convert.ToInt32(row.Cells[3].Text))
-                            {
-                                txtPeopleStay.Text = row.Cells[3].Text;
-                            }
                         }
                     }
                     else
