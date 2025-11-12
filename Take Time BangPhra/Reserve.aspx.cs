@@ -290,6 +290,18 @@ namespace Take_Time_BangPhra
 
             // 🔧 FIX: Call Calendar1_SelectionChanged ONCE before looping, not for each checked row
             // This prevents the GridView from being rebound multiple times, which resets price calculations
+            // 🔧 FIX: Don't call Calendar1_SelectionChanged if PostBack is from txtPeopleStay change
+            // because it will rebind GridView and reset the txtPeopleStay value that user just changed
+            bool isPostBackFromPeopleStayChange = false;
+            if (IsPostBack && Request.Form["__EVENTTARGET"] != null)
+            {
+                string eventTarget = Request.Form["__EVENTTARGET"];
+                if (eventTarget.Contains("txtPeopleStay"))
+                {
+                    isPostBackFromPeopleStayChange = true;
+                }
+            }
+
             bool hasCheckedAccommodation = false;
             foreach (GridViewRow row in GridView1.Rows)
             {
@@ -300,7 +312,9 @@ namespace Take_Time_BangPhra
                     break;
                 }
             }
-            if (hasCheckedAccommodation)
+
+            // Only call Calendar1_SelectionChanged if NOT from txtPeopleStay change
+            if (hasCheckedAccommodation && !isPostBackFromPeopleStayChange)
             {
                 Calendar1_SelectionChanged(null, null);
                 // Reload dtAccommodation after Calendar1_SelectionChanged updates it
@@ -322,11 +336,11 @@ namespace Take_Time_BangPhra
                     txtPeopleStay.Enabled = true;
                     if (dtAccommodation.Rows[i]["LimitWithPeople"].ToString() == "True")
                     {
-                        // 🔧 FIX: Set default guest count if 0 (when checkbox first checked)
-                        // This ensures a reasonable starting price is calculated
+                        // 🔧 FIX: Set default guest count to 1 if 0 (when checkbox first checked)
+                        // Don't use max occupancy as default - let user choose the actual number
                         if (Convert.ToInt32(txtPeopleStay.Text) == 0)
                         {
-                            txtPeopleStay.Text = dtAccommodation.Rows[i]["People"].ToString();
+                            txtPeopleStay.Text = "1";
                         }
 
                         // 🔧 Validate guest count doesn't exceed max occupancy
