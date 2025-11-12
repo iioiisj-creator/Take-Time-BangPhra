@@ -1182,10 +1182,10 @@ namespace Take_Time_BangPhra
                                         List<string> cmds = new List<string>();
 
                                         // 🔒 RACE CONDITION PREVENTION: Check NEW rooms availability before editing reservation
-                                        DateTime? checkinDate = code2.ParseDate(TextBox12.Text);
-                                        if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
+                                        DateTime? editCheckinDate = code2.ParseDate(TextBox12.Text);
+                                        if (editCheckinDate.HasValue && editCheckinDate > DateTime.Parse("1999-01-01"))
                                         {
-                                            DateTime checkoutDate = checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
+                                            DateTime editCheckoutDate = editCheckinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
 
                                             // Check each selected room to see if it's NEW (not in old accommodations)
                                             foreach (GridViewRow row in GridView1.Rows)
@@ -1213,8 +1213,8 @@ namespace Take_Time_BangPhra
                                                         // Check for conflicts (exclude current reservation)
                                                         DataTable dtConflicts = reservationDA.CheckAccommodationAvailability(
                                                             accommodationId,
-                                                            checkinDate.Value,
-                                                            checkoutDate,
+                                                            editCheckinDate.Value,
+                                                            editCheckoutDate,
                                                             Convert.ToInt32(id) // Exclude current reservation from conflict check
                                                         );
 
@@ -1243,7 +1243,7 @@ namespace Take_Time_BangPhra
 
                                                             code2.Logs(conn, "Edit Reservation Conflict - Race Condition Prevented",
                                                                 $"Reservation ID: {id}, Room: {accomName} (ID: {accommodationId}), " +
-                                                                $"Requested: {checkinDate.Value:yyyy-MM-dd} to {checkoutDate:yyyy-MM-dd}, " +
+                                                                $"Requested: {editCheckinDate.Value:yyyy-MM-dd} to {editCheckoutDate:yyyy-MM-dd}, " +
                                                                 $"Conflicts with Reservation ID: {conflictReservationId}",
                                                                 Session["User"]?.ToString() ?? "User");
 
