@@ -260,7 +260,7 @@ namespace Take_Time_BangPhra
                     SqlDataAdapter adapter = new SqlDataAdapter(cmd, con);
                     adapter.Fill(dt);
                 }
-                catch { }
+                catch(Exception ex) { }
             }
             return dt;
         }
