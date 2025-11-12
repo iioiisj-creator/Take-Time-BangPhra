@@ -364,39 +364,25 @@ namespace Take_Time_BangPhra
 
                         DepositAmount += 50* Convert.ToInt32(txtPeopleStay.Text);
 
-                        // 🔧 Calculate price for accommodation with LimitWithPeople (charged per person)
-                        // ✅ ALWAYS recalculate for LimitWithPeople, even in manual price mode
-                        // because price depends on number of guests
-                        if (Convert.ToInt32(DropDownList1.SelectedValue) > 1 && CheckBox6.Checked == false)
-                        {
-                            // Multi-night: Calculate price for each night
-                            double totalPriceAllNights = 0;
-                            for (int k = 0; k < Convert.ToInt32(DropDownList1.SelectedValue); k++)
-                            {
-                                int priceThisNight = CalculateAccomPriceWithExtraGuests(
-                                    dtAccommodation.Rows[i]["ID"].ToString(),
-                                    code2.ParseDate(TextBox12.Text).Value.AddDays(k),
-                                    Convert.ToInt32(txtPeopleStay.Text));
-                                totalPriceAllNights += priceThisNight;
-                            }
-                            PriceAccom += totalPriceAllNights;
+                        // 🔧 Calculate price for LimitWithPeople (price per person per night)
+                        // Formula: basePrice × numberOfGuests × numberOfNights
+                        // Example: 100฿/person × 5 people × 2 nights = 1,000฿
 
-                            // Update GridView to show average price per night (for all guests)
-                            GridView1.Rows[i].Cells[4].Text = (totalPriceAllNights / Convert.ToInt32(DropDownList1.SelectedValue)).ToString("0");
-                        }
-                        else
-                        {
-                            // Single night OR manual price mode: Calculate price based on number of guests
-                            int priceThisAccom = CalculateAccomPriceWithExtraGuests(
-                                dtAccommodation.Rows[i]["ID"].ToString(),
-                                code2.ParseDate(TextBox12.Text).Value,
-                                Convert.ToInt32(txtPeopleStay.Text));
+                        int numberOfGuests = Convert.ToInt32(txtPeopleStay.Text);
+                        int numberOfNights = Convert.ToInt32(DropDownList1.SelectedValue);
 
-                            PriceAccom += priceThisAccom * Convert.ToInt32(DropDownList1.SelectedValue);
+                        // Get base price per person per night
+                        int basePricePerPerson = Convert.ToInt32(AccomPrice(
+                            dtAccommodation.Rows[i]["ID"].ToString(),
+                            code2.ParseDate(TextBox12.Text).Value));
 
-                            // Update GridView to show price per night (for all guests)
-                            GridView1.Rows[i].Cells[4].Text = priceThisAccom.ToString("0");
-                        }
+                        // Calculate total: price × people × nights
+                        int totalPriceAllNights = basePricePerPerson * numberOfGuests * numberOfNights;
+                        PriceAccom += totalPriceAllNights;
+
+                        // Display price per person per night in GridView
+                        // Or display total for all guests per night: basePricePerPerson × numberOfGuests
+                        GridView1.Rows[i].Cells[4].Text = (basePricePerPerson * numberOfGuests).ToString("0");
                     }
                     else
                     {
