@@ -608,18 +608,36 @@ namespace Take_Time_BangPhra.Account.Report
                     System.Diagnostics.Debug.WriteLine($"New ID: {newID}");
                     System.Diagnostics.Debug.WriteLine($"UID: {originalUID}");
 
-                    // ถ้าเลขที่เปลี่ยน → UPDATE Primary Key ก่อน จากนั้นค่อย UPDATE Foreign Keys
+                    // ถ้าเลขที่เปลี่ยน → ใช้ INSERT + UPDATE FK + DELETE แทนการ UPDATE PK
+                    // เพราะ SQL Server ไม่ยอมให้ UPDATE PK ถ้ายังมี FK อ้างอิงอยู่
                     if (originalID != newID)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Receipt ID changed - Updating all related tables...");
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID changed - Using INSERT + UPDATE FK + DELETE pattern...");
 
                         try
                         {
-                            // 🔑 STEP 1: UPDATE Account_Receipt (PK: ID) ก่อนสุด!
-                            // ต้องทำก่อนเพื่อให้ newID มีอยู่ใน table ก่อน FK tables จะอ้างอิงได้
-                            code.DatabaseInsert(conn,
-                                "UPDATE [dbo].[Account_Receipt] SET ID = '" + newID + "' WHERE UID = '" + originalUID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Step 1: Updated Account_Receipt PK: {originalID} → {newID}");
+                            // 🆕 STEP 1: INSERT Account_Receipt ใหม่ด้วย newID และข้อมูลที่ถูก update
+                            string insertQuery = "INSERT INTO [dbo].[Account_Receipt] " +
+                                "([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat]," +
+                                "[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],[Etax],[Customer_ID],[UID]," +
+                                "[NoNameinReceipt]) VALUES (" +
+                                "'" + newID + "'," +
+                                (reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text) + "," +
+                                "'" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," +
+                                TextBox6.Text + "," +
+                                TextBox4.Text + "," +
+                                TextBox3.Text + "," +
+                                "'" + CheckBox1.Checked + "'," +
+                                "'False'," +
+                                "N'" + DropDownList2.SelectedItem.Text + "'," +
+                                "'Normal'," +
+                                Session["UserID"].ToString() + "," +
+                                "'" + CheckBox5.Checked + "'," +
+                                "'" + customerId + "'," +
+                                "'" + originalUID + "'," +
+                                "'False')";
+                            code.DatabaseInsert(conn, insertQuery);
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 1: Inserted new Account_Receipt with ID: {newID} (with updated data)");
 
                             // 🔗 STEP 2: UPDATE Payment_Slips (FK: Account_Receipt_ID → Account_Receipt.ID)
                             code.DatabaseInsert(conn,
@@ -635,6 +653,11 @@ namespace Take_Time_BangPhra.Account.Report
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
                             System.Diagnostics.Debug.WriteLine($"✅ Step 4: Updated Account_Receipt_Detail FK: {originalID} → {newID}");
+
+                            // 🗑️ STEP 5: DELETE Account_Receipt เก่า (oldID) - ตอนนี้ไม่มี FK อ้างอิงแล้ว
+                            code.DatabaseInsert(conn,
+                                "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + originalID + "' AND UID = '" + originalUID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 5: Deleted old Account_Receipt with ID: {originalID}");
                         }
                         catch (Exception ex)
                         {
@@ -646,29 +669,29 @@ namespace Take_Time_BangPhra.Account.Report
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"Receipt ID unchanged - Skip ID update");
-                    }
+                        // ถ้าเลขที่ไม่เปลี่ยน → UPDATE ข้อมูลอื่นๆ
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID unchanged - Updating data only");
 
-                    // ✅ UPDATE ข้อมูลอื่นๆ ของ Account_Receipt (amounts, dates, customer, etc.)
-                    try
-                    {
-                        code.DatabaseInsert(conn,
-                            "UPDATE [dbo].[Account_Receipt] SET " +
-                            "Reservation_ID = " + (reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text) + ", " +
-                            "Created_Date = '" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "', " +
-                            "Total_Amount = " + TextBox6.Text + ", " +
-                            "Vat = " + TextBox4.Text + ", " +
-                            "Total_Amount_Exclude_Vat = " + TextBox3.Text + ", " +
-                            "IsDeposit = '" + CheckBox1.Checked + "', " +
-                            "Paid_Type = N'" + DropDownList2.SelectedItem.Text + "', " +
-                            "Etax = '" + CheckBox5.Checked + "', " +
-                            "Customer_ID = '" + customerId + "' " +
-                            "WHERE UID = '" + originalUID + "'");
-                        System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt data");
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"❌ Error updating Account_Receipt data: {ex.Message}");
+                        try
+                        {
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Account_Receipt] SET " +
+                                "Reservation_ID = " + (reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text) + ", " +
+                                "Created_Date = '" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "', " +
+                                "Total_Amount = " + TextBox6.Text + ", " +
+                                "Vat = " + TextBox4.Text + ", " +
+                                "Total_Amount_Exclude_Vat = " + TextBox3.Text + ", " +
+                                "IsDeposit = '" + CheckBox1.Checked + "', " +
+                                "Paid_Type = N'" + DropDownList2.SelectedItem.Text + "', " +
+                                "Etax = '" + CheckBox5.Checked + "', " +
+                                "Customer_ID = '" + customerId + "' " +
+                                "WHERE UID = '" + originalUID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt data");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"❌ Error updating Account_Receipt data: {ex.Message}");
+                        }
                     }
 
                     // ✅ DELETE และ Re-INSERT Account_Receipt_Detail (เพราะอาจมีการเปลี่ยน items)
