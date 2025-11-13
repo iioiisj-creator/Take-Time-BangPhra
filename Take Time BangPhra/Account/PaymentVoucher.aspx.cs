@@ -93,6 +93,11 @@ namespace Take_Time_BangPhra.Account.Report
                 {
                     DataTable dtPayment = code.DatabaseQuery(conn, "Select * from Account_Payment Where UID = '" + uid + "'");
                     string id = dtPayment.Rows[0]["ID"].ToString();
+
+                    // ✅ เก็บ id และ uid ไว้ใน ViewState เพื่อใช้ใน GetFileUrl
+                    ViewState["PaymentID"] = id;
+                    ViewState["PaymentUID"] = uid;
+
                     DataTable dtPaymentDetail = code.DatabaseQuery(conn, "Select Number,Detail,Amount from Account_Payment_Detail Where Payment_ID = '" + id + "'");
                     DataTable dtVendorSelected = code.DatabaseQuery(conn, "Select * from Vendor Where ID = '" + dtPayment.Rows[0]["Vendor_ID"].ToString() + "'");
 
@@ -590,10 +595,24 @@ namespace Take_Time_BangPhra.Account.Report
                 if (!Directory.Exists(folderPath))
                     return "#";
 
-                // ค้นหาไฟล์ที่ลงท้ายด้วย filename ที่ระบุ
-                // เพราะไฟล์จริงมีรูปแบบ: PAY2501-0001_uid_description.ext
-                // แต่ fileName ที่ได้มาคือ: description.ext
-                string[] matchingFiles = Directory.GetFiles(folderPath, "*" + searchPattern);
+                // ✅ ดึง id และ uid จาก ViewState เพื่อค้นหาไฟล์ที่ถูกต้อง
+                string paymentId = ViewState["PaymentID"]?.ToString() ?? "";
+                string paymentUid = ViewState["PaymentUID"]?.ToString() ?? "";
+
+                // ✅ ค้นหาไฟล์ด้วย pattern ที่เฉพาะเจาะจง: id_uid_filename
+                // เพื่อป้องกันการดึงไฟล์ของ Payment อื่นที่มีชื่อไฟล์เดียวกัน
+                string specificPattern = "";
+                if (!string.IsNullOrEmpty(paymentId) && !string.IsNullOrEmpty(paymentUid))
+                {
+                    specificPattern = $"{paymentId}_{paymentUid}_*{searchPattern}";
+                }
+                else
+                {
+                    // Fallback: ถ้าไม่มี id/uid ให้ใช้ pattern เดิม (สำหรับ create mode)
+                    specificPattern = "*" + searchPattern;
+                }
+
+                string[] matchingFiles = Directory.GetFiles(folderPath, specificPattern);
 
                 if (matchingFiles.Length > 0)
                 {
@@ -601,13 +620,13 @@ namespace Take_Time_BangPhra.Account.Report
                     string actualFileName = System.IO.Path.GetFileName(matchingFiles[0]);
                     string virtualPath = $"~/Documents/Payment/{year}/{month}/{actualFileName}";
 
-                    System.Diagnostics.Debug.WriteLine($"📂 GetFileUrl: Searched='{searchPattern}', Found='{actualFileName}'");
+                    System.Diagnostics.Debug.WriteLine($"📂 GetFileUrl: Pattern='{specificPattern}', Found='{actualFileName}'");
 
                     return ResolveUrl(virtualPath);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"⚠️ GetFileUrl: File not found for pattern '*{searchPattern}' in {folderPath}");
+                    System.Diagnostics.Debug.WriteLine($"⚠️ GetFileUrl: File not found for pattern '{specificPattern}' in {folderPath}");
                     return "#";
                 }
             }
