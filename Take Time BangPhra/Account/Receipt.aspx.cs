@@ -608,32 +608,33 @@ namespace Take_Time_BangPhra.Account.Report
                     System.Diagnostics.Debug.WriteLine($"New ID: {newID}");
                     System.Diagnostics.Debug.WriteLine($"UID: {originalUID}");
 
-                    // ถ้าเลขที่เปลี่ยน → UPDATE Foreign Keys ในตารางที่เกี่ยวข้องทั้งหมด
+                    // ถ้าเลขที่เปลี่ยน → UPDATE Primary Key ก่อน จากนั้นค่อย UPDATE Foreign Keys
                     if (originalID != newID)
                     {
                         System.Diagnostics.Debug.WriteLine($"Receipt ID changed - Updating all related tables...");
 
                         try
                         {
-                            // 1. UPDATE Payment_Slips (FK: Account_Receipt_ID → Account_Receipt.ID)
-                            code.DatabaseInsert(conn,
-                                "UPDATE [dbo].[Payment_Slips] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_Slips: {originalID} → {newID}");
-
-                            // 2. UPDATE Payment_History (FK: Receipt_ID → Account_Receipt.ID)
-                            code.DatabaseInsert(conn,
-                                "UPDATE [dbo].[Payment_History] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_History: {originalID} → {newID}");
-
-                            // 3. UPDATE Account_Receipt_Detail (FK: Receipt_ID → Account_Receipt.ID)
-                            code.DatabaseInsert(conn,
-                                "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt_Detail: {originalID} → {newID}");
-
-                            // 4. UPDATE Account_Receipt (PK: ID) - ต้อง UPDATE ทีหลังสุด
+                            // 🔑 STEP 1: UPDATE Account_Receipt (PK: ID) ก่อนสุด!
+                            // ต้องทำก่อนเพื่อให้ newID มีอยู่ใน table ก่อน FK tables จะอ้างอิงได้
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Account_Receipt] SET ID = '" + newID + "' WHERE UID = '" + originalUID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt: {originalID} → {newID}");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 1: Updated Account_Receipt PK: {originalID} → {newID}");
+
+                            // 🔗 STEP 2: UPDATE Payment_Slips (FK: Account_Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Payment_Slips] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 2: Updated Payment_Slips FK: {originalID} → {newID}");
+
+                            // 🔗 STEP 3: UPDATE Payment_History (FK: Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Payment_History] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 3: Updated Payment_History FK: {originalID} → {newID}");
+
+                            // 🔗 STEP 4: UPDATE Account_Receipt_Detail (FK: Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 4: Updated Account_Receipt_Detail FK: {originalID} → {newID}");
                         }
                         catch (Exception ex)
                         {
