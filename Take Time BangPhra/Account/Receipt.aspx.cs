@@ -753,9 +753,15 @@ namespace Take_Time_BangPhra.Account.Report
                     LEFT JOIN Address ON Address.ID = Business_Info.Address_ID");
                 
 
-                dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
-                uid = dtReceipt.Rows[0]["UID"].ToString();
-                DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + RecNumber + "' order by Number ASC");
+                // ✅ Query ด้วย UID แทน ID เพราะ UID ไม่เปลี่ยนแปลง (แม้จะแก้ไขเลขที่ใบเสร็จ)
+                dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + receiptUID + "'");
+
+                // ✅ Ensure uid variable matches receiptUID (used for PDF filename later)
+                uid = receiptUID;
+
+                // ใช้ ID จาก dtReceipt เพื่อ query Receipt_Detail (เพราะ Receipt_ID อ้างอิงถึง ID column ไม่ใช่ UID)
+                string actualReceiptID = dtReceipt.Rows[0]["ID"].ToString();
+                DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + actualReceiptID + "' order by Number ASC");
 
 
                
