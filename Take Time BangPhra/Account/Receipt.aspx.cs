@@ -617,10 +617,20 @@ namespace Take_Time_BangPhra.Account.Report
                         try
                         {
                             // 🆕 STEP 1: INSERT Account_Receipt ใหม่ด้วย newID และข้อมูลที่ถูก update
+                            // ใช้ค่า NoNameinReceipt จาก record เดิม (ถ้ามี column นี้)
+                            string noNameInReceipt = "False";
+                            try
+                            {
+                                if (dtReceipt.Columns.Contains("NoNameinReceipt"))
+                                {
+                                    noNameInReceipt = dtReceipt.Rows[0]["NoNameinReceipt"].ToString();
+                                }
+                            }
+                            catch { }
+
                             string insertQuery = "INSERT INTO [dbo].[Account_Receipt] " +
                                 "([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat]," +
-                                "[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],[Etax],[Customer_ID],[UID]," +
-                                "[NoNameinReceipt]) VALUES (" +
+                                "[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],[Etax],[Customer_ID],[UID]) VALUES (" +
                                 "'" + newID + "'," +
                                 (reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text) + "," +
                                 "'" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," +
@@ -634,8 +644,7 @@ namespace Take_Time_BangPhra.Account.Report
                                 Session["UserID"].ToString() + "," +
                                 "'" + CheckBox5.Checked + "'," +
                                 "'" + customerId + "'," +
-                                "'" + originalUID + "'," +
-                                "'False')";
+                                "'" + originalUID + "')";
                             code.DatabaseInsert(conn, insertQuery);
                             System.Diagnostics.Debug.WriteLine($"✅ Step 1: Inserted new Account_Receipt with ID: {newID} (with updated data)");
 
