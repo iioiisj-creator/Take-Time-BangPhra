@@ -470,6 +470,36 @@ namespace Take_Time_BangPhra.Account.Report
                 System.Diagnostics.Debug.WriteLine($"======================");
                 System.Diagnostics.Debug.WriteLine($"");
 
+                // ✅ Validate new receipt number (if editing and number changed)
+                if (command == "edit")
+                {
+                    // id already contains originalID from line 433
+
+                    // ถ้าเลขที่เปลี่ยน → ต้อง check ว่าเลขใหม่มีอยู่แล้วหรือไม่
+                    if (docNum != id)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number changed from '{id}' to '{docNum}'");
+
+                        DataTable dtCheckDuplicate = code.DatabaseQuery(conn,
+                            "SELECT ID FROM Account_Receipt WHERE ID = '" + docNum + "'");
+
+                        if (dtCheckDuplicate.Rows.Count > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"❌ [Duplicate Check] Receipt number '{docNum}' already exists!");
+
+                            ClientScript.RegisterStartupScript(this.GetType(), "duplicateReceipt",
+                                "alert('❌ ไม่สามารถใช้เลขที่ " + docNum + " ได้\\n\\nเพราะมีอยู่ในระบบแล้ว\\nกรุณาใช้เลขที่อื่น');", true);
+                            return;
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"✅ [Duplicate Check] Receipt number '{docNum}' is available");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number unchanged: '{docNum}'");
+                    }
+                }
+
                 string RecNumber = docNum;
                 int reservation_id = 0;
 
