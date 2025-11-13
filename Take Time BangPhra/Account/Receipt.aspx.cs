@@ -547,21 +547,56 @@ namespace Take_Time_BangPhra.Account.Report
 
                 try
                 {
-                    dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
+                    // ✅ ถ้า edit mode → query ด้วย UID (เพราะ ID อาจจะเปลี่ยน, แต่ UID ไม่เปลี่ยน)
+                    if (command == "edit")
+                    {
+                        dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
+                        System.Diagnostics.Debug.WriteLine($"[Edit Mode] Query Receipt by UID: {uid}");
+                    }
+                    else
+                    {
+                        dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
+                        System.Diagnostics.Debug.WriteLine($"[Create Mode] Query Receipt by ID: {RecNumber}");
+                    }
+
                     if (dtReceipt.Rows.Count <= 0)
                     {
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Receipt not found - this is normal for CREATE mode");
                         //reservation_id = code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation] ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],[TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],NoNameinReceipt) VALUES ('" + TextBox13.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd") + "','" + Convert.ToDateTime(TextBox8.Text).AddDays(Convert.ToDouble(1)).ToString("yyyy-MM-dd") + "'," + "1" + ",N'ชำระเงินแล้ว'," + TextBox6.Text + "," + TextBox6.Text + ",N'" + TextBox6.Text + "', N'" + Session["UserName"].ToString() + "','" + DateTime.Now + "','False') SELECT SCOPE_IDENTITY(); ");
                         //dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
                     }
                     else
                     {
                         reservation_id = Convert.ToInt32(dtReceipt.Rows[0]["Reservation_ID"].ToString());
+                        System.Diagnostics.Debug.WriteLine($"✅ Found Receipt - Reservation_ID: {reservation_id}");
                     }
                 }
-                catch { dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'"); }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Error querying Receipt: {ex.Message}");
+
+                    // Fallback: try with ID
+                    if (command == "edit")
+                    {
+                        dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
+                    }
+                    else
+                    {
+                        dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
+                    }
+                }
 
                 if (command == "edit")
                 {
+                    // ✅ Validate that receipt exists before proceeding with edit
+                    if (dtReceipt == null || dtReceipt.Rows.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"❌ [Edit Mode Error] Receipt not found for UID: {uid}");
+                        ClientScript.RegisterStartupScript(this.GetType(), "receiptNotFound",
+                            "alert('❌ ไม่พบใบเสร็จที่ต้องการแก้ไข\\n\\nกรุณาลองใหม่อีกครั้ง');", true);
+                        return;
+                    }
+
                     // ✅ แทนที่จะ DELETE + INSERT → ใช้ UPDATE ID แทน (เพื่อไม่ให้เจอ FK constraint error)
                     string originalUID = dtReceipt.Rows[0]["UID"].ToString();
                     string originalID = id;  // เลขที่ใบเสร็จเดิม
