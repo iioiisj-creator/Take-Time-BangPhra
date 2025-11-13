@@ -704,8 +704,9 @@ namespace Take_Time_BangPhra.Account.Report
                     }
 
                     // ✅ DELETE และ Re-INSERT Account_Receipt_Detail (เพราะอาจมีการเปลี่ยน items)
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + newID + "'");
-                    System.Diagnostics.Debug.WriteLine($"✅ Deleted old Account_Receipt_Detail for re-insert");
+                    // ใช้ docNum (เลขที่สุดท้าย) เพื่อให้สอดคล้องกับ INSERT ด้านล่าง
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + docNum + "'");
+                    System.Diagnostics.Debug.WriteLine($"✅ Deleted old Account_Receipt_Detail (Receipt_ID={docNum}) for re-insert");
 
                     // Store UID for re-use
                     Session["EditReceiptUID"] = originalUID;
@@ -901,14 +902,42 @@ namespace Take_Time_BangPhra.Account.Report
                 
 
                 // ✅ Query ด้วย UID แทน ID เพราะ UID ไม่เปลี่ยนแปลง (แม้จะแก้ไขเลขที่ใบเสร็จ)
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== [Query Receipt for PDF] ===");
+                System.Diagnostics.Debug.WriteLine($"receiptUID: {receiptUID}");
+                System.Diagnostics.Debug.WriteLine($"docNum: {docNum}");
+
                 dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + receiptUID + "'");
+
+                // ✅ Validate query result
+                if (dtReceipt == null || dtReceipt.Rows.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ ERROR: Receipt not found for UID: {receiptUID}");
+                    ClientScript.RegisterStartupScript(this.GetType(), "receiptQueryError",
+                        "alert('❌ เกิดข้อผิดพลาด: ไม่พบข้อมูลใบเสร็จหลังบันทึก\\n\\nกรุณาติดต่อผู้ดูแลระบบ');", true);
+                    return;
+                }
 
                 // ✅ Ensure uid variable matches receiptUID (used for PDF filename later)
                 uid = receiptUID;
 
-                // ใช้ ID จาก dtReceipt เพื่อ query Receipt_Detail (เพราะ Receipt_ID อ้างอิงถึง ID column ไม่ใช่ UID)
+                // ✅ ใช้ docNum (เลขที่ที่ต้องการแสดงใน PDF) แทน actualReceiptID
+                // เพราะ docNum คือเลขที่ที่เรา INSERT Receipt_Detail ไว้
                 string actualReceiptID = dtReceipt.Rows[0]["ID"].ToString();
-                DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + actualReceiptID + "' order by Number ASC");
+                System.Diagnostics.Debug.WriteLine($"actualReceiptID from DB: {actualReceiptID}");
+
+                // ✅ ตรวจสอบว่า actualReceiptID ตรงกับ docNum หรือไม่
+                if (actualReceiptID != docNum)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ WARNING: Mismatch! actualReceiptID ({actualReceiptID}) != docNum ({docNum})");
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Using docNum for Receipt_Detail query to match INSERT");
+                }
+
+                // ✅ ใช้ docNum แทน actualReceiptID เพื่อให้ตรงกับ Receipt_Detail ที่เรา INSERT
+                DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + docNum + "' order by Number ASC");
+
+                System.Diagnostics.Debug.WriteLine($"dtReceiptDetail.Rows.Count: {dtReceiptDetail.Rows.Count}");
+                System.Diagnostics.Debug.WriteLine($"================================");
 
 
                
