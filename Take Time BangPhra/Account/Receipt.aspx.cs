@@ -470,38 +470,7 @@ namespace Take_Time_BangPhra.Account.Report
                 System.Diagnostics.Debug.WriteLine($"======================");
                 System.Diagnostics.Debug.WriteLine($"");
 
-                // ✅ Validate new receipt number (if editing and number changed)
-                if (command == "edit")
-                {
-                    // id already contains originalID from line 433
-
-                    // ถ้าเลขที่เปลี่ยน → ต้อง check ว่าเลขใหม่มีอยู่แล้วหรือไม่
-                    if (docNum != id)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number changed from '{id}' to '{docNum}'");
-
-                        DataTable dtCheckDuplicate = code.DatabaseQuery(conn,
-                            "SELECT ID FROM Account_Receipt WHERE ID = '" + docNum + "'");
-
-                        if (dtCheckDuplicate.Rows.Count > 0)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"❌ [Duplicate Check] Receipt number '{docNum}' already exists!");
-
-                            ClientScript.RegisterStartupScript(this.GetType(), "duplicateReceipt",
-                                "alert('❌ ไม่สามารถใช้เลขที่ " + docNum + " ได้\\n\\nเพราะมีอยู่ในระบบแล้ว\\nกรุณาใช้เลขที่อื่น');", true);
-                            return;
-                        }
-
-                        System.Diagnostics.Debug.WriteLine($"✅ [Duplicate Check] Receipt number '{docNum}' is available");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number unchanged: '{docNum}'");
-                    }
-                }
-
-                string RecNumber = docNum;
-                int reservation_id = 0;
+                
 
                 // Upsert customer data (insert or update) - ensures no duplicates and always latest data
                 // ALWAYS matches by MobilePhone - ensures only 1 record per phone number
@@ -544,10 +513,11 @@ namespace Take_Time_BangPhra.Account.Report
                     return;
                 }
 
-
+                
+                int reservation_id = 0;
                 try
                 {
-                    dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
+                    dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     if (dtReceipt.Rows.Count <= 0)
                     {
                         //reservation_id = code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation] ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],[TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],NoNameinReceipt) VALUES ('" + TextBox13.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd") + "','" + Convert.ToDateTime(TextBox8.Text).AddDays(Convert.ToDouble(1)).ToString("yyyy-MM-dd") + "'," + "1" + ",N'ชำระเงินแล้ว'," + TextBox6.Text + "," + TextBox6.Text + ",N'" + TextBox6.Text + "', N'" + Session["UserName"].ToString() + "','" + DateTime.Now + "','False') SELECT SCOPE_IDENTITY(); ");
@@ -558,7 +528,7 @@ namespace Take_Time_BangPhra.Account.Report
                         reservation_id = Convert.ToInt32(dtReceipt.Rows[0]["Reservation_ID"].ToString());
                     }
                 }
-                catch { dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'"); }
+                catch { dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'"); }
 
                 if (command == "edit")
                 {
@@ -573,7 +543,7 @@ namespace Take_Time_BangPhra.Account.Report
                         var paymentData = code.DatabaseQuery(conn,
                             "SELECT ph.PaymentAmount, ph.Reservation_ID " +
                             "FROM [dbo].[Payment_History] ph " +
-                            "WHERE ph.Receipt_ID = '" + id + "'");
+                            "WHERE ph.Receipt_ID = '" + dtReceipt.Rows[0]["ID"].ToString() + "'");
 
                         if (paymentData != null && paymentData.Rows.Count > 0)
                         {
