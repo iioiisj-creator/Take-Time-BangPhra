@@ -470,7 +470,38 @@ namespace Take_Time_BangPhra.Account.Report
                 System.Diagnostics.Debug.WriteLine($"======================");
                 System.Diagnostics.Debug.WriteLine($"");
 
-                
+                // ✅ Validate new receipt number (if editing and number changed)
+                if (command == "edit")
+                {
+                    // id already contains originalID from line 433
+
+                    // ถ้าเลขที่เปลี่ยน → ต้อง check ว่าเลขใหม่มีอยู่แล้วหรือไม่
+                    if (docNum != id)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number changed from '{id}' to '{docNum}'");
+
+                        DataTable dtCheckDuplicate = code.DatabaseQuery(conn,
+                            "SELECT ID FROM Account_Receipt WHERE ID = '" + docNum + "'");
+
+                        if (dtCheckDuplicate.Rows.Count > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"❌ [Duplicate Check] Receipt number '{docNum}' already exists!");
+
+                            ClientScript.RegisterStartupScript(this.GetType(), "duplicateReceipt",
+                                "alert('❌ ไม่สามารถใช้เลขที่ " + docNum + " ได้\\n\\nเพราะมีอยู่ในระบบแล้ว\\nกรุณาใช้เลขที่อื่น');", true);
+                            return;
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"✅ [Duplicate Check] Receipt number '{docNum}' is available");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number unchanged: '{docNum}'");
+                    }
+                }
+
+                string RecNumber = docNum;
+                int reservation_id = 0;
 
                 // Upsert customer data (insert or update) - ensures no duplicates and always latest data
                 // ALWAYS matches by MobilePhone - ensures only 1 record per phone number
@@ -513,11 +544,10 @@ namespace Take_Time_BangPhra.Account.Report
                     return;
                 }
 
-                
-                int reservation_id = 0;
+
                 try
                 {
-                    dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
+                    dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
                     if (dtReceipt.Rows.Count <= 0)
                     {
                         //reservation_id = code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation] ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],[TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],NoNameinReceipt) VALUES ('" + TextBox13.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd") + "','" + Convert.ToDateTime(TextBox8.Text).AddDays(Convert.ToDouble(1)).ToString("yyyy-MM-dd") + "'," + "1" + ",N'ชำระเงินแล้ว'," + TextBox6.Text + "," + TextBox6.Text + ",N'" + TextBox6.Text + "', N'" + Session["UserName"].ToString() + "','" + DateTime.Now + "','False') SELECT SCOPE_IDENTITY(); ");
@@ -528,53 +558,86 @@ namespace Take_Time_BangPhra.Account.Report
                         reservation_id = Convert.ToInt32(dtReceipt.Rows[0]["Reservation_ID"].ToString());
                     }
                 }
-                catch { dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'"); }
+                catch { dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'"); }
 
                 if (command == "edit")
                 {
-                    // ⚠️ Delete in correct order to maintain referential integrity
-                    // But KEEP the UID for re-insertion
+                    // ✅ แทนที่จะ DELETE + INSERT → ใช้ UPDATE ID แทน (เพื่อไม่ให้เจอ FK constraint error)
                     string originalUID = dtReceipt.Rows[0]["UID"].ToString();
+                    string originalID = id;  // เลขที่ใบเสร็จเดิม
+                    string newID = docNum;   // เลขที่ใบเสร็จใหม่
 
-                    // 🔧 FIX: Update Reservation.Deposit before deleting Payment_History
+                    System.Diagnostics.Debug.WriteLine($"");
+                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit Mode] ===");
+                    System.Diagnostics.Debug.WriteLine($"Original ID: {originalID}");
+                    System.Diagnostics.Debug.WriteLine($"New ID: {newID}");
+                    System.Diagnostics.Debug.WriteLine($"UID: {originalUID}");
+
+                    // ถ้าเลขที่เปลี่ยน → UPDATE Foreign Keys ในตารางที่เกี่ยวข้องทั้งหมด
+                    if (originalID != newID)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID changed - Updating all related tables...");
+
+                        try
+                        {
+                            // 1. UPDATE Payment_Slips (FK: Account_Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Payment_Slips] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_Slips: {originalID} → {newID}");
+
+                            // 2. UPDATE Payment_History (FK: Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Payment_History] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_History: {originalID} → {newID}");
+
+                            // 3. UPDATE Account_Receipt_Detail (FK: Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt_Detail: {originalID} → {newID}");
+
+                            // 4. UPDATE Account_Receipt (PK: ID) - ต้อง UPDATE ทีหลังสุด
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Account_Receipt] SET ID = '" + newID + "' WHERE UID = '" + originalUID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt: {originalID} → {newID}");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"❌ Error updating Receipt ID: {ex.Message}");
+                            ClientScript.RegisterStartupScript(this.GetType(), "updateError",
+                                "alert('❌ เกิดข้อผิดพลาดในการเปลี่ยนเลขที่ใบเสร็จ\\n\\n" + ex.Message.Replace("'", "\\'") + "');", true);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID unchanged - Skip ID update");
+                    }
+
+                    // ✅ UPDATE ข้อมูลอื่นๆ ของ Account_Receipt (amounts, dates, customer, etc.)
                     try
                     {
-                        // Get payment amount and reservation ID from Payment_History
-                        var paymentData = code.DatabaseQuery(conn,
-                            "SELECT ph.PaymentAmount, ph.Reservation_ID " +
-                            "FROM [dbo].[Payment_History] ph " +
-                            "WHERE ph.Receipt_ID = '" + dtReceipt.Rows[0]["ID"].ToString() + "'");
-
-                        if (paymentData != null && paymentData.Rows.Count > 0)
-                        {
-                            foreach (DataRow row in paymentData.Rows)
-                            {
-                                decimal amount = row["PaymentAmount"] != DBNull.Value ? Convert.ToDecimal(row["PaymentAmount"]) : 0;
-                                int reservationId = row["Reservation_ID"] != DBNull.Value ? Convert.ToInt32(row["Reservation_ID"]) : 0;
-
-                                if (amount > 0 && reservationId > 0)
-                                {
-                                    // Reduce Reservation.Deposit by payment amount
-                                    code.DatabaseInsert(conn,
-                                        $"UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {amount} WHERE ID = {reservationId}");
-                                }
-                            }
-                        }
+                        code.DatabaseInsert(conn,
+                            "UPDATE [dbo].[Account_Receipt] SET " +
+                            "Reservation_ID = " + (reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text) + ", " +
+                            "Created_Date = '" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "', " +
+                            "Total_Amount = " + TextBox6.Text + ", " +
+                            "Vat = " + TextBox4.Text + ", " +
+                            "Total_Amount_Exclude_Vat = " + TextBox3.Text + ", " +
+                            "IsDeposit = '" + CheckBox1.Checked + "', " +
+                            "Paid_Type = N'" + DropDownList2.SelectedItem.Text + "', " +
+                            "Etax = '" + CheckBox5.Checked + "', " +
+                            "Customer_ID = '" + customerId + "' " +
+                            "WHERE UID = '" + originalUID + "'");
+                        System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt data");
                     }
                     catch (Exception ex)
                     {
-                        // Continue with deletion even if update fails
-                        System.Diagnostics.Debug.WriteLine($"⚠️ Error updating Reservation.Deposit: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"❌ Error updating Account_Receipt data: {ex.Message}");
                     }
 
-                    // 1. Delete Payment_History first (references Receipt_ID)
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Payment_History] WHERE Receipt_ID = '" + id + "'");
-
-                    // 2. Delete Account_Receipt_Detail
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + id + "'");
-
-                    // 3. Finally delete Account_Receipt
-                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + id + "'");
+                    // ✅ DELETE และ Re-INSERT Account_Receipt_Detail (เพราะอาจมีการเปลี่ยน items)
+                    code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + newID + "'");
+                    System.Diagnostics.Debug.WriteLine($"✅ Deleted old Account_Receipt_Detail for re-insert");
 
                     // Store UID for re-use
                     Session["EditReceiptUID"] = originalUID;
@@ -596,26 +659,35 @@ namespace Take_Time_BangPhra.Account.Report
                     receiptUID = Guid.NewGuid().ToString();
                 }
 
-                // ✅ INSERT Account_Receipt with docNum as ID
-                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserting Account_Receipt with ID={docNum}, UID={receiptUID}");
-
-                if (reservation_id > 0)
+                // ✅ INSERT Account_Receipt (เฉพาะ CREATE mode, ถ้า EDIT mode → ใช้ UPDATE ด้านบนแทน)
+                if (command != "edit")
                 {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + reservation_id + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'"+CheckBox5.Checked+"','"+ customerId + "','" + receiptUID + "')");
+                    System.Diagnostics.Debug.WriteLine($"[Receipt CREATE] Inserting Account_Receipt with ID={docNum}, UID={receiptUID}");
+
+                    if (reservation_id > 0)
+                    {
+                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + reservation_id + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'"+CheckBox5.Checked+"','"+ customerId + "','" + receiptUID + "')");
+                    }
+                    else
+                    {
+                        code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ customerId + "','" + receiptUID + "')");
+                    }
+                    System.Diagnostics.Debug.WriteLine($"[Receipt CREATE] Account_Receipt inserted successfully");
                 }
                 else
                 {
-                    code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ customerId + "','" + receiptUID + "')");
+                    System.Diagnostics.Debug.WriteLine($"[Receipt EDIT] Skip INSERT Account_Receipt (already updated above)");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[Receipt] Account_Receipt inserted successfully with ID={docNum}");
+                // ✅ INSERT Account_Receipt_Detail (ทั้ง CREATE และ EDIT mode - เพราะ DELETE ไปแล้วด้านบน)
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserting {dtDetail.Rows.Count} detail rows...");
                 for (int i = 0; i < dtDetail.Rows.Count; i++)
                 {
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt_Detail] ([Number],[Receipt_ID],[ProductType_ID],[Product_ID],[Product_Data],[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount]) VALUES (" + dtDetail.Rows[i]["Number"].ToString() + ",'" + docNum + "','" + dtDetail.Rows[i]["ProductType_ID"].ToString() + "',0,N'" + dtDetail.Rows[i]["Product_Data"].ToString() + "'," + dtDetail.Rows[i]["Product_Amount"].ToString() + ",N'" + dtDetail.Rows[i]["Product_Unit"].ToString() + "'," + dtDetail.Rows[i]["Price_PerPeice"].ToString() + "," + dtDetail.Rows[i]["Price_Amount"].ToString() + ")");
-
                 }
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserted {dtDetail.Rows.Count} detail rows successfully");
 
-                // 🆕 Record payment to Payment_History when receipt is created
+                // 🆕 Record/Update payment to Payment_History
                 string actualReservationId = reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text;
                 if (!string.IsNullOrEmpty(actualReservationId) && actualReservationId != "0")
                 {
@@ -645,55 +717,92 @@ namespace Take_Time_BangPhra.Account.Report
                         }
                         catch { }
 
-                        string insertPaymentQuery = @"
-                            INSERT INTO [dbo].[Payment_History] (
-                                Reservation_ID,
-                                PaymentDate,
-                                PaymentAmount,
-                                PaymentType,
-                                PaymentMethod,
-                                Receipt_ID,
-                                ProcessedBy_AdminID,
-                                PaidBy_CustomerPhone,
-                                Status,
-                                Notes,
-                                CreatedDate,
-                                UpdatedDate
-                            ) VALUES (
-                                @ReservationId,
-                                @PaymentDate,
-                                @PaymentAmount,
-                                @PaymentType,
-                                @PaymentMethod,
-                                @ReceiptId,
-                                @AdminId,
-                                @CustomerPhone,
-                                'COMPLETED',
-                                @Notes,
-                                GETDATE(),
-                                GETDATE()
-                            )";
-
-                        var paymentParams = new Dictionary<string, object>
+                        if (command == "edit")
                         {
-                            { "@ReservationId", actualReservationId },
-                            { "@PaymentDate", Convert.ToDateTime(TextBox8.Text) },
-                            { "@PaymentAmount", totalAmount },
-                            { "@PaymentType", paymentType },
-                            { "@PaymentMethod", paymentMethod },
-                            { "@ReceiptId", docNum },
-                            { "@AdminId", adminId ?? (object)DBNull.Value },
-                            { "@CustomerPhone", customerPhone },
-                            { "@Notes", paymentNotes }
-                        };
+                            // ✅ EDIT mode: UPDATE Payment_History (Receipt_ID ถูก UPDATE ไปแล้วด้านบน)
+                            string updatePaymentQuery = @"
+                                UPDATE [dbo].[Payment_History] SET
+                                    Reservation_ID = @ReservationId,
+                                    PaymentDate = @PaymentDate,
+                                    PaymentAmount = @PaymentAmount,
+                                    PaymentType = @PaymentType,
+                                    PaymentMethod = @PaymentMethod,
+                                    ProcessedBy_AdminID = @AdminId,
+                                    PaidBy_CustomerPhone = @CustomerPhone,
+                                    Notes = @Notes,
+                                    UpdatedDate = GETDATE()
+                                WHERE Receipt_ID = @ReceiptId";
 
-                        code2.DatabaseInsertSafe(conn, insertPaymentQuery, paymentParams);
-                        System.Diagnostics.Debug.WriteLine($"Created Payment_History for Receipt: {docNum}");
+                            var updateParams = new Dictionary<string, object>
+                            {
+                                { "@ReservationId", actualReservationId },
+                                { "@PaymentDate", Convert.ToDateTime(TextBox8.Text) },
+                                { "@PaymentAmount", totalAmount },
+                                { "@PaymentType", paymentType },
+                                { "@PaymentMethod", paymentMethod },
+                                { "@ReceiptId", docNum },
+                                { "@AdminId", adminId ?? (object)DBNull.Value },
+                                { "@CustomerPhone", customerPhone },
+                                { "@Notes", paymentNotes }
+                            };
+
+                            code2.DatabaseInsertSafe(conn, updatePaymentQuery, updateParams);
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_History for Receipt: {docNum}");
+                        }
+                        else
+                        {
+                            // ✅ CREATE mode: INSERT Payment_History
+                            string insertPaymentQuery = @"
+                                INSERT INTO [dbo].[Payment_History] (
+                                    Reservation_ID,
+                                    PaymentDate,
+                                    PaymentAmount,
+                                    PaymentType,
+                                    PaymentMethod,
+                                    Receipt_ID,
+                                    ProcessedBy_AdminID,
+                                    PaidBy_CustomerPhone,
+                                    Status,
+                                    Notes,
+                                    CreatedDate,
+                                    UpdatedDate
+                                ) VALUES (
+                                    @ReservationId,
+                                    @PaymentDate,
+                                    @PaymentAmount,
+                                    @PaymentType,
+                                    @PaymentMethod,
+                                    @ReceiptId,
+                                    @AdminId,
+                                    @CustomerPhone,
+                                    'COMPLETED',
+                                    @Notes,
+                                    GETDATE(),
+                                    GETDATE()
+                                )";
+
+                            var insertParams = new Dictionary<string, object>
+                            {
+                                { "@ReservationId", actualReservationId },
+                                { "@PaymentDate", Convert.ToDateTime(TextBox8.Text) },
+                                { "@PaymentAmount", totalAmount },
+                                { "@PaymentType", paymentType },
+                                { "@PaymentMethod", paymentMethod },
+                                { "@ReceiptId", docNum },
+                                { "@AdminId", adminId ?? (object)DBNull.Value },
+                                { "@CustomerPhone", customerPhone },
+                                { "@Notes", paymentNotes }
+                            };
+
+                            code2.DatabaseInsertSafe(conn, insertPaymentQuery, insertParams);
+                            System.Diagnostics.Debug.WriteLine($"✅ Inserted Payment_History for Receipt: {docNum}");
+                        }
                     }
                     catch (Exception ex)
                     {
-                        code2.Logs(conn, "Payment_History Insert Error (Account/Receipt)",
+                        code2.Logs(conn, "Payment_History Upsert Error (Account/Receipt)",
                             ex.Message + " - " + ex.StackTrace, "SYSTEM");
+                        System.Diagnostics.Debug.WriteLine($"❌ Error upserting Payment_History: {ex.Message}");
                         // Don't fail receipt creation if payment history fails
                     }
                 }
