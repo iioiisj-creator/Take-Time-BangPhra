@@ -475,8 +475,9 @@
                     <div class="card">
                         <div class="card-body">
                             <center>
-                                <asp:Calendar ID="Calendar1" runat="server" Height="199px" Width="80%" 
+                                <asp:Calendar ID="Calendar1" runat="server" Height="199px" Width="80%"
                                     OnDayRender="Calendar1_DayRender" OnSelectionChanged="Calendar1_SelectionChanged"
+                                    FirstDayOfWeek="Sunday"
                                     CssClass="calendar-style"></asp:Calendar>
                             </center>
                             
