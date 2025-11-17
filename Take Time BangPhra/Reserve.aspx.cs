@@ -1021,7 +1021,7 @@ namespace Take_Time_BangPhra
                             else
                             {
                                 // ✅ LimitWithPeople = True: เช็คว่าจองเกินผู้เข้าพักสูงสุดหรือไม่
-                                int limitPeople = Convert.ToInt32(dtReserveAccomDup.Rows[0]["Limit_People"].ToString());
+                                int limitPeople = Convert.ToInt32(dtReserveAccomDup.Rows[0]["People"].ToString());
 
                                 // ดึงจำนวนคนที่จองแล้วในวันและห้องนี้
                                 string sumPeopleQuery = @"
