@@ -690,6 +690,7 @@
       <DependentUpon>About.aspx</DependentUpon>
     </Compile>
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Class\AccommodationAvailabilityService.cs" />
     <Compile Include="Class\CodeHelper.cs" />
     <Compile Include="Class\CustomerService.cs" />
     <Compile Include="Class\AccountingService.cs" />
