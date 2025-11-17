@@ -655,8 +655,8 @@
                 <!-- Right Section - Calendar and Booking -->
                 <div class="right-section">
                     <div class="calendar-container">
-                        <asp:Calendar ID="Calendar1" runat="server" OnDayRender="Calendar1_DayRender" OnSelectionChanged="Calendar1_SelectionChanged" 
-                            NextMonthText=">>>" PrevMonthText="<<<" CssClass="myCalendar ExampleFont" CellPadding="0">
+                        <asp:Calendar ID="Calendar1" runat="server" OnDayRender="Calendar1_DayRender" OnSelectionChanged="Calendar1_SelectionChanged"
+                            NextMonthText=">>>" PrevMonthText="<<<" CssClass="myCalendar ExampleFont" CellPadding="0" FirstDayOfWeek="Monday">
                             <OtherMonthDayStyle ForeColor="#b0b0b0" />
                             <DayStyle CssClass="myCalendarDay" ForeColor="#2d3338" />
                             <DayHeaderStyle CssClass="myCalendarDayHeader" ForeColor="#2d3338" HorizontalAlign="Center" VerticalAlign="Middle" />
