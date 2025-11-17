@@ -620,18 +620,19 @@ namespace Take_Time_BangPhra
                 DataTable dtCustomer = reservationDA.GetReservationWithCustomerDetails(Convert.ToInt32(id), check);
 
                 // 💰 Load payment amounts (needed for PostBack validation)
-                // ✅ FIX: Use different logic for initial load vs PostBack
+                // ✅ FIX: Reservation.TotalPrice now contains ONLY base price (accommodations + items)
+                // ProductCharges are stored separately in Reservation_Product_Charges table
+                // Grand total = Reservation.TotalPrice + ProductCharges (sum from separate table)
                 decimal dbTotalPrice = Convert.ToDecimal(dtCustomer.Rows[0]["TotalPrice"]);
                 decimal calculatedTotalPrice = Convert.ToDecimal(Session["totalPrice"]);
 
                 decimal finalTotalPrice;
                 if (!IsPostBack)
                 {
-                    // 🔧 Initial load: Use dbTotalPrice + ProductCharges
-                    // Because GridView checkboxes haven't been checked yet
-                    // (they will be checked later in line ~723-736)
-                    decimal productChargesOnly = Convert.ToDecimal(Session["ProductCharges"] ?? "0");
-                    finalTotalPrice = dbTotalPrice + productChargesOnly;
+                    // 🔧 Initial load: Use totalPrice from Session (already includes ProductCharges)
+                    // Session["totalPrice"] is calculated in Page_Load from PriceAccom + PriceItems + ProductCharges
+                    // This is correct because ProductCharges are NOT included in dbTotalPrice anymore
+                    finalTotalPrice = calculatedTotalPrice;
 
                     Session["PriceModified"] = "false";
                 }
@@ -641,8 +642,9 @@ namespace Take_Time_BangPhra
                     // Because user may have modified prices/rooms
                     finalTotalPrice = calculatedTotalPrice;
 
-                    // Mark as modified if price differs from DB
-                    if (calculatedTotalPrice != dbTotalPrice)
+                    // Mark as modified if price differs from DB base total
+                    decimal calculatedBasePrice = calculatedTotalPrice - Convert.ToDecimal(Session["ProductCharges"] ?? "0");
+                    if (calculatedBasePrice != dbTotalPrice)
                     {
                         Session["PriceModified"] = "true";
                     }
@@ -5666,9 +5668,48 @@ namespace Take_Time_BangPhra
                     "alert('กรุณาติดต่อ Admin กรณีต้องการจองเกิน 3 เดือน');", true);
             }
 
-            // Get all active accommodations
-            DataTable dtAccommodation = code.DatabaseQuery(conn,
-                "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
+            // Get accommodations
+            DataTable dtAccommodation;
+
+            // ✅ FIX: For edit/checkin/rentmore modes, load from Reservation_Accommodation to preserve prices
+            // For new reservations, load all available accommodations
+            if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
+            {
+                // Edit mode: Load existing accommodations with saved prices from Reservation_Accommodation
+                // Then merge with all accommodations for availability checking
+                var reservationDA = new ReservationDataAccess(conn);
+                DataTable dtExistingAccom = reservationDA.GetReservationWithAccommodations(Convert.ToInt32(id), check);
+
+                // Get all accommodations for display
+                dtAccommodation = code.DatabaseQuery(conn,
+                    "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
+
+                // Merge existing accommodation prices into dtAccommodation
+                foreach (DataRow existingRow in dtExistingAccom.Rows)
+                {
+                    int accomId = Convert.ToInt32(existingRow["Accommodation_ID"]);
+                    decimal savedPrice = Convert.ToDecimal(existingRow["Price"]);
+                    int savedAmount = Convert.ToInt32(existingRow["Amount"]);
+
+                    // Find matching accommodation and update its price
+                    foreach (DataRow accomRow in dtAccommodation.Rows)
+                    {
+                        if (Convert.ToInt32(accomRow["ID"]) == accomId)
+                        {
+                            // Override default price with saved price
+                            accomRow["Price"] = savedPrice;
+                            accomRow["Amount"] = savedAmount; // Save amount too for LimitWithPeople
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // New reservation: Load all active accommodations
+                dtAccommodation = code.DatabaseQuery(conn,
+                    "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
+            }
 
             // Add status columns
             if (!dtAccommodation.Columns.Contains("StatusOnDate"))
@@ -5768,7 +5809,17 @@ AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
             foreach (DataRow accomRow in dtAccommodation.Rows)
             {
                 if (accomRow.RowState == DataRowState.Deleted) continue;
-                accomRow["Price"] = AccomPrice(accomRow["ID"].ToString(), checkInDate);
+
+                // ✅ FIX: Only set price from DB for NEW reservations
+                // For edit/checkin/rentmore modes, preserve existing prices from database
+                // This prevents overriding manually-edited prices (especially LimitWithPeople)
+                if (command != "edit" && command != "checkin" && command != "rentmore")
+                {
+                    // New reservation: Get price from AccommodationPrice table or default
+                    accomRow["Price"] = AccomPrice(accomRow["ID"].ToString(), checkInDate);
+                }
+                // For edit modes: Price is already loaded from Reservation_Accommodation table
+                // No need to override it here
             }
 
             // Bind to grid

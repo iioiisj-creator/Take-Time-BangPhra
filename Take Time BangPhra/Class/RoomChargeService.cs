@@ -83,8 +83,11 @@ namespace Take_Time_BangPhra
                         notes
                     );
 
-                    // Update reservation total
-                    _chargeDA.UpdateReservationTotal(reservationId, total, isAddition: true);
+                    // ✅ FIX: Don't update Reservation.TotalPrice for product charges
+                    // Product charges are tracked separately in Reservation_Product_Charges
+                    // The grand total will be calculated as: Reservation.TotalPrice + SUM(Reservation_Product_Charges)
+                    // This prevents double-counting when displaying totals
+                    // _chargeDA.UpdateReservationTotal(reservationId, total, isAddition: true); // REMOVED
                 }
 
                 // Log success
@@ -210,11 +213,14 @@ namespace Take_Time_BangPhra
                 // Mark as cancelled
                 _chargeDA.CancelCharge(chargeId, adminId, reason);
 
-                // Update reservation total (only for ROOM_CHARGE type)
-                if (chargeType == "ROOM_CHARGE")
-                {
-                    _chargeDA.UpdateReservationTotal(reservationId, totalAmount, isAddition: false);
-                }
+                // ✅ FIX: Don't update Reservation.TotalPrice when cancelling charges
+                // Since we don't add to TotalPrice when creating charges (see ChargeToRoom),
+                // we shouldn't subtract when cancelling either
+                // Product charges are tracked separately in Reservation_Product_Charges with Status
+                // if (chargeType == "ROOM_CHARGE")
+                // {
+                //     _chargeDA.UpdateReservationTotal(reservationId, totalAmount, isAddition: false);
+                // }
 
                 // Log
                 _code.Logs(_connectionString,
@@ -381,8 +387,9 @@ namespace Take_Time_BangPhra
                         notes ?? "จองพร้อมการจองห้องพัก"
                     );
 
-                    // Update reservation total
-                    _chargeDA.UpdateReservationTotal(reservationId, total, isAddition: true);
+                    // ✅ FIX: Don't update Reservation.TotalPrice for pre-booked products
+                    // Product charges (including pre-bookings) are tracked separately
+                    // _chargeDA.UpdateReservationTotal(reservationId, total, isAddition: true); // REMOVED
                 }
 
                 _code.Logs(_connectionString,
