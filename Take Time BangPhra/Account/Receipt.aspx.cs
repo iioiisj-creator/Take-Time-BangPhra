@@ -663,10 +663,15 @@ namespace Take_Time_BangPhra.Account.Report
                                 "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
                             System.Diagnostics.Debug.WriteLine($"✅ Step 4: Updated Account_Receipt_Detail FK: {originalID} → {newID}");
 
-                            // 🗑️ STEP 5: DELETE Account_Receipt เก่า (oldID) - ตอนนี้ไม่มี FK อ้างอิงแล้ว
+                            // 🔗 STEP 5: UPDATE Product_Out (FK: Account_Receipt_ID → Account_Receipt.ID)
+                            code.DatabaseInsert(conn,
+                                "UPDATE [dbo].[Product_Out] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 5: Updated Product_Out FK: {originalID} → {newID}");
+
+                            // 🗑️ STEP 6: DELETE Account_Receipt เก่า (oldID) - ตอนนี้ไม่มี FK อ้างอิงแล้ว
                             code.DatabaseInsert(conn,
                                 "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + originalID + "' AND UID = '" + originalUID + "'");
-                            System.Diagnostics.Debug.WriteLine($"✅ Step 5: Deleted old Account_Receipt with ID: {originalID}");
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 6: Deleted old Account_Receipt with ID: {originalID}");
                         }
                         catch (Exception ex)
                         {
