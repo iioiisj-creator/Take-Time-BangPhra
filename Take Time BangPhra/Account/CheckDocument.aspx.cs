@@ -308,7 +308,7 @@ namespace Take_Time_BangPhra.Account
                                 {
                                     // Reduce Reservation.Deposit by payment amount
                                     code.DatabaseInsert(conn,
-                                        $"UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {amount} WHERE ID = {reservationId}");
+                                        string.Format("UPDATE [dbo].[Reservation] SET Deposit = ISNULL(Deposit, 0) - {0} WHERE ID = {1}", amount, reservationId));
                                 }
                             }
                         }
@@ -316,7 +316,7 @@ namespace Take_Time_BangPhra.Account
                     catch (Exception ex)
                     {
                         // Continue with deletion even if update fails (data consistency issue but prevents stuck state)
-                        System.Diagnostics.Debug.WriteLine($"⚠️ Error updating Reservation.Deposit: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine(string.Format("⚠️ Error updating Reservation.Deposit: {0}", ex.Message));
                     }
 
                     // Delete Payment_History records that reference this receipt

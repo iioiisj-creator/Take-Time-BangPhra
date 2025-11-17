@@ -53,13 +53,13 @@ namespace Take_Time_BangPhra
                 }
                 else
                 {
-                    
+
                     jsonResponse = await FetchGoogleReviews();
                     DatabaseInsert(conn, code.AdaptSql("INSERT INTO [dbo].[Reviews] ([Date],[json]) VALUES ('" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "',N'" + jsonResponse.Replace("'", "''") + "');"));
                 }
-                 
+
             // Assign the response to a Literal as a JavaScript variable
-            Literal1.Text = $"<script>var jsoninput = {jsonResponse};</script>";
+            Literal1.Text = string.Format("<script>var jsoninput = {0};</script>", jsonResponse);
 
             }
             try
@@ -96,7 +96,7 @@ namespace Take_Time_BangPhra
             catch (Exception ex)
             {
                 // Return an error message if API call fails
-                return $"{{\"error\": \"{ex.Message}\"}}";
+                return "{{\"error\": \"{ex.Message}\"}}";
             }
         }
 
@@ -106,14 +106,14 @@ namespace Take_Time_BangPhra
 
             if (GridView1.SelectedIndex >= 0)
             {
-                
+
                 Response.Redirect("./Default.aspx?selecteddate="+ Calendar1.SelectedDate.ToString("yyyy-MM-dd"));
-                
+
             }
             if (DateTime.Now > Calendar1.SelectedDate.AddDays(1) && Session["permission"] == "No")
             {
                 GridView1.Visible = false;
-                
+
             }
             else
             {
@@ -192,7 +192,7 @@ namespace Take_Time_BangPhra
                     }
                 }
             }
-            
+
         }
 
         public int DatabaseInsert(string connStr, string cmd)
@@ -371,9 +371,9 @@ namespace Take_Time_BangPhra
                 else
                 {
                     e.Cell.ForeColor = System.Drawing.Color.Transparent;
-                    
+
                 }
-                
+
 
             }
             else

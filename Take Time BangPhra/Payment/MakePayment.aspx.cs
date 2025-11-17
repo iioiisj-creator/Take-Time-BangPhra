@@ -171,7 +171,7 @@ namespace Take_Time_BangPhra.Payment
                 decimal remainingBalance = decimal.Parse(lblRemainingBalance.Text.Replace(",", ""));
                 if (paymentAmount > remainingBalance)
                 {
-                    ShowError($"จำนวนเงินที่ชำระ ({paymentAmount:N2}) มากกว่ายอดคงเหลือ ({remainingBalance:N2})");
+                    ShowError(string.Format("จำนวนเงินที่ชำระ ({0}) มากกว่ายอดคงเหลือ ({1})", paymentAmount:N2, remainingBalance:N2));
                     return;
                 }
 
@@ -206,9 +206,9 @@ namespace Take_Time_BangPhra.Payment
 
                 if (result.Success)
                 {
-                    ShowSuccess($"ชำระเงินสำเร็จ! จำนวน {paymentAmount:N2} บาท<br/>" +
-                               $"เลขที่ใบเสร็จ: {result.ReceiptId}<br/>" +
-                               $"ยอดคงเหลือ: {result.RemainingBalance:N2} บาท");
+                    ShowSuccess(string.Format("ชำระเงินสำเร็จ! จำนวน {0} บาท<br/>", paymentAmount:N2) +
+                               string.Format("เลขที่ใบเสร็จ: {0}<br/>", result.ReceiptId) +
+                               string.Format("ยอดคงเหลือ: {0} บาท", result.RemainingBalance:N2));
 
                     // Reload data
                     LoadReservationData();

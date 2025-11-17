@@ -16,7 +16,7 @@ namespace Take_Time_BangPhra.Admin
             {
                 response.Clear();
                 response.Buffer = true;
-                response.AddHeader("content-disposition", $"attachment;filename={fileName}.xlsx");
+                response.AddHeader("content-disposition", string.Format("attachment;filename={0}.xlsx", fileName));
                 response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 response.Charset = "UTF-8";
 
@@ -30,7 +30,7 @@ namespace Take_Time_BangPhra.Admin
                     CreateExcelFileStructure(tempDir, dataTable, reportTitle);
 
                     // สร้างไฟล์ .xlsx (ซึ่งคือ zip archive)
-                    string tempExcelPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xlsx");
+                    string tempExcelPath = Path.Combine(Path.GetTempPath(), string.Format("{0}.xlsx", Guid.NewGuid()));
                     ZipFile.CreateFromDirectory(tempDir, tempExcelPath);
 
                     // ส่งไฟล์ไปยัง client
@@ -51,7 +51,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                throw new Exception($"เกิดข้อผิดพลาดในการสร้างไฟล์ Excel: {ex.Message}", ex);
+                throw new Exception(string.Format("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel: {0}", ex.Message), ex);
             }
         }
 

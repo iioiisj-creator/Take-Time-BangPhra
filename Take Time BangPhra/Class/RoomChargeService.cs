@@ -62,7 +62,7 @@ namespace Take_Time_BangPhra
                     decimal currentStock = _chargeDA.GetProductStock(productId);
                     if (currentStock < quantity)
                     {
-                        throw new Exception($"สินค้า '{productName}' มีจำนวนไม่เพียงพอ (คงเหลือ {currentStock})");
+                        throw new Exception(string.Format("สินค้า '{0}' มีจำนวนไม่เพียงพอ (คงเหลือ {1})", productName, currentStock));
                     }
 
                     // Deduct stock
@@ -90,7 +90,7 @@ namespace Take_Time_BangPhra
                 // Log success
                 _code.Logs(_connectionString,
                     "RoomChargeService.ChargeToRoom",
-                    $"Charged {cartItems.Rows.Count} items to Reservation {reservationId}",
+                    string.Format("Charged {0} items to Reservation {1}", cartItems.Rows.Count, reservationId),
                     adminId?.ToString() ?? "SYSTEM");
 
                 return lastChargeId;
@@ -99,7 +99,7 @@ namespace Take_Time_BangPhra
             {
                 _code.Logs(_connectionString,
                     "RoomChargeService.ChargeToRoom Error",
-                    $"ReservationID: {reservationId}, Error: {ex.Message}",
+                    string.Format("ReservationID: {0}, Error: {1}", reservationId, ex.Message),
                     adminId?.ToString() ?? "SYSTEM");
                 throw;
             }
@@ -128,7 +128,7 @@ namespace Take_Time_BangPhra
                 decimal currentStock = _chargeDA.GetProductStock(productId);
                 if (currentStock < quantity)
                 {
-                    throw new Exception($"สินค้า '{productName}' มีจำนวนไม่เพียงพอ");
+                    throw new Exception(string.Format("สินค้า '{0}' มีจำนวนไม่เพียงพอ", productName));
                 }
 
                 // Deduct stock
@@ -157,7 +157,7 @@ namespace Take_Time_BangPhra
 
                 _code.Logs(_connectionString,
                     "RoomChargeService.ChargeImmediateWithGuest",
-                    $"Immediate charge for Product {productId} linked to Reservation {reservationId}, Receipt {receiptId}",
+                    string.Format("Immediate charge for Product {0} linked to Reservation {1}, Receipt {2}", productId, reservationId, receiptId),
                     adminId?.ToString() ?? "SYSTEM");
 
                 return chargeId;
@@ -166,7 +166,7 @@ namespace Take_Time_BangPhra
             {
                 _code.Logs(_connectionString,
                     "RoomChargeService.ChargeImmediateWithGuest Error",
-                    $"ProductID: {productId}, ReservationID: {reservationId}, Error: {ex.Message}",
+                    string.Format("ProductID: {0}, ReservationID: {1}, Error: {2}", productId, reservationId, ex.Message),
                     adminId?.ToString() ?? "SYSTEM");
                 throw;
             }
@@ -219,14 +219,14 @@ namespace Take_Time_BangPhra
                 // Log
                 _code.Logs(_connectionString,
                     "RoomChargeService.CancelRoomCharge",
-                    $"Cancelled Charge {chargeId}, Returned {quantity} units of Product {productId}, Reason: {reason}",
+                    string.Format("Cancelled Charge {0}, Returned {1} units of Product {2}, Reason: {3}", chargeId, quantity, productId, reason),
                     adminId?.ToString() ?? "SYSTEM");
             }
             catch (Exception ex)
             {
                 _code.Logs(_connectionString,
                     "RoomChargeService.CancelRoomCharge Error",
-                    $"ChargeID: {chargeId}, Error: {ex.Message}",
+                    string.Format("ChargeID: {0}, Error: {1}", chargeId, ex.Message),
                     adminId?.ToString() ?? "SYSTEM");
                 throw;
             }
@@ -255,7 +255,7 @@ namespace Take_Time_BangPhra
 
                 _code.Logs(_connectionString,
                     "RoomChargeService.MarkAllChargesAsPaid",
-                    $"Marked {affectedRows} charges as paid for Reservation {reservationId}, Receipt {receiptId}",
+                    string.Format("Marked {0} charges as paid for Reservation {1}, Receipt {2}", affectedRows, reservationId, receiptId),
                     "SYSTEM");
 
                 return affectedRows;
@@ -264,7 +264,7 @@ namespace Take_Time_BangPhra
             {
                 _code.Logs(_connectionString,
                     "RoomChargeService.MarkAllChargesAsPaid Error",
-                    $"ReservationID: {reservationId}, ReceiptID: {receiptId}, Error: {ex.Message}",
+                    string.Format("ReservationID: {0}, ReceiptID: {1}, Error: {2}", reservationId, receiptId, ex.Message),
                     "SYSTEM");
                 throw;
             }
@@ -360,7 +360,7 @@ namespace Take_Time_BangPhra
                     decimal currentStock = _chargeDA.GetProductStock(productId);
                     if (currentStock < quantity)
                     {
-                        throw new Exception($"สินค้า '{productName}' มีจำนวนไม่เพียงพอ");
+                        throw new Exception(string.Format("สินค้า '{0}' มีจำนวนไม่เพียงพอ", productName));
                     }
 
                     // Deduct stock
@@ -387,7 +387,7 @@ namespace Take_Time_BangPhra
 
                 _code.Logs(_connectionString,
                     "RoomChargeService.PreBookProducts",
-                    $"Pre-booked {selectedProducts.Rows.Count} products for Reservation {reservationId}",
+                    string.Format("Pre-booked {0} products for Reservation {1}", selectedProducts.Rows.Count, reservationId),
                     adminId?.ToString() ?? "SYSTEM");
 
                 return lastChargeId;
@@ -396,7 +396,7 @@ namespace Take_Time_BangPhra
             {
                 _code.Logs(_connectionString,
                     "RoomChargeService.PreBookProducts Error",
-                    $"ReservationID: {reservationId}, Error: {ex.Message}",
+                    string.Format("ReservationID: {0}, Error: {1}", reservationId, ex.Message),
                     adminId?.ToString() ?? "SYSTEM");
                 throw;
             }
@@ -494,7 +494,7 @@ namespace Take_Time_BangPhra
                 else if (status == "PAID") paidCount++;
             }
 
-            return $"รายการทั้งหมด: {totalCharges} | รอชำระ: {pendingCount} ({pending:N2} บาท) | ชำระแล้ว: {paidCount}";
+            return string.Format("รายการทั้งหมด: {0} | รอชำระ: {1} ({2} บาท) | ชำระแล้ว: {3}", totalCharges, pendingCount, pending:N2, paidCount);
         }
 
         #endregion

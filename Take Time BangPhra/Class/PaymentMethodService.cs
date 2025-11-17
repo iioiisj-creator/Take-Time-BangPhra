@@ -167,7 +167,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to get payment method by ID: {id}");
+                    string.Format("Failed to get payment method by ID: {0}", id));
                 throw;
             }
         }
@@ -208,7 +208,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to get payment method by code: {code}");
+                    string.Format("Failed to get payment method by code: {0}", code));
                 throw;
             }
         }
@@ -251,7 +251,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to map legacy payment method: {legacyPaymentMethod}");
+                    string.Format("Failed to map legacy payment method: {0}", legacyPaymentMethod));
                 return GetPaymentMethodByCode("OTHER")?.ID;
             }
         }
@@ -288,7 +288,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to parse payment methods from Paid_Type: {paidType}");
+                    string.Format("Failed to parse payment methods from Paid_Type: {0}", paidType));
                 return new List<int>();
             }
         }
@@ -356,7 +356,7 @@ namespace Take_Time_BangPhra.Class
 
                         loggingService.LogAccountingOperation(
                             "CreatePaymentMethod",
-                            $"Created payment method: {method.Code} - {method.Name_TH}",
+                            string.Format("Created payment method: {0} - {1}", method.Code, method.Name_TH),
                             true,
                             userId);
 
@@ -367,7 +367,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to create payment method: {method?.Code}", userId);
+                    string.Format("Failed to create payment method: {0}", method?.Code), userId);
                 throw;
             }
         }
@@ -412,7 +412,7 @@ namespace Take_Time_BangPhra.Class
 
                         loggingService.LogAccountingOperation(
                             "UpdatePaymentMethod",
-                            $"Updated payment method: {method.Code} - {method.Name_TH}",
+                            string.Format("Updated payment method: {0} - {1}", method.Code, method.Name_TH),
                             rowsAffected > 0,
                             userId);
 
@@ -423,7 +423,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to update payment method: {method?.Code}", userId);
+                    string.Format("Failed to update payment method: {0}", method?.Code), userId);
                 throw;
             }
         }
@@ -453,7 +453,7 @@ namespace Take_Time_BangPhra.Class
 
                         loggingService.LogAccountingOperation(
                             "DeactivatePaymentMethod",
-                            $"Deactivated payment method ID: {id}",
+                            string.Format("Deactivated payment method ID: {0}", id),
                             rowsAffected > 0,
                             userId);
 
@@ -464,7 +464,7 @@ namespace Take_Time_BangPhra.Class
             catch (Exception ex)
             {
                 loggingService.LogException(ex, LoggingService.LogCategory.Accounting,
-                    $"Failed to deactivate payment method ID: {id}", userId);
+                    string.Format("Failed to deactivate payment method ID: {0}", id), userId);
                 throw;
             }
         }

@@ -73,7 +73,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Admin Login Error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Admin Login Error: {0}", ex.Message));
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');", true);
             }
         }
@@ -110,7 +110,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Admin Password Change Error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Admin Password Change Error: {0}", ex.Message));
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');", true);
             }
         }

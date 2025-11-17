@@ -23,7 +23,7 @@ namespace Take_Time_BangPhra
             try
             {
                 // Simple HTTP implementation without RestSharp
-                string url = $"https://api.telegram.org/bot{_botToken}/sendMessage";
+                string url = string.Format("https://api.telegram.org/bot{0}/sendMessage", _botToken);
 
                 var payload = new
                 {
@@ -40,12 +40,12 @@ namespace Take_Time_BangPhra
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorContent = await response.Content.ReadAsStringAsync();
-                    System.Diagnostics.Trace.TraceError($"Telegram API error: {response.StatusCode} - {errorContent}");
+                    System.Diagnostics.Trace.TraceError(string.Format("Telegram API error: {0} - {1}", response.StatusCode, errorContent));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Telegram send error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Telegram send error: {0}", ex.Message));
                 // Don't throw - telegram failure shouldn't break the main reservation process
             }
         }
@@ -55,7 +55,7 @@ namespace Take_Time_BangPhra
             try
             {
                 // Simple implementation for media upload
-                string url = $"https://api.telegram.org/bot{_botToken}/sendDocument";
+                string url = string.Format("https://api.telegram.org/bot{0}/sendDocument", _botToken);
 
                 using (var form = new MultipartFormDataContent())
                 {
@@ -71,13 +71,13 @@ namespace Take_Time_BangPhra
                     if (!response.IsSuccessStatusCode)
                     {
                         string errorContent = await response.Content.ReadAsStringAsync();
-                        System.Diagnostics.Trace.TraceError($"Telegram media API error: {response.StatusCode} - {errorContent}");
+                        System.Diagnostics.Trace.TraceError(string.Format("Telegram media API error: {0} - {1}", response.StatusCode, errorContent));
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Telegram media send error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Telegram media send error: {0}", ex.Message));
             }
         }
 

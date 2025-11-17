@@ -33,7 +33,7 @@ namespace Take_Time_BangPhra
                         DropDownList1.SelectedValue = currentYear.ToString();
                         DropDownList2.SelectedValue = currentMonth.ToString();
 
-                        System.Diagnostics.Debug.WriteLine($"Initial Load: Year={currentYear}, Month={currentMonth}");
+                        System.Diagnostics.Debug.WriteLine(string.Format("Initial Load: Year={0}, Month={1}", currentYear, currentMonth));
 
                         // โหลดข้อมูล
                         LoadReservationData();
@@ -55,7 +55,7 @@ namespace Take_Time_BangPhra
             int year = Convert.ToInt32(DropDownList1.SelectedValue);
             int month = Convert.ToInt32(DropDownList2.SelectedValue);
 
-            System.Diagnostics.Debug.WriteLine($"Button Click: Year={year}, Month={month}");
+            System.Diagnostics.Debug.WriteLine(string.Format("Button Click: Year={0}, Month={1}", year, month));
 
             LoadReservationData();
         }
@@ -78,8 +78,8 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in LoadReservationData: {ex.Message}");
-                ShowErrorMessage($"เกิดข้อผิดพลาด: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in LoadReservationData: {0}", ex.Message));
+                ShowErrorMessage(string.Format("เกิดข้อผิดพลาด: {0}", ex.Message));
             }
         }
 
@@ -92,7 +92,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in LoadRevenueSummary: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in LoadRevenueSummary: {0}", ex.Message));
                 Label4.Text = "0";
                 Label5.Text = "0";
                 Label6.Text = "0";
@@ -134,10 +134,10 @@ namespace Take_Time_BangPhra
                         // คำนวณยอดค้างชำระ
                         decimal balanceDue = totalRevenue - totalDeposit;
 
-                        System.Diagnostics.Debug.WriteLine($"=== STORED PROCEDURE RESULT ===");
-                        System.Diagnostics.Debug.WriteLine($"Total Revenue: {totalRevenue:#,##0}");
-                        System.Diagnostics.Debug.WriteLine($"Total Deposit: {totalDeposit:#,##0}");
-                        System.Diagnostics.Debug.WriteLine($"Balance Due: {balanceDue:#,##0}");
+                        System.Diagnostics.Debug.WriteLine("=== STORED PROCEDURE RESULT ===");
+                        System.Diagnostics.Debug.WriteLine(string.Format("Total Revenue: {0}", totalRevenue:#,##0));
+                        System.Diagnostics.Debug.WriteLine(string.Format("Total Deposit: {0}", totalDeposit:#,##0));
+                        System.Diagnostics.Debug.WriteLine(string.Format("Balance Due: {0}", balanceDue:#,##0));
 
                         // อัพเดท UI
                         Label4.Text = totalRevenue.ToString("#,##0"); // ยอดรวมทั้งหมด
@@ -148,7 +148,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetExactReportData with SP: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in GetExactReportData with SP: {0}", ex.Message));
 
                 // Fallback to direct query
                 GetExactReportDataFallback(year, month);
@@ -164,17 +164,17 @@ namespace Take_Time_BangPhra
 
                 // ใช้ INNER JOIN แทน RIGHT JOIN เพื่อความเสถียร
                 string revenueQuery = @"
-            SELECT 
+            SELECT
                 ISNULL(SUM(RA.Price * R.StayDays), 0) as TotalRevenue
-            FROM [Reservation] R 
-            INNER JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID 
+            FROM [Reservation] R
+            INNER JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID
             WHERE R.CheckinDate >= @StartDate AND R.CheckoutDate <= @EndDate
             AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')";
 
                 string depositQuery = @"
-            SELECT 
+            SELECT
                 ISNULL(SUM(R.Deposit), 0) as TotalDeposit
-            FROM [Reservation] R 
+            FROM [Reservation] R
             WHERE R.CheckinDate >= @StartDate AND R.CheckoutDate <= @EndDate
             AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')";
 
@@ -201,10 +201,10 @@ namespace Take_Time_BangPhra
 
                     decimal balanceDue = totalRevenue - totalDeposit;
 
-                    System.Diagnostics.Debug.WriteLine($"=== FALLBACK CALCULATION ===");
-                    System.Diagnostics.Debug.WriteLine($"Total Revenue: {totalRevenue:#,##0}");
-                    System.Diagnostics.Debug.WriteLine($"Total Deposit: {totalDeposit:#,##0}");
-                    System.Diagnostics.Debug.WriteLine($"Balance Due: {balanceDue:#,##0}");
+                    System.Diagnostics.Debug.WriteLine("=== FALLBACK CALCULATION ===");
+                    System.Diagnostics.Debug.WriteLine(string.Format("Total Revenue: {0}", totalRevenue:#,##0));
+                    System.Diagnostics.Debug.WriteLine(string.Format("Total Deposit: {0}", totalDeposit:#,##0));
+                    System.Diagnostics.Debug.WriteLine(string.Format("Balance Due: {0}", balanceDue:#,##0));
 
                     Label4.Text = totalRevenue.ToString("#,##0");
                     Label5.Text = totalDeposit.ToString("#,##0");
@@ -213,7 +213,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in fallback: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in fallback: {0}", ex.Message));
                 Label4.Text = "0";
                 Label5.Text = "0";
                 Label6.Text = "0";
@@ -228,7 +228,7 @@ namespace Take_Time_BangPhra
                 DateTime endDate = new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
 
                 string debugQuery = @"
-            SELECT 
+            SELECT
                 R.ID,
                 R.CheckinDate,
                 R.CheckoutDate,
@@ -238,8 +238,8 @@ namespace Take_Time_BangPhra
                 RA.Price as PricePerNight,
                 R.StayDays,
                 (RA.Price * R.StayDays) as RoomRevenue
-            FROM [Reservation] R 
-            INNER JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID 
+            FROM [Reservation] R
+            INNER JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID
             WHERE R.CheckinDate >= @StartDate AND R.CheckoutDate <= @EndDate
             AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')
             ORDER BY R.ID";
@@ -261,19 +261,19 @@ namespace Take_Time_BangPhra
                                 decimal deposit = reader["Deposit"] != DBNull.Value ? Convert.ToDecimal(reader["Deposit"]) : 0;
                                 decimal roomRevenue = reader["RoomRevenue"] != DBNull.Value ? Convert.ToDecimal(reader["RoomRevenue"]) : 0;
 
-                                System.Diagnostics.Debug.WriteLine($"Reservation {reader["ID"]}: " +
-                                    $"Deposit={deposit}, " +
-                                    $"RoomRevenue={roomRevenue}, " +
-                                    $"Status={reader["Status"]}");
+                                System.Diagnostics.Debug.WriteLine("Reservation {reader["ID"]}: " +
+                                    string.Format("Deposit={0}, ", deposit) +
+                                    string.Format("RoomRevenue={0}, ", roomRevenue) +
+                                    "Status={reader["Status"]}");
                             }
-                            System.Diagnostics.Debug.WriteLine($"Total reservations found: {count}");
+                            System.Diagnostics.Debug.WriteLine(string.Format("Total reservations found: {0}", count));
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Debug error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Debug error: {0}", ex.Message));
             }
         }
 
@@ -300,21 +300,21 @@ namespace Take_Time_BangPhra
                             if (reader.Read())
                             {
                                 decimal totalRevenue = reader.GetDecimal(0);
-                                System.Diagnostics.Debug.WriteLine($"Verified Total Revenue: {totalRevenue:#,##0}");
+                                System.Diagnostics.Debug.WriteLine(string.Format("Verified Total Revenue: {0}", totalRevenue:#,##0));
                             }
 
                             // อ่านยอดมัดจำทั้งหมด
                             if (reader.NextResult() && reader.Read())
                             {
                                 decimal totalDeposit = reader.GetDecimal(0);
-                                System.Diagnostics.Debug.WriteLine($"Verified Total Deposit: {totalDeposit:#,##0}");
+                                System.Diagnostics.Debug.WriteLine(string.Format("Verified Total Deposit: {0}", totalDeposit:#,##0));
                             }
 
                             // อ่านยอดรับมาแล้ว
                             if (reader.NextResult() && reader.Read())
                             {
                                 decimal totalReceived = reader.GetDecimal(0);
-                                System.Diagnostics.Debug.WriteLine($"Verified Total Received: {totalReceived:#,##0}");
+                                System.Diagnostics.Debug.WriteLine(string.Format("Verified Total Received: {0}", totalReceived:#,##0));
                             }
                         }
                     }
@@ -322,7 +322,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in verification: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in verification: {0}", ex.Message));
             }
         }
         private DataTable GetReservationData(int year, int month)
@@ -347,11 +347,11 @@ namespace Take_Time_BangPhra
                             da.Fill(dt);
                         }
 
-                        System.Diagnostics.Debug.WriteLine($"Found {dt.Rows.Count} reservations for {year}-{month}");
+                        System.Diagnostics.Debug.WriteLine(string.Format("Found {0} reservations for {1}-{2}", dt.Rows.Count, year, month));
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error using SP, fallback to query: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine(string.Format("Error using SP, fallback to query: {0}", ex.Message));
                         // Fallback to optimized query
                         dt = GetOptimizedReservationData(year, month);
                     }
@@ -367,7 +367,7 @@ namespace Take_Time_BangPhra
             DateTime endDate = new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
 
             string query = @"
-        SELECT 
+        SELECT
             R.ID,
             R.CheckinDate,
             R.CheckoutDate,
@@ -386,7 +386,7 @@ namespace Take_Time_BangPhra
         INNER JOIN Customer C ON R.Customer_MobilePhone = C.MobilePhone
         INNER JOIN Reservation_Accommodation RA ON R.ID = RA.Reservation_ID
         INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
-        WHERE 
+        WHERE
             (R.CheckinDate <= @EndDate AND R.CheckoutDate >= @StartDate)
             AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')
         ORDER BY R.CheckinDate, A.AccomName";
@@ -438,8 +438,8 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in LoadReservationGridView: {ex.Message}");
-                ShowErrorMessage($"เกิดข้อผิดพลาดในการโหลดข้อมูล: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in LoadReservationGridView: {0}", ex.Message));
+                ShowErrorMessage(string.Format("เกิดข้อผิดพลาดในการโหลดข้อมูล: {0}", ex.Message));
             }
         }
 
@@ -456,7 +456,7 @@ namespace Take_Time_BangPhra
             return dtShow;
         }
 
-       
+
         private void FillReservationData(DataTable dtShow, DataTable dtAccom, DataTable dtReservation, int year, int month)
         {
             int daysInMonth = DateTime.DaysInMonth(year, month);
@@ -477,7 +477,7 @@ namespace Take_Time_BangPhra
                 {
                     if (date.Year == year && date.Month == month)
                     {
-                        string key = $"{date:yyyy-MM-dd}_{accomId}";
+                        string key = string.Format("{0}_{1}", date:yyyy-MM-dd, accomId);
 
                         if (!reservationDict.ContainsKey(key))
                         {
@@ -506,7 +506,7 @@ namespace Take_Time_BangPhra
                     string accomId = dtAccom.Rows[accomIndex]["ID"].ToString();
 
                     StringBuilder cellContent = new StringBuilder();
-                    string key = $"{currentDate:yyyy-MM-dd}_{accomId}";
+                    string key = string.Format("{0}_{1}", currentDate:yyyy-MM-dd, accomId);
 
                     if (reservationDict.ContainsKey(key))
                     {
@@ -542,17 +542,17 @@ namespace Take_Time_BangPhra
                 decimal deposit = reservation["Deposit"] != DBNull.Value ? Convert.ToDecimal(reservation["Deposit"]) : 0;
                 string status = reservation["Status"]?.ToString() ?? "";
 
-                info.Append($"<div class='customer-info'>");
-                info.Append($"<div class='customer-name'>{name} ({nickname})</div>");
-                info.Append($"<div class='customer-details'>เบอร์: {phone} | {peopleStay} คน | {stayDays} คืน</div>");
-                info.Append($"<div class='payment-info'>คืนละ: {pricePerNight:#,##0} | รวม: {totalPrice:#,##0} | รับมาแล้ว: {deposit:#,##0}</div>");
-                info.Append($"<div class='status-info'>สถานะ: {GetStatusText(status)}</div>");
+                info.Append("<div class='customer-info'>");
+                info.Append(string.Format("<div class='customer-name'>{0} ({1})</div>", name, nickname));
+                info.Append(string.Format("<div class='customer-details'>เบอร์: {0} | {1} คน | {2} คืน</div>", phone, peopleStay, stayDays));
+                info.Append(string.Format("<div class='payment-info'>คืนละ: {0} | รวม: {1} | รับมาแล้ว: {2}</div>", pricePerNight:#,##0, totalPrice:#,##0, deposit:#,##0));
+                info.Append(string.Format("<div class='status-info'>สถานะ: {0}</div>", GetStatusText(status)));
                 info.Append("</div>");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in FormatCustomerInfo: {ex.Message}");
-                info.Append($"<div class='customer-info text-danger'>Error: {ex.Message}</div>");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in FormatCustomerInfo: {0}", ex.Message));
+                info.Append(string.Format("<div class='customer-info text-danger'>Error: {0}</div>", ex.Message));
             }
 
             return info.ToString();
@@ -608,11 +608,11 @@ namespace Take_Time_BangPhra
                 GridView1.DataBind();
 
                 // แสดงจำนวนแถวที่พบ
-                System.Diagnostics.Debug.WriteLine($"Displaying {dtShow.Rows.Count} days of data");
+                System.Diagnostics.Debug.WriteLine(string.Format("Displaying {0} days of data", dtShow.Rows.Count));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in DisplayReservationGrid: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Error in DisplayReservationGrid: {0}", ex.Message));
                 throw;
             }
         }
@@ -655,13 +655,13 @@ namespace Take_Time_BangPhra
         private void ShowInfoMessage(string message)
         {
             ScriptManager.RegisterStartupScript(this, this.GetType(), "showInfo",
-                $"alert('{message}');", true);
+                string.Format("alert('{0}');", message), true);
         }
 
         private void ShowErrorMessage(string message)
         {
             ScriptManager.RegisterStartupScript(this, this.GetType(), "showError",
-                $"alert('{message}');", true);
+                string.Format("alert('{0}');", message), true);
         }
     }
 }

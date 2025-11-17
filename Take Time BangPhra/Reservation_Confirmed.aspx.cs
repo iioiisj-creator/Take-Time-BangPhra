@@ -36,7 +36,7 @@ namespace Take_Time_BangPhra
                 {
                     Label10.Text = "ไม่พบข้อมูลการจอง - กรุณาตรวจสอบรหัสการจองและเบอร์โทรศัพท์";
                     code2.Logs(conn, "Reservation_Confirmed - No Data",
-                        $"ID: {id}, Check: {check} - No reservation data found",
+                        string.Format("ID: {0}, Check: {1} - No reservation data found", id, check),
                         "SYSTEM");
                     return;
                 }
@@ -71,7 +71,7 @@ namespace Take_Time_BangPhra
                     // แสดงจำนวนผู้เข้าพักสำหรับแต่ละห้อง
                     if (dtReservation.Rows[i]["LimitWithPeople"].ToString() == "True")
                     {
-                        peopleInfo = $" (จำนวนผู้เข้าพัก: {dtReservation.Rows[i]["Amount"].ToString()} คน)";
+                        peopleInfo = " (จำนวนผู้เข้าพัก: {dtReservation.Rows[i]["Amount"].ToString()} คน)";
                     }
                     else
                     {
@@ -79,7 +79,7 @@ namespace Take_Time_BangPhra
                         peopleInfo = " (จำนวนผู้เข้าพัก: 2 คน)"; // หรือดึงจากฟิลด์อื่นที่เหมาะสม
                     }
 
-                    Accom += $"• {dtReservation.Rows[i]["AccomName"].ToString()}{peopleInfo} - ฿{price:n0} บาท\r\n";
+                    Accom += "• {dtReservation.Rows[i]["AccomName"].ToString()}{peopleInfo} - ฿{price:n0} บาท\r\n";
                 }
                 Label8.Text = Accom;
 
@@ -95,7 +95,7 @@ namespace Take_Time_BangPhra
                     for (int i = 0; i < dtReservationItems.Rows.Count; i++)
                     {
                         int price = Convert.ToInt32(dtReservationItems.Rows[i]["Price"].ToString()) * Convert.ToInt32(dtReservationItems.Rows[i]["Amount"].ToString());
-                        Items += $"• {dtReservationItems.Rows[i]["ItemName"].ToString()} ({dtReservationItems.Rows[i]["Amount"].ToString()} ชิ้น) - ฿{price:n0} บาท\r\n";
+                        Items += "• {dtReservationItems.Rows[i]["ItemName"].ToString()} ({dtReservationItems.Rows[i]["Amount"].ToString()} ชิ้น) - ฿{price:n0} บาท\r\n";
                     }
                 }
 
@@ -120,7 +120,7 @@ namespace Take_Time_BangPhra
                         string statusIcon = status == "PAID" ? "✅" : "⏳";
                         string statusText = status == "PAID" ? "ชำระแล้ว" : "รอชำระ";
 
-                        Items += $"• {productName} ({quantity:n0} ชิ้น) - ฿{totalAmount:n0} บาท {statusIcon} {statusText}\r\n";
+                        Items += string.Format("• {0} ({1} ชิ้น) - ฿{2} บาท {3} {4}\r\n", productName, quantity:n0, totalAmount:n0, statusIcon, statusText);
                     }
                 }
 
@@ -132,7 +132,7 @@ namespace Take_Time_BangPhra
                 // 1. Get base total price from Reservation
                 decimal baseTotalPrice = 0;
                 DataTable dtReservationPrice = code.DatabaseQuery(conn,
-                    $"SELECT TotalPrice FROM Reservation WHERE ID = {id}");
+                    string.Format("SELECT TotalPrice FROM Reservation WHERE ID = {0}", id));
                 if (dtReservationPrice.Rows.Count > 0 && dtReservationPrice.Rows[0]["TotalPrice"] != DBNull.Value)
                 {
                     baseTotalPrice = Convert.ToDecimal(dtReservationPrice.Rows[0]["TotalPrice"]);
@@ -169,7 +169,7 @@ namespace Take_Time_BangPhra
                 if (totalPaid == 0)
                 {
                     DataTable dtDeposit = code.DatabaseQuery(conn,
-                        $"SELECT ISNULL(Deposit, 0) as Deposit FROM Reservation WHERE ID = {id}");
+                        string.Format("SELECT ISNULL(Deposit, 0) as Deposit FROM Reservation WHERE ID = {0}", id));
                     if (dtDeposit.Rows.Count > 0 && dtDeposit.Rows[0]["Deposit"] != DBNull.Value)
                     {
                         totalPaid = Convert.ToDecimal(dtDeposit.Rows[0]["Deposit"]);
@@ -192,12 +192,12 @@ namespace Take_Time_BangPhra
 
                 // Log detailed error for debugging
                 code2.Logs(conn, "Reservation_Confirmed Error",
-                    $"ID: {Request.QueryString["id"]}, Check: {Request.QueryString["check"]}, Error: {ex.Message}, StackTrace: {ex.StackTrace}",
+                    "ID: {Request.QueryString["id"]}, Check: {Request.QueryString["check"]}, Error: {ex.Message}, StackTrace: {ex.StackTrace}",
                     "SYSTEM");
 
                 // Show detailed error in development
-                System.Diagnostics.Debug.WriteLine($"Reservation_Confirmed Error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine(string.Format("Reservation_Confirmed Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine(string.Format("StackTrace: {0}", ex.StackTrace));
             }
         }
 
@@ -238,20 +238,20 @@ namespace Take_Time_BangPhra
                         if (row["SlipFileURL"] == DBNull.Value || string.IsNullOrWhiteSpace(row["SlipFileURL"].ToString()))
                         {
                             // Generate OLD pattern for backward compatibility: Upload/Slip/{ReservationID}_{Phone}.jpg
-                            string generatedPath = $"Upload/Slip/{reservationId}_{customerPhone}.jpg";
+                            string generatedPath = string.Format("Upload/Slip/{0}_{1}.jpg", reservationId, customerPhone);
                             string fullPath = Server.MapPath("~/" + generatedPath);
 
                             // Check if file exists before setting path
                             if (File.Exists(fullPath))
                             {
                                 row["SlipFileURL"] = generatedPath;
-                                row["FileName"] = $"{reservationId}_{customerPhone}.jpg";
+                                row["FileName"] = string.Format("{0}_{1}.jpg", reservationId, customerPhone);
                             }
                         }
                     }
 
                     // Show slip count
-                    lblSlipCount.Text = $"💳 มีการโอนเงินทั้งหมด {dtSlips.Rows.Count} ครั้ง";
+                    lblSlipCount.Text = string.Format("💳 มีการโอนเงินทั้งหมด {0} ครั้ง", dtSlips.Rows.Count);
                     lblSlipCount.Visible = true;
 
                     // Bind to repeater
@@ -346,7 +346,7 @@ namespace Take_Time_BangPhra
                 string year = created.Year.ToString();
                 string month = created.Month.ToString("00");
 
-                return $"/Documents/Receipt/{year}/{month}/{id}_{receiptUID}.pdf";
+                return string.Format("/Documents/Receipt/{0}/{1}/{2}_{3}.pdf", year, month, id, receiptUID);
             }
             catch
             {
