@@ -108,7 +108,7 @@ namespace Take_Time_BangPhra
 
             for (int i = 0; i < dtReservation.Rows.Count; i++)
             {
-                dtReservation.Rows[i]["Name"] = "{dtReservation.Rows[i]["Name"]} - {dtReservation.Rows[i]["NickName"]} - {dtReservation.Rows[i]["Customer_MobilePhone"]}";
+                dtReservation.Rows[i]["Name"] = $"{dtReservation.Rows[i]["Name"]} - {dtReservation.Rows[i]["NickName"]} - {dtReservation.Rows[i]["Customer_MobilePhone"]}";
 
                 string AccomName = "";
                 int orderID = 99;
@@ -120,7 +120,7 @@ namespace Take_Time_BangPhra
                         AccomName += dtReservation_Accom.Rows[j]["AccomName"];
                         if (dtReservation_Accom.Rows[j]["LimitWithPeople"].ToString() == "True")
                         {
-                            AccomName += ": ({dtReservation_Accom.Rows[j]["Amount"]}คน)";
+                            AccomName += $": ({dtReservation_Accom.Rows[j]["Amount"]}คน)";
                         }
                         AccomName += "\r\n";
 
@@ -140,7 +140,7 @@ namespace Take_Time_BangPhra
                 {
                     if (dtReservation.Rows[i]["ID"].ToString() == dtReservation_Items.Rows[j]["Reservation_ID"].ToString())
                     {
-                        Items += "[{dtReservation_Items.Rows[j]["ItemName"]} : ({dtReservation_Items.Rows[j]["Amount"]}ชิ้น)] ";
+                        Items += $"[{dtReservation_Items.Rows[j]["ItemName"]} : ({dtReservation_Items.Rows[j]["Amount"]}ชิ้น)] ";
                     }
                 }
 
@@ -150,7 +150,7 @@ namespace Take_Time_BangPhra
                     if (dtReservation.Rows[i]["ID"].ToString() == dtProductCharges.Rows[j]["Reservation_ID"].ToString())
                     {
                         int quantity = Convert.ToInt32(dtProductCharges.Rows[j]["Quantity"]);
-                        Items += "[{dtProductCharges.Rows[j]["Product_Name"]} : ({quantity}ชิ้น)] ";
+                        Items += $"[{dtProductCharges.Rows[j]["Product_Name"]} : ({quantity}ชิ้น)] ";
                     }
                 }
 
@@ -267,7 +267,7 @@ namespace Take_Time_BangPhra
                     int reservationId = Convert.ToInt32(GridView1.DataKeys[row.RowIndex].Value);
 
                     // Find the correct row in dtReservation by ID
-                    DataRow[] foundRows = dtReservation.Select(string.Format("ID = {0}", reservationId));
+                    DataRow[] foundRows = dtReservation.Select($"ID = {reservationId}");
                     if (foundRows.Length == 0) continue;
 
                     DataRow currentRow = foundRows[0];
@@ -412,8 +412,8 @@ namespace Take_Time_BangPhra
         protected void Calendar1_DayRender(object sender, DayRenderEventArgs e)
         {
             DataTable dtReservation = DatabaseQuery(conn,
-                @"SELECT * FROM Reservation
-                  RIGHT JOIN Reservation_Accommodation ON Reservation.ID = Reservation_Accommodation.Reservation_ID
+                @"SELECT * FROM Reservation 
+                  RIGHT JOIN Reservation_Accommodation ON Reservation.ID = Reservation_Accommodation.Reservation_ID 
                   WHERE @SelectedDate >= CheckinDate AND @SelectedDate < CheckoutDate",
                 new SqlParameter("@SelectedDate", e.Day.Date.ToString("yyyy-MM-dd")));
 
@@ -478,23 +478,23 @@ namespace Take_Time_BangPhra
 
                     if (e.CommandName == "Checkin")
                     {
-                        Response.Redirect(string.Format("./Reserve?command=checkin&date={0}&id={1}&check={2}", Calendar1.SelectedDate:yyyy-MM-dd, commandArg, customerPhone), false);
+                        Response.Redirect($"./Reserve?command=checkin&date={Calendar1.SelectedDate:yyyy-MM-dd}&id={commandArg}&check={customerPhone}", false);
                     }
                     else if (e.CommandName == "EditReservation")
                     {
-                        Response.Redirect(string.Format("./Reserve?command=edit&date={0}&id={1}&check={2}", Calendar1.SelectedDate:yyyy-MM-dd, commandArg, customerPhone), false);
+                        Response.Redirect($"./Reserve?command=edit&date={Calendar1.SelectedDate:yyyy-MM-dd}&id={commandArg}&check={customerPhone}", false);
                     }
                     else if (e.CommandName == "RentMore")
                     {
-                        Response.Redirect(string.Format("./Reserve?command=rentmore&date={0}&id={1}&check={2}", Calendar1.SelectedDate:yyyy-MM-dd, commandArg, customerPhone), false);
+                        Response.Redirect($"./Reserve?command=rentmore&date={Calendar1.SelectedDate:yyyy-MM-dd}&id={commandArg}&check={customerPhone}", false);
                     }
                     else if (e.CommandName == "PayMore")
                     {
-                        Response.Redirect(string.Format("./Payment/MakePayment?id={0}", commandArg), false);
+                        Response.Redirect($"./Payment/MakePayment?id={commandArg}", false);
                     }
                     else if (e.CommandName == "Checkout")
                     {
-                        Response.Redirect(string.Format("./Checkout?id={0}", commandArg), false);
+                        Response.Redirect($"./Checkout?id={commandArg}", false);
                     }
                     else if (e.CommandName == "CancelNoRefund")
                     {
@@ -508,7 +508,7 @@ namespace Take_Time_BangPhra
                     }
                     else if (e.CommandName == "CountReserved")
                     {
-                        Response.Redirect(string.Format("./CountReserved?telnum={0}", customerPhone), false);
+                        Response.Redirect($"./CountReserved?telnum={customerPhone}", false);
                     }
                     break;
 
@@ -525,7 +525,7 @@ namespace Take_Time_BangPhra
                     if (dtDetailCustomer.Rows.Count > 0)
                     {
                         string detailCustomerPhone = dtDetailCustomer.Rows[0]["Customer_MobilePhone"].ToString();
-                        Response.Redirect(string.Format("./Reservation_Confirmed?id={0}&check={1}", detailReservationId, detailCustomerPhone), false);
+                        Response.Redirect($"./Reservation_Confirmed?id={detailReservationId}&check={detailCustomerPhone}", false);
                     }
                     break;
             }
@@ -540,8 +540,8 @@ namespace Take_Time_BangPhra
             // 🔧 FIX: Cancel Payment_History records first
             try
             {
-                string cancelNote = refund ? string.Format("ยกเลิกจากการยกเลิกการจอง (คืนเงิน) ID: {0}", reservationId) :
-                                            string.Format("ยกเลิกจากการยกเลิกการจอง (ไม่คืนเงิน) ID: {0}", reservationId);
+                string cancelNote = refund ? $"ยกเลิกจากการยกเลิกการจอง (คืนเงิน) ID: {reservationId}" :
+                                            $"ยกเลิกจากการยกเลิกการจอง (ไม่คืนเงิน) ID: {reservationId}";
 
                 DatabaseInsert(conn,
                     @"UPDATE [dbo].[Payment_History]
@@ -550,11 +550,11 @@ namespace Take_Time_BangPhra
                     new SqlParameter("@Notes", cancelNote),
                     new SqlParameter("@ReservationId", reservationId));
 
-                System.Diagnostics.Debug.WriteLine(string.Format("✅ Cancelled Payment_History for Reservation {0}", reservationId));
+                System.Diagnostics.Debug.WriteLine($"✅ Cancelled Payment_History for Reservation {reservationId}");
             }
             catch (Exception phEx)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("⚠️ Failed to cancel Payment_History: {0}", phEx.Message));
+                System.Diagnostics.Debug.WriteLine($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
                 // Continue - this is non-critical
             }
 
@@ -603,7 +603,7 @@ namespace Take_Time_BangPhra
 
                 if (dt.Rows.Count > 0)
                 {
-                    string customerName = "{dt.Rows[0]["Name"]} ({dt.Rows[0]["NickName"]})";
+                    string customerName = $"{dt.Rows[0]["Name"]} ({dt.Rows[0]["NickName"]})";
                     string phone = dt.Rows[0]["Customer_MobilePhone"].ToString();
                     DateTime checkinDate = Convert.ToDateTime(dt.Rows[0]["CheckinDate"]);
                     DateTime checkoutDate = Convert.ToDateTime(dt.Rows[0]["CheckoutDate"]);
@@ -614,7 +614,7 @@ namespace Take_Time_BangPhra
                     StringBuilder roomDetails = new StringBuilder();
                     foreach (DataRow row in dt.Rows)
                     {
-                        roomDetails.AppendLine("   • {row["AccomName"]}");
+                        roomDetails.AppendLine($"   • {row["AccomName"]}");
                     }
 
                     string message = refund ?
@@ -741,8 +741,8 @@ namespace Take_Time_BangPhra
             }
 
             string fileName = string.IsNullOrEmpty(uid) ?
-                string.Format("{0}{1}.pdf", receiptId, suffix) :
-                string.Format("{0}_{1}{2}.pdf", receiptId, uid, suffix);
+                $"{receiptId}{suffix}.pdf" :
+                $"{receiptId}_{uid}{suffix}.pdf";
 
             return Path.Combine(monthPath, fileName);
         }

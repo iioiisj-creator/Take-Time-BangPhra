@@ -167,7 +167,7 @@ namespace Take_Time_BangPhra.Product
                         dtOrder.Rows[rowid]["Amount"] = amount;
                         dtOrder.Rows[rowid]["Price_Total"] = total;
                     }
-
+                    
                 }
                 GridView1.DataSource = dtOrder;
                 GridView1.DataBind();
@@ -202,7 +202,7 @@ namespace Take_Time_BangPhra.Product
 
         protected void CheckBox1_CheckedChanged1(object sender, EventArgs e)
         {
-
+            
         }
 
         protected void CheckBox2_CheckedChanged(object sender, EventArgs e)
@@ -218,7 +218,7 @@ namespace Take_Time_BangPhra.Product
                 // ✅ Auto-fill customer data from selected guest reservation
                 if (ddlGuestReservation.SelectedValue != "0")
                 {
-                    debugMsg += string.Format("Guest Reservation ID: {0}\\n", ddlGuestReservation.SelectedValue);
+                    debugMsg += $"Guest Reservation ID: {ddlGuestReservation.SelectedValue}\\n";
                     int reservationId = Convert.ToInt32(ddlGuestReservation.SelectedValue);
                     FillCustomerDataFromReservation(reservationId);
 
@@ -231,7 +231,7 @@ namespace Take_Time_BangPhra.Product
                             DataTable dtCustomer = (DataTable)Session["PendingCustomerData"];
                             if (dtCustomer != null && dtCustomer.Rows.Count > 0)
                             {
-                                debugMsg += string.Format("DataTable has {0} rows\\n", dtCustomer.Rows.Count);
+                                debugMsg += $"DataTable has {dtCustomer.Rows.Count} rows\\n";
                                 ApplyCustomerData(dtCustomer);
                                 Session["PendingCustomerData"] = null; // Clear after applying
                             }
@@ -242,7 +242,7 @@ namespace Take_Time_BangPhra.Product
                         }
                         catch (Exception ex)
                         {
-                            debugMsg += string.Format("Error applying data: {0}\\n", ex.Message);
+                            debugMsg += $"Error applying data: {ex.Message}\\n";
                         }
                     }
                     else
@@ -256,7 +256,7 @@ namespace Take_Time_BangPhra.Product
                 }
 
                 // 🐛 Debug message (commented out - working correctly)
-                // ClientScript.RegisterStartupScript(this.GetType(), "checkbox_debug", string.Format("alert('{0}');", debugMsg), true);
+                // ClientScript.RegisterStartupScript(this.GetType(), "checkbox_debug", $"alert('{debugMsg}');", true);
             }
             else
             {
@@ -288,7 +288,7 @@ namespace Take_Time_BangPhra.Product
                     if (!string.IsNullOrEmpty(customerPhone))
                     {
                         TextBox3.Text = customerPhone;
-                        fillData(string.Format("SELECT * FROM [Customer] WHERE MobilePhone = '{0}'", customerPhone));
+                        fillData($"SELECT * FROM [Customer] WHERE MobilePhone = '{customerPhone}'");
                     }
                 }
             }
@@ -368,11 +368,11 @@ namespace Take_Time_BangPhra.Product
             try
             {
                 DataTable dtProvince = code.DatabaseQuery(conn,
-                    string.Format("SELECT DISTINCT [Province] FROM [Address] WHERE PostalCode = '{0}' ORDER BY Province ASC", postalCode));
+                    $"SELECT DISTINCT [Province] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY Province ASC");
                 DataTable dtDistrict = code.DatabaseQuery(conn,
-                    string.Format("SELECT DISTINCT [District] FROM [Address] WHERE PostalCode = '{0}' ORDER BY District ASC", postalCode));
+                    $"SELECT DISTINCT [District] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY District ASC");
                 DataTable dtSubDistrict = code.DatabaseQuery(conn,
-                    string.Format("SELECT DISTINCT [SubDistrict] FROM [Address] WHERE PostalCode = '{0}' ORDER BY SubDistrict ASC", postalCode));
+                    $"SELECT DISTINCT [SubDistrict] FROM [Address] WHERE PostalCode = '{postalCode}' ORDER BY SubDistrict ASC");
 
                 if (dtProvince.Rows.Count > 0 && dtDistrict.Rows.Count > 0 && dtSubDistrict.Rows.Count > 0)
                 {
@@ -430,13 +430,13 @@ namespace Take_Time_BangPhra.Product
                 // Add conditions based on available data
                 if (!string.IsNullOrEmpty(province))
                 {
-                    districtQuery += " AND Province = N'{province.Replace("'", "''")}'";
-                    subDistrictQuery += " AND Province = N'{province.Replace("'", "''")}'";
+                    districtQuery += $" AND Province = N'{province.Replace("'", "''")}'";
+                    subDistrictQuery += $" AND Province = N'{province.Replace("'", "''")}'";
                 }
 
                 if (!string.IsNullOrEmpty(district))
                 {
-                    subDistrictQuery += " AND District = N'{district.Replace("'", "''")}'";
+                    subDistrictQuery += $" AND District = N'{district.Replace("'", "''")}'";
                 }
 
                 provinceQuery += " ORDER BY Province ASC";
@@ -500,7 +500,7 @@ namespace Take_Time_BangPhra.Product
                 {
                     try
                     {
-                        DataTable dtAddress = code.DatabaseQuery(conn, string.Format("SELECT PostalCode, Province, District, SubDistrict FROM [Address] WHERE ID = {0}", addressId));
+                        DataTable dtAddress = code.DatabaseQuery(conn, $"SELECT PostalCode, Province, District, SubDistrict FROM [Address] WHERE ID = {addressId}");
                         if (dtAddress.Rows.Count > 0)
                         {
                             postalCode = dtAddress.Rows[0]["PostalCode"]?.ToString()?.Trim() ?? "";
@@ -536,8 +536,8 @@ namespace Take_Time_BangPhra.Product
                 Session["PendingCustomerData"] = dtMerged;
 
                 // 🐛 Debug logging (commented out - working correctly)
-                // string debugMsg = string.Format("fillData called\\nAddress_ID: {0}\\nPostalCode: {1}\\nProvince: {2}\\nDistrict: {3}\\nSubDistrict: {4}\\nCustomer_Type_ID: {dtCustomer.Rows[0][", addressId, postalCode, province, district, subDistrict)Customer_Type_ID"]?.ToString() ?? "NULL"}";
-                // ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", string.Format("alert('{0}');", debugMsg), true);
+                // string debugMsg = $"fillData called\\nAddress_ID: {addressId}\\nPostalCode: {postalCode}\\nProvince: {province}\\nDistrict: {district}\\nSubDistrict: {subDistrict}\\nCustomer_Type_ID: {dtCustomer.Rows[0]["Customer_Type_ID"]?.ToString() ?? "NULL"}";
+                // ClientScript.RegisterStartupScript(this.GetType(), "fillData_debug", $"alert('{debugMsg}');", true);
             }
         }
 
@@ -561,15 +561,15 @@ namespace Take_Time_BangPhra.Product
                 {
                     debugMsg += "Forcing SqlDataSource2 to DataBind()\\n";
                     DropDownList2.DataBind();
-                    debugMsg += string.Format("After DataBind: DropDownList2 Items Count: {0}\\n", DropDownList2.Items.Count);
+                    debugMsg += $"After DataBind: DropDownList2 Items Count: {DropDownList2.Items.Count}\\n";
                 }
 
                 // ✅ Customer Type dropdown
                 try
                 {
                     string customerTypeId = dtCustomer.Rows[0]["Customer_Type_ID"].ToString();
-                    debugMsg += string.Format("Customer Type ID: {0}\\n", customerTypeId);
-                    debugMsg += string.Format("DropDownList2 Items Count: {0}\\n", DropDownList2.Items.Count);
+                    debugMsg += $"Customer Type ID: {customerTypeId}\\n";
+                    debugMsg += $"DropDownList2 Items Count: {DropDownList2.Items.Count}\\n";
 
                     DropDownList2.ClearSelection();
                     var customerTypeItem = DropDownList2.Items.FindByValue(customerTypeId);
@@ -577,7 +577,7 @@ namespace Take_Time_BangPhra.Product
                     {
                         customerTypeItem.Selected = true;
                         DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(customerTypeItem);
-                        debugMsg += string.Format("Customer Type selected: {0}\\n", customerTypeItem.Text);
+                        debugMsg += $"Customer Type selected: {customerTypeItem.Text}\\n";
                     }
                     else
                     {
@@ -586,7 +586,7 @@ namespace Take_Time_BangPhra.Product
                 }
                 catch (Exception ex)
                 {
-                    debugMsg += string.Format("Customer Type error: {0}\\n", ex.Message);
+                    debugMsg += $"Customer Type error: {ex.Message}\\n";
                 }
 
                 // ✅ Address dropdowns
@@ -598,7 +598,7 @@ namespace Take_Time_BangPhra.Product
                     string district = dtCustomer.Rows[0]["District_Actual"]?.ToString()?.Trim() ?? "";
                     string subDistrict = dtCustomer.Rows[0]["SubDistrict_Actual"]?.ToString()?.Trim() ?? "";
 
-                    debugMsg += string.Format("PostalCode: {0}, Province: {1}, District: {2}, SubDistrict: {3}\\n", postalCode, province, district, subDistrict);
+                    debugMsg += $"PostalCode: {postalCode}, Province: {province}, District: {district}, SubDistrict: {subDistrict}\\n";
 
                     // Step 1: Load dropdown items (prefer postal code, fallback to address values)
                     bool dropdownsPopulated = false;
@@ -607,7 +607,7 @@ namespace Take_Time_BangPhra.Product
                     if (!string.IsNullOrEmpty(postalCode) && postalCode.Length == 5)
                     {
                         LoadAddressDropdownsByPostalCode(postalCode);
-                        debugMsg += string.Format("After LoadAddressDropdownsByPostalCode: DDL3={0}, DDL4={1}, DDL5={2}\\n", DropDownList3.Items.Count, DropDownList4.Items.Count, DropDownList5.Items.Count);
+                        debugMsg += $"After LoadAddressDropdownsByPostalCode: DDL3={DropDownList3.Items.Count}, DDL4={DropDownList4.Items.Count}, DDL5={DropDownList5.Items.Count}\\n";
 
                         // Check if any items were added
                         if (DropDownList3.Items.Count > 0)
@@ -620,7 +620,7 @@ namespace Take_Time_BangPhra.Product
                     if (!dropdownsPopulated && !string.IsNullOrEmpty(province))
                     {
                         LoadAddressDropdownsByLocation(province, district, subDistrict);
-                        debugMsg += string.Format("After LoadAddressDropdownsByLocation: DDL3={0}, DDL4={1}, DDL5={2}\\n", DropDownList3.Items.Count, DropDownList4.Items.Count, DropDownList5.Items.Count);
+                        debugMsg += $"After LoadAddressDropdownsByLocation: DDL3={DropDownList3.Items.Count}, DDL4={DropDownList4.Items.Count}, DDL5={DropDownList5.Items.Count}\\n";
                     }
 
                     // Step 2: Select the correct values from the populated dropdowns
@@ -634,16 +634,16 @@ namespace Take_Time_BangPhra.Product
                             {
                                 provinceItem.Selected = true;
                                 DropDownList3.SelectedIndex = DropDownList3.Items.IndexOf(provinceItem);
-                                debugMsg += string.Format("Province selected: {0}\\n", provinceItem.Text);
+                                debugMsg += $"Province selected: {provinceItem.Text}\\n";
                             }
                             else
                             {
-                                debugMsg += string.Format("Province '{0}' not found in dropdown\\n", province);
+                                debugMsg += $"Province '{province}' not found in dropdown\\n";
                             }
                         }
                         catch (Exception ex)
                         {
-                            debugMsg += string.Format("Province selection error: {0}\\n", ex.Message);
+                            debugMsg += $"Province selection error: {ex.Message}\\n";
                         }
                     }
 
@@ -657,16 +657,16 @@ namespace Take_Time_BangPhra.Product
                             {
                                 districtItem.Selected = true;
                                 DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(districtItem);
-                                debugMsg += string.Format("District selected: {0}\\n", districtItem.Text);
+                                debugMsg += $"District selected: {districtItem.Text}\\n";
                             }
                             else
                             {
-                                debugMsg += string.Format("District '{0}' not found in dropdown\\n", district);
+                                debugMsg += $"District '{district}' not found in dropdown\\n";
                             }
                         }
                         catch (Exception ex)
                         {
-                            debugMsg += string.Format("District selection error: {0}\\n", ex.Message);
+                            debugMsg += $"District selection error: {ex.Message}\\n";
                         }
                     }
 
@@ -680,16 +680,16 @@ namespace Take_Time_BangPhra.Product
                             {
                                 subdistrictItem.Selected = true;
                                 DropDownList5.SelectedIndex = DropDownList5.Items.IndexOf(subdistrictItem);
-                                debugMsg += string.Format("SubDistrict selected: {0}\\n", subdistrictItem.Text);
+                                debugMsg += $"SubDistrict selected: {subdistrictItem.Text}\\n";
                             }
                             else
                             {
-                                debugMsg += string.Format("SubDistrict '{0}' not found in dropdown\\n", subDistrict);
+                                debugMsg += $"SubDistrict '{subDistrict}' not found in dropdown\\n";
                             }
                         }
                         catch (Exception ex)
                         {
-                            debugMsg += string.Format("SubDistrict selection error: {0}\\n", ex.Message);
+                            debugMsg += $"SubDistrict selection error: {ex.Message}\\n";
                         }
                     }
 
@@ -702,11 +702,11 @@ namespace Take_Time_BangPhra.Product
                 }
                 catch (Exception ex)
                 {
-                    debugMsg += string.Format("Address error: {0}\\n", ex.Message);
+                    debugMsg += $"Address error: {ex.Message}\\n";
                 }
 
                 // 🐛 Debug message (commented out - working correctly)
-                // ClientScript.RegisterStartupScript(this.GetType(), "debug", string.Format("alert('{0}');", debugMsg), true);
+                // ClientScript.RegisterStartupScript(this.GetType(), "debug", $"alert('{debugMsg}');", true);
             }
             catch (Exception ex)
             {
@@ -801,7 +801,7 @@ namespace Take_Time_BangPhra.Product
                 DataTable dtbusinessinfo = code.DatabaseQuery(conn, "Select * from Business_Info left join Customer_Type on Business_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID");
 
 
-
+                
                 DataTable dtcustomer = new DataTable();
                 if (CheckBox2.Checked == true)
                 {
@@ -898,7 +898,7 @@ namespace Take_Time_BangPhra.Product
                     else
                     {
 
-
+                        
                         if (DropDownList2.SelectedValue == "1" && TextBox5.Text == "00000")
                         {
                             dtCustomerReport.Rows[0]["FullName"] = TextBox4.Text;
@@ -1208,7 +1208,7 @@ namespace Take_Time_BangPhra.Product
                     catch (Exception ex)
                     {
                         code.Logs(conn, "Product.ProcessImmediateCharge Error",
-                            string.Format("Receipt: {0}, Reservation: {1}, Error: {2}", docNum, guestReservationId, ex.Message),
+                            $"Receipt: {docNum}, Reservation: {guestReservationId}, Error: {ex.Message}",
                             Session["User"]?.ToString());
                         // Don't fail receipt creation, just log the error
                     }
@@ -1347,7 +1347,7 @@ namespace Take_Time_BangPhra.Product
             if (dt.Rows.Count == 0)
             {
                 // No data - show message and setup 5-minute refresh
-
+                
 
                 // Setup refresh for primary interval (5 minutes)
                 SetupRefresh(PrimaryInterval);
@@ -1355,7 +1355,7 @@ namespace Take_Time_BangPhra.Product
             else
             {
                 // Data exists - display it and setup 1-minute check
-
+                
 
                 // Setup check for secondary interval (1 minute)
                 SetupRefresh(SecondaryInterval);
@@ -1417,7 +1417,7 @@ namespace Take_Time_BangPhra.Product
             catch (Exception ex)
             {
                 code.Logs(conn, "Product.TextBox12_TextChanged Error",
-                    string.Format("Failed to reload active guests: {0}", ex.Message),
+                    $"Failed to reload active guests: {ex.Message}",
                     Session["User"]?.ToString());
             }
         }
@@ -1460,13 +1460,13 @@ namespace Take_Time_BangPhra.Product
 
                     // Show count of active guests with selected date
                     string displayDate = searchDate.ToString("dd/MM/yyyy");
-                    lblActiveGuestCount.Text = string.Format("📊 มีผู้เข้าพัก {0} รายการ ในวันที่ {1}", guests.Rows.Count, displayDate);
+                    lblActiveGuestCount.Text = $"📊 มีผู้เข้าพัก {guests.Rows.Count} รายการ ในวันที่ {displayDate}";
                 }
                 else
                 {
                     // No active guests for selected date
                     string displayDate = searchDate.ToString("dd/MM/yyyy");
-                    lblActiveGuestCount.Text = string.Format("ℹ️ ไม่มีผู้เข้าพักในวันที่ {0}", displayDate);
+                    lblActiveGuestCount.Text = $"ℹ️ ไม่มีผู้เข้าพักในวันที่ {displayDate}";
                 }
             }
             catch (Exception ex)
@@ -1609,7 +1609,7 @@ namespace Take_Time_BangPhra.Product
                     if (currentStock < quantity)
                     {
                         string productName = item["Product_Name"].ToString();
-                        throw new Exception(string.Format("สินค้า '{0}' มีสต๊อกไม่เพียงพอ\\n\\nสต๊อกปัจจุบัน: {1}\\nต้องการ: {2}", productName, currentStock, quantity));
+                        throw new Exception($"สินค้า '{productName}' มีสต๊อกไม่เพียงพอ\\n\\nสต๊อกปัจจุบัน: {currentStock}\\nต้องการ: {quantity}");
                     }
                 }
 
@@ -1618,7 +1618,7 @@ namespace Take_Time_BangPhra.Product
                     reservationId,
                     dtOrder,
                     adminId,
-                    string.Format("POS Sale on {0}", DateTime.Now:yyyy-MM-dd HH:mm)
+                    $"POS Sale on {DateTime.Now:yyyy-MM-dd HH:mm}"
                 );
 
                 // ✅ Clear cart
@@ -1633,21 +1633,21 @@ namespace Take_Time_BangPhra.Product
 
                 // ✅ Success message with details
                 ClientScript.RegisterStartupScript(this.GetType(), "success",
-                    string.Format("alert('✅ บันทึกรายการชาร์จเข้าห้องเรียบร้อยแล้ว\\n\\n📝 รหัสการจอง: {0}\\n📦 จำนวนรายการ: {1} รายการ\\n\\n💡 รายการจะรวมในบิลเช็คเอาท์');", reservationId, itemCount),
+                    $"alert('✅ บันทึกรายการชาร์จเข้าห้องเรียบร้อยแล้ว\\n\\n📝 รหัสการจอง: {reservationId}\\n📦 จำนวนรายการ: {itemCount} รายการ\\n\\n💡 รายการจะรวมในบิลเช็คเอาท์');",
                     true);
 
                 // ✅ Log success
                 code.Logs(conn, "Product.ProcessRoomCharge Success",
-                    string.Format("Reservation: {0}, Items: {1}, ChargeID: {2}", reservationId, itemCount, chargeId),
+                    $"Reservation: {reservationId}, Items: {itemCount}, ChargeID: {chargeId}",
                     Session["User"]?.ToString());
             }
             catch (Exception ex)
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "error",
-                    "alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message.Replace("'", "\\'")}');",
+                    $"alert('❌ เกิดข้อผิดพลาดในการชาร์จเข้าห้อง:\\n\\n{ex.Message.Replace("'", "\\'")}');",
                     true);
                 code.Logs(conn, "Product.ProcessRoomCharge Error",
-                    string.Format("Error: {0}, StackTrace: {1}", ex.Message, ex.StackTrace),
+                    $"Error: {ex.Message}, StackTrace: {ex.StackTrace}",
                     Session["User"]?.ToString());
             }
         }
@@ -1692,7 +1692,7 @@ namespace Take_Time_BangPhra.Product
                         total,
                         "IMMEDIATE", // ChargeType
                         adminId,
-                        string.Format("POS PAY_NOW - Receipt: {0}", receiptId)
+                        $"POS PAY_NOW - Receipt: {receiptId}"
                     );
 
                     // Mark as paid immediately
@@ -1702,14 +1702,14 @@ namespace Take_Time_BangPhra.Product
                 // Log success
                 code.Logs(conn,
                     "Product.ProcessImmediateCharge",
-                    string.Format("Created {0} IMMEDIATE charges for Reservation {1}, Receipt {2}", dtOrder.Rows.Count, reservationId, receiptId),
+                    $"Created {dtOrder.Rows.Count} IMMEDIATE charges for Reservation {reservationId}, Receipt {receiptId}",
                     adminId?.ToString() ?? "SYSTEM");
             }
             catch (Exception ex)
             {
                 code.Logs(conn,
                     "Product.ProcessImmediateCharge Error",
-                    string.Format("Reservation: {0}, Receipt: {1}, Error: {2}", reservationId, receiptId, ex.Message),
+                    $"Reservation: {reservationId}, Receipt: {receiptId}, Error: {ex.Message}",
                     Session["User"]?.ToString());
                 throw; // Re-throw to be caught by caller
             }

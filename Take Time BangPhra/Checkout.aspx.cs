@@ -182,8 +182,8 @@ namespace Take_Time_BangPhra
                     // Show pending charges warning if any
                     if (pendingCharges > 0)
                     {
-                        ShowWarning(string.Format("⚠️ มีสินค้าชาร์จเข้าห้องที่ยังไม่ได้ชำระ: {0} บาท<br/>", pendingCharges:N2) +
-                                   "กรุณาชำระยอดคงเหลือก่อนเช็คเอาท์");
+                        ShowWarning($"⚠️ มีสินค้าชาร์จเข้าห้องที่ยังไม่ได้ชำระ: {pendingCharges:N2} บาท<br/>" +
+                                   $"กรุณาชำระยอดคงเหลือก่อนเช็คเอาท์");
                     }
 
                     // Check payment status
@@ -202,10 +202,10 @@ namespace Take_Time_BangPhra
                         lblPaymentStatus.Text = "<span class='icon-warning'><i class='fa fa-exclamation-triangle'></i> ยังไม่ครบ</span>";
 
                         // 🔒 STRICT: ไม่อนุญาตให้เช็คเอาท์ถ้ายอดไม่ครบ 100%
-                        ShowWarning("⚠️ ไม่สามารถเช็คเอาท์ได้<br/>" +
-                                   "กรุณาชำระเงินให้ครบ 100% ก่อนเช็คเอาท์<br/>" +
-                                   string.Format("<strong>ยอดคงเหลือ: {0} บาท</strong><br/><br/>", remainingBalance:N2) +
-                                   "💡 หมายเหตุ: ระบบต้องการยอดชำระครบถ้วนตามนโยบายของ PMS");
+                        ShowWarning($"⚠️ ไม่สามารถเช็คเอาท์ได้<br/>" +
+                                   $"กรุณาชำระเงินให้ครบ 100% ก่อนเช็คเอาท์<br/>" +
+                                   $"<strong>ยอดคงเหลือ: {remainingBalance:N2} บาท</strong><br/><br/>" +
+                                   $"💡 หมายเหตุ: ระบบต้องการยอดชำระครบถ้วนตามนโยบายของ PMS");
                         btnCheckout.Enabled = false;
                     }
                 }
@@ -303,11 +303,11 @@ namespace Take_Time_BangPhra
 
                 if (result.Success)
                 {
-                    ShowSuccess("เช็คเอาท์สำเร็จ!<br/>" +
-                               string.Format("รหัสการจอง: {0}<br/>", reservationId) +
-                               string.Format("เวลาเช็คเอาท์: {0}<br/>", DateTime.Now:dd/MM/yyyy HH:mm) +
-                               string.Format("คะแนนความพึงพอใจ: {0}/5 ดาว<br/><br/>", rating) +
-                               "ขอบคุณที่ใช้บริการ!");
+                    ShowSuccess($"เช็คเอาท์สำเร็จ!<br/>" +
+                               $"รหัสการจอง: {reservationId}<br/>" +
+                               $"เวลาเช็คเอาท์: {DateTime.Now:dd/MM/yyyy HH:mm}<br/>" +
+                               $"คะแนนความพึงพอใจ: {rating}/5 ดาว<br/><br/>" +
+                               $"ขอบคุณที่ใช้บริการ!");
 
                     // Disable form
                     btnCheckout.Enabled = false;

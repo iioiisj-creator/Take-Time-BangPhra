@@ -60,16 +60,16 @@ namespace Take_Time_BangPhra.Services
         public void SendReceiptEmail(string toEmail, string receiptId, DateTime docDate, string pdfFilePath)
         {
             string docCreateThaiDate = docDate.ToString("ddMM") + (docDate.Year + 543).ToString();
-            string subject = string.Format("[{0}][INV][{1}]", docCreateThaiDate, receiptId);
+            string subject = $"[{docCreateThaiDate}][INV][{receiptId}]";
             string body = @"เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br />
-                          หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้
+                          หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ 
                           ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />
                           ขอแสดงความนับถือ<br />
                           หจก.แอม แฮปปี้เนส (Take Time)";
 
             byte[] bytes = System.IO.File.ReadAllBytes(pdfFilePath);
             var memoryStream = new System.IO.MemoryStream(bytes);
-            var attachment = new Attachment(memoryStream, string.Format("{0}_etax.pdf", receiptId));
+            var attachment = new Attachment(memoryStream, $"{receiptId}_etax.pdf");
 
             SendEmail(toEmail, subject, body, new Attachment[] { attachment });
         }

@@ -54,7 +54,7 @@ namespace Take_Time_BangPhra.Helpers
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.TraceError(string.Format("Database insert error: {0}", ex.Message));
+                    System.Diagnostics.Trace.TraceError($"Database insert error: {ex.Message}");
                     // Don't throw, match old behavior
                 }
             }
@@ -78,7 +78,7 @@ namespace Take_Time_BangPhra.Helpers
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.TraceError(string.Format("Database query error: {0}", ex.Message));
+                    System.Diagnostics.Trace.TraceError($"Database query error: {ex.Message}");
                     // Don't throw, match old behavior
                 }
             }
@@ -115,7 +115,7 @@ namespace Take_Time_BangPhra.Helpers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.TraceError(string.Format("Database query error: {0}\nQuery: {1}", ex.Message, query));
+                        System.Diagnostics.Trace.TraceError($"Database query error: {ex.Message}\nQuery: {query}");
                         throw; // Re-throw for proper error handling
                     }
                 }
@@ -151,7 +151,7 @@ namespace Take_Time_BangPhra.Helpers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.TraceError(string.Format("Database command error: {0}\nQuery: {1}", ex.Message, query));
+                        System.Diagnostics.Trace.TraceError($"Database command error: {ex.Message}\nQuery: {query}");
                         throw;
                     }
                 }
@@ -192,7 +192,7 @@ namespace Take_Time_BangPhra.Helpers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.TraceError(string.Format("Database insert error: {0}\nQuery: {1}", ex.Message, query));
+                        System.Diagnostics.Trace.TraceError($"Database insert error: {ex.Message}\nQuery: {query}");
                         throw;
                     }
                 }
@@ -228,7 +228,7 @@ namespace Take_Time_BangPhra.Helpers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.TraceError(string.Format("Database scalar query error: {0}\nQuery: {1}", ex.Message, query));
+                        System.Diagnostics.Trace.TraceError($"Database scalar query error: {ex.Message}\nQuery: {query}");
                         throw;
                     }
                 }
@@ -250,7 +250,7 @@ namespace Take_Time_BangPhra.Helpers
             string month = documentDate.Month.ToString("00");
             string day = documentDate.Day.ToString("00");
 
-            string query = string.Format("SELECT TOP 1 ID FROM {0} WHERE ID LIKE '{1}{2}{3}{4}%' ORDER BY ID DESC", tableName, docType, year, month, day);
+            string query = $"SELECT TOP 1 ID FROM {tableName} WHERE ID LIKE '{docType}{year}{month}{day}%' ORDER BY ID DESC";
             DataTable dt = ExecuteQuery(query);
 
             int nextNumber = 1;
@@ -265,7 +265,7 @@ namespace Take_Time_BangPhra.Helpers
             }
 
             string numberStr = nextNumber.ToString("000");
-            return string.Format("{0}{1}{2}{3}{4}", docType, year, month, day, numberStr);
+            return $"{docType}{year}{month}{day}{numberStr}";
         }
     }
 }

@@ -116,7 +116,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                result.ErrorMessage = string.Format("เกิดข้อผิดพลาดในการประมวลผล: {0}", ex.Message);
+                result.ErrorMessage = $"เกิดข้อผิดพลาดในการประมวลผล: {ex.Message}";
                 result.Status = "FAILED";
             }
 
@@ -210,11 +210,11 @@ namespace Take_Time_BangPhra.Services
                 var conn = _connectionString;
 
                 string logMessage = result.Success
-                    ? string.Format("OCR Success - Amount: {0}, Confidence: {1}%", result.Amount:N2, result.Confidence:N2)
-                    : string.Format("OCR Failed - {0}", result.ErrorMessage);
+                    ? $"OCR Success - Amount: {result.Amount:N2}, Confidence: {result.Confidence:N2}%"
+                    : $"OCR Failed - {result.ErrorMessage}";
 
                 codeInstance.Logs(conn, "SlipOCR Result",
-                    string.Format("SlipID: {0}, Status: {1}, {2}", slipId, result.Status, logMessage), "SYSTEM");
+                    $"SlipID: {slipId}, Status: {result.Status}, {logMessage}", "SYSTEM");
 
                 // If you want to store OCR results, you need to:
                 // 1. Run migration to add OCR columns to Payment_Slips table
@@ -249,7 +249,7 @@ namespace Take_Time_BangPhra.Services
                 // Log error
                 var codeInstance = new code();
                 codeInstance.Logs(_connectionString, "SlipOCRService.SaveOCRResult Error",
-                    string.Format("SlipID: {0}, Error: {1}", slipId, ex.Message), "SYSTEM");
+                    $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
             }
         }
 
@@ -305,7 +305,7 @@ namespace Take_Time_BangPhra.Services
             {
                 var codeInstance = new code();
                 codeInstance.Logs(_connectionString, "SlipOCRService.GetPendingOCRSlips Error",
-                    string.Format("Error: {0}", ex.Message), "SYSTEM");
+                    $"Error: {ex.Message}", "SYSTEM");
                 return new DataTable();
             }
         }

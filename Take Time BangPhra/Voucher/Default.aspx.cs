@@ -75,7 +75,7 @@ namespace Take_Time_BangPhra.Voucher
 
                 string command = Request.QueryString["command"];
                 string uid = Request.QueryString["uid"];
-
+                
                 if(command == "edit")
                 {
 
@@ -94,11 +94,11 @@ namespace Take_Time_BangPhra.Voucher
                         {
                             dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + dtReceipt.Rows[0]["Customer_MobilePhone"].ToString() + "'");
                         }
-
+                        
                     }
                     catch {
                         dtcustomer = code.DatabaseQuery(conn, "Select * from Customer left join Customer_Type on Customer_Type_ID = Customer_Type.ID left join Address on Address.ID = Address_ID Where MobilePhone = '" + dtReceipt.Rows[0]["Customer_MobilePhone"].ToString() + "'");
-
+                        
                     }
 
                     try //Address
@@ -139,7 +139,7 @@ namespace Take_Time_BangPhra.Voucher
                         }
                             DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
                         DropDownList2.DataBind();
-
+                       
                         DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(DropDownList4.Items.FindByValue("1"));
                         DropDownList4.DataBind();
                     }
@@ -173,7 +173,7 @@ namespace Take_Time_BangPhra.Voucher
                             CheckBox5.DataBind();
                             TextBox7.Visible = true;
                             TextBox7.Text = dtcustomer.Rows[0]["Branch_Number"].ToString();
-
+                            
                         }
                     }
                     catch { }
@@ -195,7 +195,7 @@ namespace Take_Time_BangPhra.Voucher
                         TextBox17.Text = dtcustomer.Rows[0]["Email"].ToString();
                         TextBox18.Text = dtcustomer.Rows[0]["Address1"].ToString();
                     }
-
+                    
 
                     DropDownList2.DataBind();
                     DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
@@ -204,7 +204,7 @@ namespace Take_Time_BangPhra.Voucher
                     DropDownList4.SelectedIndex = 1;
                     DropDownList4.DataBind();
 
-
+                    
                     Session["dtDetail"] = dtReceiptDetail;
 
                     Panel1.Visible = true;
@@ -225,13 +225,13 @@ namespace Take_Time_BangPhra.Voucher
                 }
                 if (command == "edit")
                 {
-
+                    
                 }
                 else
                 {
                     Session["dtDetail"] = dtDetail;
                 }
-
+                
                 DataTable dtUpload = new DataTable();
                 try
                 {
@@ -249,7 +249,7 @@ namespace Take_Time_BangPhra.Voucher
         protected void Button2_Click(object sender, EventArgs e)
         {
             Label1.Text = DropDownList4.SelectedItem.Text;
-
+            
             if ( TextBox2.Text.Length > 0)
             {
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
@@ -261,8 +261,8 @@ namespace Take_Time_BangPhra.Voucher
                     {
                         if(code.DatabaseQuery(conn, "Select * from Accommodation_RatePlan_Group Where Group_Name = N'" + dtDetail.Rows[i]["RatePlan_Group"].ToString() + "'").Rows[0]["AccomGroupID"].ToString() == dtDetails.Rows[0]["AccomGroupID"].ToString())
                         {
-
-
+                            
+                            
                         }
                         else
                         {
@@ -283,7 +283,7 @@ namespace Take_Time_BangPhra.Voucher
                 Session["dtDetail"] = (DataTable)dtDetail;
                 GridView1.DataSource = dtDetail;
                 GridView1.DataBind();
-
+                
                 TextBox2.Text = "0";
             }
             else
@@ -356,7 +356,7 @@ namespace Take_Time_BangPhra.Voucher
 
                 docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
 
-
+               
                 string RecNumber = docNum;
                 int reservation_id = 0;
 
@@ -507,7 +507,7 @@ namespace Take_Time_BangPhra.Voucher
                             };
 
                             code2.DatabaseInsertSafe(conn, insertPaymentQuery, paymentParams);
-                            System.Diagnostics.Debug.WriteLine(string.Format("Created Payment_History for Voucher Receipt: {0}", docNum));
+                            System.Diagnostics.Debug.WriteLine($"Created Payment_History for Voucher Receipt: {docNum}");
                         }
                         catch (Exception ex)
                         {
@@ -877,7 +877,7 @@ namespace Take_Time_BangPhra.Voucher
                     catch { }
                 }
 
-
+                
 
                 string createddate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 for (int i = 0;i<Convert.ToInt32(TextBox19.Text);i++)
@@ -922,7 +922,7 @@ namespace Take_Time_BangPhra.Voucher
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุข้อมูลให้ครบถ้วน');", true);
             }
-
+            
         }
 
         public string cleantext(string input)
@@ -933,8 +933,8 @@ namespace Take_Time_BangPhra.Voucher
 
         protected void Button4_Click(object sender, EventArgs e)
         {
-
-
+            
+          
         }
 
         protected void GridView2_RowDeleted(object sender, GridViewDeletedEventArgs e)
@@ -943,7 +943,7 @@ namespace Take_Time_BangPhra.Voucher
 
         protected void GridView2_RowDeleting(object sender, GridViewDeleteEventArgs e)
         {
-
+          
         }
 
         public string createVoucherNumber(string AccomGroupID,string Year, string Month, string Day)
@@ -960,7 +960,7 @@ namespace Take_Time_BangPhra.Voucher
             {
                 Day = "0" + Day;
             }
-
+            
             int Number = 0;
             string NumberAccom = "";
                 Number = Convert.ToInt32(AccomGroupID);
@@ -968,8 +968,8 @@ namespace Take_Time_BangPhra.Voucher
                 {
                     NumberAccom = "0" + Number.ToString();
                 }
-
-
+            
+            
             //Random random = new Random();
             //int randomNumber = random.Next(1, 999);
             //string randomNum = "";
@@ -1024,7 +1024,7 @@ namespace Take_Time_BangPhra.Voucher
             }
         }
 
-
+       
 
         protected void Button4_Click1(object sender, EventArgs e)
         {
@@ -1222,7 +1222,7 @@ namespace Take_Time_BangPhra.Voucher
             }
             else
             {
-
+                
             }
         }
 
@@ -1329,7 +1329,7 @@ namespace Take_Time_BangPhra.Voucher
                     string filename = TextBox13.Text + ".jpg";
                     FileSaveWithPath = Server.MapPath("\\Upload\\Slip\\" + filename);
                     FileUpload1.SaveAs(FileSaveWithPath);
-
+                    
                     Image1.ImageUrl = "\\Upload\\Slip\\" + filename;
                     Image1.DataBind();
                 }

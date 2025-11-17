@@ -46,11 +46,11 @@ namespace Take_Time_BangPhra
                 throw new Exception("ไฟล์ใหญ่เกิน (สูงสุด 10MB)");
 
             // Generate filename
-            string fileName = string.Format("{0}_{1}_{2}{3}", productType, productId, Guid.NewGuid():N, ext);
-            string thumbFileName = string.Format("{0}_{1}_{2}_thumb{3}", productType, productId, Guid.NewGuid():N, ext);
+            string fileName = $"{productType}_{productId}_{Guid.NewGuid():N}{ext}";
+            string thumbFileName = $"{productType}_{productId}_{Guid.NewGuid():N}_thumb{ext}";
 
             // Save paths
-            string uploadDir = HttpContext.Current.Server.MapPath(string.Format("~/Images/{0}/{1}/", productType, productId));
+            string uploadDir = HttpContext.Current.Server.MapPath($"~/Images/{productType}/{productId}/");
             if (!Directory.Exists(uploadDir))
                 Directory.CreateDirectory(uploadDir);
 
@@ -70,8 +70,8 @@ namespace Take_Time_BangPhra
             long imageId = _productDA.InsertProductImage(
                 productType,
                 productId,
-                string.Format("~/Images/{0}/{1}/{2}", productType, productId, fileName),
-                string.Format("~/Images/{0}/{1}/{2}", productType, productId, thumbFileName),
+                $"~/Images/{productType}/{productId}/{fileName}",
+                $"~/Images/{productType}/{productId}/{thumbFileName}",
                 nextOrder,
                 isMainImage,
                 caption,

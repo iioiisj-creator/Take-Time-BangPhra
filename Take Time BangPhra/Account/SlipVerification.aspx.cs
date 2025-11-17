@@ -206,7 +206,7 @@ namespace Take_Time_BangPhra.Account
 
             // Log action
             codeInstance.Logs(conn, "Slip Approved",
-                string.Format("SlipID: {0}, AdminID: {1}", slipId, adminId),
+                $"SlipID: {slipId}, AdminID: {adminId}",
                 Session["Name"]?.ToString() ?? "SYSTEM");
         }
 
@@ -237,7 +237,7 @@ namespace Take_Time_BangPhra.Account
 
             // Log action
             codeInstance.Logs(conn, "Slip Rejected",
-                string.Format("SlipID: {0}, AdminID: {1}, Reason: {2}", slipId, adminId, reason),
+                $"SlipID: {slipId}, AdminID: {adminId}, Reason: {reason}",
                 Session["Name"]?.ToString() ?? "SYSTEM");
         }
 

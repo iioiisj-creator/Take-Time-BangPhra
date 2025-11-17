@@ -99,8 +99,8 @@ namespace Take_Time_BangPhra.Class
             try
             {
                 var level = success ? LogLevel.Info : LogLevel.Warning;
-                var message = string.Format("Accounting Operation: {0}", operation);
-                var fullDetails = string.Format("Operation: {0}\nSuccess: {1}\nDetails: {2}", operation, success, details);
+                var message = $"Accounting Operation: {operation}";
+                var fullDetails = $"Operation: {operation}\nSuccess: {success}\nDetails: {details}";
 
                 InsertLog(level, LogCategory.Accounting, message, fullDetails, null, null,
                          userId, reservationId, receiptId);
@@ -119,18 +119,18 @@ namespace Take_Time_BangPhra.Class
         {
             try
             {
-                var message = string.Format("Payment Transaction: {0} - {1}", paymentMethod, amount:C);
-                var details = string.Format("PaymentHistoryID: {0}\n", paymentHistoryId) +
-                             string.Format("Amount: {0}\n", amount:C) +
-                             string.Format("Method: {0}\n", paymentMethod) +
-                             string.Format("Status: {0}", status);
+                var message = $"Payment Transaction: {paymentMethod} - {amount:C}";
+                var details = $"PaymentHistoryID: {paymentHistoryId}\n" +
+                             $"Amount: {amount:C}\n" +
+                             $"Method: {paymentMethod}\n" +
+                             $"Status: {status}";
 
                 InsertLog(LogLevel.Info, LogCategory.Payment, message, details, null, null,
                          userId, reservationId, null);
             }
             catch (Exception ex)
             {
-                LogToFileSystem(LogLevel.Error, LogCategory.Payment, string.Format("Payment {0}", paymentHistoryId), ex);
+                LogToFileSystem(LogLevel.Error, LogCategory.Payment, $"Payment {paymentHistoryId}", ex);
             }
         }
 
@@ -142,10 +142,10 @@ namespace Take_Time_BangPhra.Class
         {
             try
             {
-                var message = string.Format("Revenue Calculation: {0} to {1}", startDate:yyyy-MM-dd, endDate:yyyy-MM-dd);
-                var details = string.Format("Date Range: {0} to {1}\n", startDate:yyyy-MM-dd, endDate:yyyy-MM-dd) +
-                             string.Format("Total Revenue: {0}\n", totalRevenue:C) +
-                             string.Format("Breakdown:\n{0}", breakdown);
+                var message = $"Revenue Calculation: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}";
+                var details = $"Date Range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}\n" +
+                             $"Total Revenue: {totalRevenue:C}\n" +
+                             $"Breakdown:\n{breakdown}";
 
                 InsertLog(LogLevel.Info, LogCategory.Revenue, message, details, null, null,
                          userId, null, null);
@@ -164,11 +164,11 @@ namespace Take_Time_BangPhra.Class
         {
             try
             {
-                var message = string.Format("Data Integrity Issue: {0}", issueType);
-                var details = string.Format("Issue Type: {0}\n", issueType) +
-                             string.Format("Description: {0}\n", description) +
-                             string.Format("Affected Table: {0}\n", affectedTable) +
-                             "Affected Record ID: {affectedRecordId ?? "N/A"}";
+                var message = $"Data Integrity Issue: {issueType}";
+                var details = $"Issue Type: {issueType}\n" +
+                             $"Description: {description}\n" +
+                             $"Affected Table: {affectedTable}\n" +
+                             $"Affected Record ID: {affectedRecordId ?? "N/A"}";
 
                 InsertLog(LogLevel.Critical, LogCategory.DataIntegrity, message, details,
                          null, affectedTable, null, null, affectedRecordId);
@@ -188,12 +188,12 @@ namespace Take_Time_BangPhra.Class
         {
             try
             {
-                var message = string.Format("Reconciliation: {0} to {1}", startDate:yyyy-MM-dd, endDate:yyyy-MM-dd);
-                var fullDetails = string.Format("Date Range: {0} to {1}\n", startDate:yyyy-MM-dd, endDate:yyyy-MM-dd) +
-                                 string.Format("Matched: {0}\n", matchedCount) +
-                                 string.Format("Mismatched: {0}\n", mismatchCount) +
-                                 string.Format("Missing: {0}\n", missingCount) +
-                                 "Details: {details ?? "N/A"}";
+                var message = $"Reconciliation: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}";
+                var fullDetails = $"Date Range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}\n" +
+                                 $"Matched: {matchedCount}\n" +
+                                 $"Mismatched: {mismatchCount}\n" +
+                                 $"Missing: {missingCount}\n" +
+                                 $"Details: {details ?? "N/A"}";
 
                 var level = mismatchCount > 0 || missingCount > 0 ? LogLevel.Warning : LogLevel.Info;
 
@@ -327,30 +327,30 @@ namespace Take_Time_BangPhra.Class
         private string BuildExceptionDetails(Exception ex, string additionalInfo)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(string.Format("Exception Type: {0}", ex.GetType().Name));
-            sb.AppendLine(string.Format("Message: {0}", ex.Message));
+            sb.AppendLine($"Exception Type: {ex.GetType().Name}");
+            sb.AppendLine($"Message: {ex.Message}");
 
             if (!string.IsNullOrEmpty(additionalInfo))
             {
-                sb.AppendLine(string.Format("Additional Info: {0}", additionalInfo));
+                sb.AppendLine($"Additional Info: {additionalInfo}");
             }
 
             if (ex.InnerException != null)
             {
                 sb.AppendLine("\nInner Exception:");
-                sb.AppendLine(string.Format("  Type: {0}", ex.InnerException.GetType().Name));
-                sb.AppendLine(string.Format("  Message: {0}", ex.InnerException.Message));
+                sb.AppendLine($"  Type: {ex.InnerException.GetType().Name}");
+                sb.AppendLine($"  Message: {ex.InnerException.Message}");
             }
 
             // Add HTTP context info if available
             if (HttpContext.Current != null)
             {
                 sb.AppendLine("\nHTTP Context:");
-                sb.AppendLine(string.Format("  URL: {0}", HttpContext.Current.Request.Url));
-                sb.AppendLine(string.Format("  User Agent: {0}", HttpContext.Current.Request.UserAgent));
+                sb.AppendLine($"  URL: {HttpContext.Current.Request.Url}");
+                sb.AppendLine($"  User Agent: {HttpContext.Current.Request.UserAgent}");
                 if (HttpContext.Current.User != null && HttpContext.Current.User.Identity.IsAuthenticated)
                 {
-                    sb.AppendLine(string.Format("  User: {0}", HttpContext.Current.User.Identity.Name));
+                    sb.AppendLine($"  User: {HttpContext.Current.User.Identity.Name}");
                 }
             }
 
@@ -367,12 +367,12 @@ namespace Take_Time_BangPhra.Class
                     System.IO.Directory.CreateDirectory(logDir);
                 }
 
-                var logFile = System.IO.Path.Combine(logDir, string.Format("Accounting_{0}.log", DateTime.Now:yyyyMMdd));
-                var logMessage = string.Format("[{0}] [{1}] [{2}] {3}\n", DateTime.Now:yyyy-MM-dd HH:mm:ss, level, category, message);
+                var logFile = System.IO.Path.Combine(logDir, $"Accounting_{DateTime.Now:yyyyMMdd}.log");
+                var logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] [{category}] {message}\n";
 
                 if (ex != null)
                 {
-                    logMessage += string.Format("Exception: {0}\n{1}\n", ex.Message, ex.StackTrace);
+                    logMessage += $"Exception: {ex.Message}\n{ex.StackTrace}\n";
                 }
 
                 logMessage += "----------------------------------------\n";

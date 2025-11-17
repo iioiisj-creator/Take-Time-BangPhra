@@ -199,7 +199,7 @@ namespace Take_Time_BangPhra.Admin
 
                 // 🔍 Check duplicate by Name + Branch_Number (Primary unique key)
                 DataTable dtCheckName = code.DatabaseQuery(conn,
-                    string.Format("SELECT * FROM Vendor WHERE Name = N'{0}' AND Branch_Number = '{1}'", vendorName, branchNumber));
+                    $"SELECT * FROM Vendor WHERE Name = N'{vendorName}' AND Branch_Number = '{branchNumber}'");
                 bool isDuplicateName = dtCheckName.Rows.Count > 0;
 
                 // 🔍 Check duplicate by IDNumber + Branch_Number (if Tax ID exists)
@@ -207,7 +207,7 @@ namespace Take_Time_BangPhra.Admin
                 if (!string.IsNullOrEmpty(taxId))
                 {
                     DataTable dtCheckTax = code.DatabaseQuery(conn,
-                        "SELECT * FROM Vendor WHERE IDNumber = '{taxId.Replace("'", "''")}' AND Branch_Number = '{branchNumber}'");
+                        $"SELECT * FROM Vendor WHERE IDNumber = '{taxId.Replace("'", "''")}' AND Branch_Number = '{branchNumber}'");
                     isDuplicateTaxId = dtCheckTax.Rows.Count > 0;
 
                     // ⚠️ Check conflict: มี Tax ID ซ้ำแต่ชื่อไม่ตรงกัน
@@ -215,15 +215,15 @@ namespace Take_Time_BangPhra.Admin
                     {
                         string existingName = dtCheckTax.Rows[0]["Name"].ToString();
                         ClientScript.RegisterStartupScript(this.GetType(), "conflict",
-                            string.Format("alert('⚠️ เลขผู้เสียภาษี {0} สาขา {1} มีอยู่แล้วในชื่อ \", taxId, branchNumber){existingName}\"\\n\\nไม่สามารถใช้เลขผู้เสียภาษีซ้ำกับชื่อต่างกันได้');", true);
+                            $"alert('⚠️ เลขผู้เสียภาษี {taxId} สาขา {branchNumber} มีอยู่แล้วในชื่อ \"{existingName}\"\\n\\nไม่สามารถใช้เลขผู้เสียภาษีซ้ำกับชื่อต่างกันได้');", true);
                         return;
                     }
                 }
 
                 string phoneValue = string.IsNullOrEmpty(TextBox7.Text.Trim())
                     ? "NULL"
-                    : "'{TextBox7.Text.Trim().Replace("'", "''")}'";
-                string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : "'{taxId.Replace("'", "''")}'";
+                    : $"'{TextBox7.Text.Trim().Replace("'", "''")}'";
+                string idNumberValue = string.IsNullOrEmpty(taxId) ? "NULL" : $"'{taxId.Replace("'", "''")}'";
 
                 if (isDuplicateName || isDuplicateTaxId)
                 {
@@ -268,7 +268,7 @@ namespace Take_Time_BangPhra.Admin
             catch (Exception ex)
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "error",
-                    string.Format("alert('❌ เกิดข้อผิดพลาด: {0}');", ex.Message), true);
+                    $"alert('❌ เกิดข้อผิดพลาด: {ex.Message}');", true);
             }
         }
 
@@ -276,7 +276,7 @@ namespace Take_Time_BangPhra.Admin
         {
             if (TextBox3.Text.Length == 5)
             {
-
+                
             }
             else { ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('เลขสาขาไม่ครบ 5 หลัก');", true); }
         }

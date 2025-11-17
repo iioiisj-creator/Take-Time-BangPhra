@@ -59,7 +59,7 @@ namespace Take_Time_BangPhra
                     return new PaymentResult
                     {
                         Success = false,
-                        Message = string.Format("จำนวนเงินเกินยอดค้างชำระ (ค้าง: {0} บาท)", remaining:N2)
+                        Message = $"จำนวนเงินเกินยอดค้างชำระ (ค้าง: {remaining:N2} บาท)"
                     };
                 }
 
@@ -253,7 +253,7 @@ namespace Take_Time_BangPhra
             }
 
             // 2. Generate unique filename
-            string uniqueFileName = string.Format("Slip_{0}_{1}_{2}{3}", reservationId, DateTime.Now:yyyyMMddHHmmss, Guid.NewGuid().ToString().Substring(0, 8), fileExtension);
+            string uniqueFileName = $"Slip_{reservationId}_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{fileExtension}";
 
             // 3. Create directory if not exists
             string uploadPath = HttpContext.Current.Server.MapPath("~/Documents/PaymentSlips/");
@@ -302,7 +302,7 @@ namespace Take_Time_BangPhra
             {
                 // Log OCR error but don't fail the upload
                 _code.Logs(_connectionString, "OCR Processing Error",
-                    string.Format("SlipID: {0}, Error: {1}", slipId, ocrEx.Message), "SYSTEM");
+                    $"SlipID: {slipId}, Error: {ocrEx.Message}", "SYSTEM");
             }
 
             return slipId;
@@ -327,11 +327,11 @@ namespace Take_Time_BangPhra
 
                 // Log result for monitoring
                 string logMessage = ocrResult.Success
-                    ? string.Format("OCR Success - Amount: {0}, Confidence: {1}%", ocrResult.Amount:N2, ocrResult.Confidence:N2)
-                    : string.Format("OCR Failed - {0}", ocrResult.ErrorMessage);
+                    ? $"OCR Success - Amount: {ocrResult.Amount:N2}, Confidence: {ocrResult.Confidence:N2}%"
+                    : $"OCR Failed - {ocrResult.ErrorMessage}";
 
                 _code.Logs(_connectionString, "OCR Processing",
-                    string.Format("SlipID: {0}, {1}", slipId, logMessage), "SYSTEM");
+                    $"SlipID: {slipId}, {logMessage}", "SYSTEM");
             }
             catch (Exception ex)
             {
@@ -346,7 +346,7 @@ namespace Take_Time_BangPhra
                 // Note: Payment_Slips table does not have OCR columns
                 // Just log the error, don't update non-existent columns
                 _code.Logs(_connectionString, "OCR Processing Failed",
-                    string.Format("SlipID: {0}, Error: {1}", slipId, ex.Message), "SYSTEM");
+                    $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
 
                 throw;
             }
@@ -394,7 +394,7 @@ namespace Take_Time_BangPhra
 
             // Get reservation data
             var reservation = _code.DatabaseQuerySafe(_connectionString,
-                string.Format("SELECT * FROM Reservation WHERE ID = {0}", reservationId),
+                $"SELECT * FROM Reservation WHERE ID = {reservationId}",
                 null);
 
             if (reservation.Rows.Count == 0)
@@ -442,7 +442,7 @@ namespace Take_Time_BangPhra
             string datePrefix = "REC" + DateTime.Now.ToString("yyMMdd");
 
             var result = _code.DatabaseQuerySafe(_connectionString,
-                string.Format("SELECT MAX(ID) as LastID FROM Account_Receipt WHERE ID LIKE '{0}%'", datePrefix),
+                $"SELECT MAX(ID) as LastID FROM Account_Receipt WHERE ID LIKE '{datePrefix}%'",
                 null);
 
             int sequenceNumber = 1;

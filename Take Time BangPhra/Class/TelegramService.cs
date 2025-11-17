@@ -32,12 +32,12 @@ namespace Take_Time_BangPhra.Services
 
                 var bot = new TelegramBot2(_botToken);
                 await bot.SendMessageAsync(chatId, message);
-                System.Diagnostics.Trace.TraceInformation(string.Format("Telegram message sent to {0}", chatId));
+                System.Diagnostics.Trace.TraceInformation($"Telegram message sent to {chatId}");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Telegram send error: {0}", ex.Message));
+                System.Diagnostics.Trace.TraceError($"Telegram send error: {ex.Message}");
                 return false;
             }
         }
@@ -45,11 +45,11 @@ namespace Take_Time_BangPhra.Services
         public async Task SendReservationNotificationAsync(string reservationId, string phoneNumber,
             DateTime checkinDate, DateTime checkoutDate, string details)
         {
-            string message = string.Format("ลูกค้าจองห้องพักใหม่หมายเลขการจอง: {0}\r\n", reservationId) +
-                           string.Format("หมายเลขโทรศัพท์: {0}\r\n", phoneNumber) +
-                           string.Format("เช็คอินวันที่: {0}\r\n", checkinDate:dd MMMM yyyy) +
-                           string.Format("เช็คเอ้าท์วันที่: {0}\r\n", checkoutDate:dd MMMM yyyy) +
-                           string.Format("{0}", details);
+            string message = $"ลูกค้าจองห้องพักใหม่หมายเลขการจอง: {reservationId}\r\n" +
+                           $"หมายเลขโทรศัพท์: {phoneNumber}\r\n" +
+                           $"เช็คอินวันที่: {checkinDate:dd MMMM yyyy}\r\n" +
+                           $"เช็คเอ้าท์วันที่: {checkoutDate:dd MMMM yyyy}\r\n" +
+                           $"{details}";
 
             await SendMessageAsync("-4969611371", message);
         }
@@ -60,11 +60,11 @@ namespace Take_Time_BangPhra.Services
             for (int i = 0; i < reservationDetails.Rows.Count; i++)
             {
                 DateTime checkinDate = DateTime.Parse(reservationDetails.Rows[i]["CheckinDate"].ToString());
-                message += string.Format("- หมายเลข: {0}\r\n", reservationId) +
-                          "ห้องพัก: {reservationDetails.Rows[i]["AccomName"]}\r\n" +
-                          string.Format("เช็คอิน: {0}\r\n", checkinDate:dd MMMM yyyy) +
-                          "เช็คเอาท์: {reservationDetails.Rows[i]["CheckOutDate"]}\r\n" +
-                          "จำนวนคืน: {reservationDetails.Rows[i]["StayDays"]}\r\n\r\n";
+                message += $"- หมายเลข: {reservationId}\r\n" +
+                          $"ห้องพัก: {reservationDetails.Rows[i]["AccomName"]}\r\n" +
+                          $"เช็คอิน: {checkinDate:dd MMMM yyyy}\r\n" +
+                          $"เช็คเอาท์: {reservationDetails.Rows[i]["CheckOutDate"]}\r\n" +
+                          $"จำนวนคืน: {reservationDetails.Rows[i]["StayDays"]}\r\n\r\n";
             }
 
             await SendMessageAsync("-4969611371", message);
@@ -73,11 +73,11 @@ namespace Take_Time_BangPhra.Services
         public async Task SendEditNotificationAsync(string reservationId, string phoneNumber,
             DateTime checkinDate, DateTime checkoutDate, string details)
         {
-            string message = string.Format("แก้ไขการจองหมายเลข: {0}\r\n", reservationId) +
-                           string.Format("หมายเลขโทรศัพท์: {0}\r\n", phoneNumber) +
-                           string.Format("เช็คอินวันที่: {0}\r\n", checkinDate:dd MMMM yyyy) +
-                           string.Format("เช็คเอ้าท์วันที่: {0}\r\n", checkoutDate:dd MMMM yyyy) +
-                           string.Format("{0}", details);
+            string message = $"แก้ไขการจองหมายเลข: {reservationId}\r\n" +
+                           $"หมายเลขโทรศัพท์: {phoneNumber}\r\n" +
+                           $"เช็คอินวันที่: {checkinDate:dd MMMM yyyy}\r\n" +
+                           $"เช็คเอ้าท์วันที่: {checkoutDate:dd MMMM yyyy}\r\n" +
+                           $"{details}";
 
             await SendMessageAsync("-4969611371", message);
         }

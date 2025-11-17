@@ -207,9 +207,9 @@ namespace Take_Time_BangPhra.Admin
 
                 if (imageId > 0)
                 {
-                    ShowSuccess("อัพโหลดรูปภาพสำเร็จ!<br/>" +
-                               string.Format("ID รูปภาพ: {0}<br/>", imageId) +
-                               string.Format("ขนาดไฟล์: {0} KB", (imageFile.ContentLength / 1024.0):N2));
+                    ShowSuccess($"อัพโหลดรูปภาพสำเร็จ!<br/>" +
+                               $"ID รูปภาพ: {imageId}<br/>" +
+                               $"ขนาดไฟล์: {(imageFile.ContentLength / 1024.0):N2} KB");
 
                     // Reload product lists
                     LoadAccommodations();

@@ -167,7 +167,7 @@ namespace Take_Time_BangPhra.Admin.Report
 
         private void GenerateSelectedReport()
         {
-
+            
             switch (ddlReportType.SelectedValue)
             {
                 case "1":
@@ -199,7 +199,7 @@ namespace Take_Time_BangPhra.Admin.Report
         private void GenerateLatestReservationsReport()
         {
             string query = @"
-        SELECT
+        SELECT 
             R.ID AS 'เลขที่การจอง',
             STUFF((
                 SELECT ', ' + A.AccomName
@@ -220,14 +220,14 @@ namespace Take_Time_BangPhra.Admin.Report
             R.Remark AS 'หมายเหตุ',
             R.Reserve_By AS 'จองโดย'
         FROM [Reservation] R
-        INNER JOIN Customer C ON C.MobilePhone = R.Customer_MobilePhone
+        INNER JOIN Customer C ON C.MobilePhone = R.Customer_MobilePhone 
         WHERE R.Created_Date >= @StartDate AND R.Created_Date <= @EndDate
         ORDER BY R.ID DESC";
 
             var parameters = new Dictionary<string, object>
     {
-        { "@StartDate", string.Format("{0} 00:00:01", txtStartDate.Text) },
-        { "@EndDate", string.Format("{0} 23:59:59", txtEndDate.Text) }
+        { "@StartDate", $"{txtStartDate.Text} 00:00:01" },
+        { "@EndDate", $"{txtEndDate.Text} 23:59:59" }
     };
 
             BindReportData(query, parameters);
@@ -236,13 +236,13 @@ namespace Take_Time_BangPhra.Admin.Report
         private void GenerateEquipmentRentalReport()
         {
             string query = @"
-                SELECT
+                SELECT 
                     I.ItemName AS 'ชื่ออุปกรณ์',
                     SUM(RI.Amount * R.StayDays) AS 'จำนวนที่เช่า',
                     FORMAT(SUM(RI.Price * R.StayDays), 'N0') AS 'ราคารวม'
-                FROM [Reservation] R
-                RIGHT JOIN Reservation_Items RI ON RI.Reservation_ID = R.ID
-                INNER JOIN Items I ON I.ID = RI.Items_ID
+                FROM [Reservation] R 
+                RIGHT JOIN Reservation_Items RI ON RI.Reservation_ID = R.ID 
+                INNER JOIN Items I ON I.ID = RI.Items_ID 
                 WHERE R.CheckinDate >= @StartDate AND R.CheckoutDate <= @EndDate
                 AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')
                 GROUP BY I.ID, I.ItemName
@@ -250,8 +250,8 @@ namespace Take_Time_BangPhra.Admin.Report
 
             var parameters = new Dictionary<string, object>
             {
-                { "@StartDate", string.Format("{0} 00:00:01", txtStartDate.Text) },
-                { "@EndDate", string.Format("{0} 23:59:59", txtEndDate.Text) }
+                { "@StartDate", $"{txtStartDate.Text} 00:00:01" },
+                { "@EndDate", $"{txtEndDate.Text} 23:59:59" }
             };
 
             var dt = databaseHelper.ExecuteQueryWithParams(query, parameters);
@@ -259,20 +259,20 @@ namespace Take_Time_BangPhra.Admin.Report
             BindGridViewWithSummary(dt);
 
             decimal totalPrice = CalculateTotalFromDataTable(dt, "ราคารวม");
-            ShowSummary(string.Format("ยอดรวมรายได้: {0} บาท", totalPrice:N0));
+            ShowSummary($"ยอดรวมรายได้: {totalPrice:N0} บาท");
         }
 
         private void GenerateRoomReservationReport()
         {
             string query = @"
-        SELECT
+        SELECT 
             A.AccomName AS 'ประเภทที่พัก',
             SUM(R.StayDays) AS 'จำนวนคืน',
             SUM(RA.Amount) AS 'จำนวนผู้พัก',
             FORMAT(SUM(RA.Price * R.StayDays), 'N0') AS 'รายได้'
-        FROM [Reservation] R
-        RIGHT JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID
-        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID
+        FROM [Reservation] R 
+        RIGHT JOIN Reservation_Accommodation RA ON RA.Reservation_ID = R.ID 
+        INNER JOIN Accommodation A ON RA.Accommodation_ID = A.ID 
         WHERE R.CheckinDate >= @StartDate AND R.CheckoutDate <= @EndDate
         AND R.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน')
         GROUP BY A.ID, A.AccomName
@@ -280,8 +280,8 @@ namespace Take_Time_BangPhra.Admin.Report
 
             var parameters = new Dictionary<string, object>
     {
-        { "@StartDate", string.Format("{0} 00:00:01", txtStartDate.Text) },
-        { "@EndDate", string.Format("{0} 23:59:59", txtEndDate.Text) }
+        { "@StartDate", $"{txtStartDate.Text} 00:00:01" },
+        { "@EndDate", $"{txtEndDate.Text} 23:59:59" }
     };
 
             var dt = databaseHelper.ExecuteQueryWithParams(query, parameters);
@@ -327,20 +327,20 @@ namespace Take_Time_BangPhra.Admin.Report
             decimal totalRevenue = domeTotal + roomTotal + villaTotal + tentTotal + campingTentTotal + cabinTotal;
 
             // Debug information
-            System.Diagnostics.Debug.WriteLine("=== ROOM REVENUE BREAKDOWN ===");
-            System.Diagnostics.Debug.WriteLine(string.Format("Dome: {0}", domeTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Room: {0}", roomTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Villa: {0}", villaTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Tent: {0}", tentTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Camping Tent: {0}", campingTentTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Cabin: {0}", cabinTotal:#,##0));
-            System.Diagnostics.Debug.WriteLine(string.Format("TOTAL: {0}", totalRevenue:#,##0));
+            System.Diagnostics.Debug.WriteLine($"=== ROOM REVENUE BREAKDOWN ===");
+            System.Diagnostics.Debug.WriteLine($"Dome: {domeTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"Room: {roomTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"Villa: {villaTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"Tent: {tentTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"Camping Tent: {campingTentTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"Cabin: {cabinTotal:#,##0}");
+            System.Diagnostics.Debug.WriteLine($"TOTAL: {totalRevenue:#,##0}");
 
             // ตรวจสอบความถูกต้อง
             decimal calculatedTotal = domeTotal + roomTotal + villaTotal + tentTotal + campingTentTotal + cabinTotal;
             if (Math.Abs(calculatedTotal - totalRevenue) > 1)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("WARNING: Totals don't match! Calculated: {0}, Reported: {1}", calculatedTotal, totalRevenue));
+                System.Diagnostics.Debug.WriteLine($"WARNING: Totals don't match! Calculated: {calculatedTotal}, Reported: {totalRevenue}");
                 totalRevenue = calculatedTotal;
             }
 
@@ -354,7 +354,7 @@ namespace Take_Time_BangPhra.Admin.Report
             summarySection.Visible = true;
 
             // แสดงยอดรวมใน header
-            lblTotalRevenue.Text = string.Format("ยอดรวม: {0} บาท", totalRevenue:N0);
+            lblTotalRevenue.Text = $"ยอดรวม: {totalRevenue:N0} บาท";
 
             // สร้างรายการประเภทที่พักทั้งหมดพร้อมไอคอน - แก้ไขประเภทข้อมูล
             var accommodationTypes = new List<(Label label, decimal amount, string icon)>
@@ -372,11 +372,11 @@ namespace Take_Time_BangPhra.Admin.Report
             {
                 if (item.amount > 0)
                 {
-                    item.label.Text = string.Format("{0}<br><span class='summary-amount'>{1} บาท</span>", item.icon, item.amount:N0);
+                    item.label.Text = $"{item.icon}<br><span class='summary-amount'>{item.amount:N0} บาท</span>";
                 }
                 else
                 {
-                    item.label.Text = string.Format("{0}<br><span class='text-muted'>-</span>", item.icon);
+                    item.label.Text = $"{item.icon}<br><span class='text-muted'>-</span>";
                 }
             }
 
@@ -384,10 +384,10 @@ namespace Take_Time_BangPhra.Admin.Report
             decimal sumAllTypes = domeTotal + roomTotal + villaTotal + tentTotal + campingTentTotal + cabinTotal;
 
             // เพิ่มข้อมูล debug ใน console
-            System.Diagnostics.Debug.WriteLine("=== VERIFICATION ===");
-            System.Diagnostics.Debug.WriteLine(string.Format("Sum of all types: {0}", sumAllTypes:N0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Reported total: {0}", totalRevenue:N0));
-            System.Diagnostics.Debug.WriteLine(string.Format("Difference: {0}", Math.Abs(sumAllTypes - totalRevenue):N0));
+            System.Diagnostics.Debug.WriteLine($"=== VERIFICATION ===");
+            System.Diagnostics.Debug.WriteLine($"Sum of all types: {sumAllTypes:N0}");
+            System.Diagnostics.Debug.WriteLine($"Reported total: {totalRevenue:N0}");
+            System.Diagnostics.Debug.WriteLine($"Difference: {Math.Abs(sumAllTypes - totalRevenue):N0}");
         }
 
 
@@ -411,7 +411,7 @@ namespace Take_Time_BangPhra.Admin.Report
             var sortedSummaries = summaries.OrderByDescending(x => x.amount).ToList();
 
             // แสดง 5 อันดับแรก + ยอดรวม (รวมเป็น 6 ช่อง)
-            lblSummary1.Text = string.Format("💰 ยอดรวม: {0} บาท", totalRevenue:N0);
+            lblSummary1.Text = $"💰 ยอดรวม: {totalRevenue:N0} บาท";
 
             for (int i = 0; i < Math.Min(5, sortedSummaries.Count); i++)
             {
@@ -420,11 +420,11 @@ namespace Take_Time_BangPhra.Admin.Report
                 {
                     switch (i)
                     {
-                        case 0: lblSummary2.Text = string.Format("{0} {1}: {2} บาท", summary.icon, summary.name, summary.amount:N0); break;
-                        case 1: lblSummary3.Text = string.Format("{0} {1}: {2} บาท", summary.icon, summary.name, summary.amount:N0); break;
-                        case 2: lblSummary4.Text = string.Format("{0} {1}: {2} บาท", summary.icon, summary.name, summary.amount:N0); break;
-                        case 3: lblSummary5.Text = string.Format("{0} {1}: {2} บาท", summary.icon, summary.name, summary.amount:N0); break;
-                        case 4: lblSummary6.Text = string.Format("{0} {1}: {2} บาท", summary.icon, summary.name, summary.amount:N0); break;
+                        case 0: lblSummary2.Text = $"{summary.icon} {summary.name}: {summary.amount:N0} บาท"; break;
+                        case 1: lblSummary3.Text = $"{summary.icon} {summary.name}: {summary.amount:N0} บาท"; break;
+                        case 2: lblSummary4.Text = $"{summary.icon} {summary.name}: {summary.amount:N0} บาท"; break;
+                        case 3: lblSummary5.Text = $"{summary.icon} {summary.name}: {summary.amount:N0} บาท"; break;
+                        case 4: lblSummary6.Text = $"{summary.icon} {summary.name}: {summary.amount:N0} บาท"; break;
                     }
                 }
             }
@@ -434,7 +434,7 @@ namespace Take_Time_BangPhra.Admin.Report
             {
                 // รวมยอดที่เหลือทั้งหมด
                 decimal otherTotal = sortedSummaries.Skip(5).Sum(x => x.amount);
-                lblSummary6.Text = string.Format("📊 อื่นๆ: {0} บาท", otherTotal:N0);
+                lblSummary6.Text = $"📊 อื่นๆ: {otherTotal:N0} บาท";
             }
         }
 
@@ -445,7 +445,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 DECLARE @EndDate DATE = @EndDateParam;
 
                 WITH TotalDays AS (
-                    SELECT
+                    SELECT 
                         A.ID AS Accommodation_ID,
                         A.AccomName,
                         DATEDIFF(DAY, @StartDate, @EndDate) + 1 AS TotalPossibleDays
@@ -453,13 +453,13 @@ namespace Take_Time_BangPhra.Admin.Report
                     WHERE A.Status = 1
                 ),
                 OccupiedDays AS (
-                    SELECT
+                    SELECT 
                         RA.Accommodation_ID,
                         COUNT(DISTINCT DR.Date) AS OccupiedDaysCount
                     FROM (
                         SELECT DATEADD(DAY, number, @StartDate) AS Date
                         FROM master.dbo.spt_values
-                        WHERE type = 'P'
+                        WHERE type = 'P' 
                         AND number <= DATEDIFF(DAY, @StartDate, @EndDate)
                     ) DR
                     JOIN [Reservation_Accommodation] RA ON 1=1
@@ -469,24 +469,24 @@ namespace Take_Time_BangPhra.Admin.Report
                       AND DR.Date BETWEEN @StartDate AND @EndDate
                     GROUP BY RA.Accommodation_ID
                 )
-                SELECT
+                SELECT 
                     T.AccomName AS 'ประเภทที่พัก',
                     T.TotalPossibleDays AS 'จำนวนวันทั้งหมด',
                     ISNULL(O.OccupiedDaysCount, 0) AS 'จำนวนวันที่มีการจอง',
                     FORMAT(
-                        CASE
-                            WHEN T.TotalPossibleDays > 0
-                            THEN CAST(ISNULL(O.OccupiedDaysCount, 0) AS FLOAT) / T.TotalPossibleDays * 100
-                            ELSE 0
+                        CASE 
+                            WHEN T.TotalPossibleDays > 0 
+                            THEN CAST(ISNULL(O.OccupiedDaysCount, 0) AS FLOAT) / T.TotalPossibleDays * 100 
+                            ELSE 0 
                         END, 'N2'
                     ) AS 'อัตราการจอง (%)'
                 FROM TotalDays T
                 LEFT JOIN OccupiedDays O ON T.Accommodation_ID = O.Accommodation_ID
-                ORDER BY
-                    CASE
-                        WHEN T.TotalPossibleDays > 0
-                        THEN CAST(ISNULL(O.OccupiedDaysCount, 0) AS FLOAT) / T.TotalPossibleDays * 100
-                        ELSE 0
+                ORDER BY 
+                    CASE 
+                        WHEN T.TotalPossibleDays > 0 
+                        THEN CAST(ISNULL(O.OccupiedDaysCount, 0) AS FLOAT) / T.TotalPossibleDays * 100 
+                        ELSE 0 
                     END DESC, T.AccomName";
 
             var parameters = new Dictionary<string, object>
@@ -502,13 +502,13 @@ namespace Take_Time_BangPhra.Admin.Report
         {
             string query = @"
                 WITH ProductCost AS (
-                    SELECT
+                    SELECT 
                         Product_ID,
                         PricePerUnit AS CostPrice,
                         ROW_NUMBER() OVER (PARTITION BY Product_ID ORDER BY DateTime_In DESC) AS RowNum
                     FROM [Product_In]
                 )
-                SELECT
+                SELECT 
                     PO.ID AS 'เลขที่รายการ',
                     FORMAT(PO.DateTime_Out, 'dd/MM/yyyy HH:mm') AS 'วันที่ขาย',
                     P.Barcode AS 'บาร์โค้ด',
@@ -521,10 +521,10 @@ namespace Take_Time_BangPhra.Admin.Report
                     FORMAT((PO.Amount * P.Sell_Price), 'N2') AS 'รายได้',
                     FORMAT((PO.Amount * P.Sell_Price) - (PO.Amount * PCOST.CostPrice), 'N2') AS 'กำไร',
                     FORMAT(
-                        CASE
-                            WHEN (PO.Amount * PCOST.CostPrice) = 0 THEN 0
-                            ELSE (((PO.Amount * P.Sell_Price) - (PO.Amount * PCOST.CostPrice)) /
-                                  (PO.Amount * PCOST.CostPrice)) * 100
+                        CASE 
+                            WHEN (PO.Amount * PCOST.CostPrice) = 0 THEN 0 
+                            ELSE (((PO.Amount * P.Sell_Price) - (PO.Amount * PCOST.CostPrice)) / 
+                                  (PO.Amount * PCOST.CostPrice)) * 100 
                         END, 'N2'
                     ) AS 'อัตรากำไร (%)',
                     PO.Account_Receipt_ID AS 'เลขที่ใบเสร็จ',
@@ -541,8 +541,8 @@ namespace Take_Time_BangPhra.Admin.Report
 
             var parameters = new Dictionary<string, object>
             {
-                { "@StartDate", string.Format("{0} 00:00:01", txtStartDate.Text) },
-                { "@EndDate", string.Format("{0} 23:59:59", txtEndDate.Text) }
+                { "@StartDate", $"{txtStartDate.Text} 00:00:01" },
+                { "@EndDate", $"{txtEndDate.Text} 23:59:59" }
             };
 
             var dt = databaseHelper.ExecuteQueryWithParams(query, parameters);
@@ -553,9 +553,9 @@ namespace Take_Time_BangPhra.Admin.Report
             decimal totalProfit = CalculateTotalFromDataTable(dt, "กำไร");
 
             ShowSummary(
-                string.Format("รายได้รวม: {0} บาท", totalRevenue:N2),
-                string.Format("กำไรรวม: {0} บาท", totalProfit:N2),
-                string.Format("อัตรากำไรเฉลี่ย: {0}%", ((totalRevenue > 0) ? (totalProfit / (totalRevenue - totalProfit) * 100) : 0):N2)
+                $"รายได้รวม: {totalRevenue:N2} บาท",
+                $"กำไรรวม: {totalProfit:N2} บาท",
+                $"อัตรากำไรเฉลี่ย: {((totalRevenue > 0) ? (totalProfit / (totalRevenue - totalProfit) * 100) : 0):N2}%"
             );
         }
 
@@ -565,58 +565,58 @@ namespace Take_Time_BangPhra.Admin.Report
                 DECLARE @StartDate DATE = @StartDateParam;
                 DECLARE @EndDate DATE = @EndDateParam;
 
-                SELECT
+                SELECT 
                     P.ID AS 'รหัสสินค้า',
                     P.Barcode AS 'บาร์โค้ด',
                     P.Product_Name AS 'ชื่อสินค้า',
                     PC.Category_Name AS 'หมวดหมู่',
                     FORMAT(P.Sell_Price, 'N2') AS 'ราคาขายปัจจุบัน',
                     FORMAT(
-                        (SELECT TOP 1 PricePerUnit
-                         FROM [Product_In]
-                         WHERE Product_ID = P.ID
+                        (SELECT TOP 1 PricePerUnit 
+                         FROM [Product_In] 
+                         WHERE Product_ID = P.ID 
                          ORDER BY DateTime_In DESC), 'N2'
                     ) AS 'ต้นทุนล่าสุด',
                     (SELECT ISNULL(SUM(Amount), 0) FROM [Product_In] WHERE Product_ID = P.ID) -
-                    ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out]
-                            WHERE Product_ID = P.ID
+                    ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out] 
+                            WHERE Product_ID = P.ID 
                             AND DateTime_Out BETWEEN @StartDate AND @EndDate), 0) AS 'สต็อกคงเหลือ',
-                    ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out]
-                            WHERE Product_ID = P.ID
+                    ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out] 
+                            WHERE Product_ID = P.ID 
                             AND DateTime_Out BETWEEN @StartDate AND @EndDate), 0) AS 'จำนวนที่ขาย',
                     FORMAT(
-                        ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out]
-                                WHERE Product_ID = P.ID
+                        ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out] 
+                                WHERE Product_ID = P.ID 
                                 AND DateTime_Out BETWEEN @StartDate AND @EndDate), 0) * P.Sell_Price, 'N2'
                     ) AS 'รายได้รวม',
                     FORMAT(
-                        ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out]
-                                WHERE Product_ID = P.ID
-                                AND DateTime_Out BETWEEN @StartDate AND @EndDate), 0) *
-                        (P.Sell_Price - ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In]
+                        ISNULL((SELECT ISNULL(SUM(Amount), 0) FROM [Product_Out] 
+                                WHERE Product_ID = P.ID 
+                                AND DateTime_Out BETWEEN @StartDate AND @EndDate), 0) * 
+                        (P.Sell_Price - ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In] 
                                          WHERE Product_ID = P.ID ORDER BY DateTime_In DESC), 0)), 'N2'
                     ) AS 'กำไรรวม',
                     FORMAT(
-                        CASE
-                            WHEN ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In]
+                        CASE 
+                            WHEN ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In] 
                                   WHERE Product_ID = P.ID ORDER BY DateTime_In DESC), 0) = 0 THEN 0
-                            ELSE ((P.Sell_Price - ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In]
-                                                   WHERE Product_ID = P.ID ORDER BY DateTime_In DESC), 0)) /
-                                 ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In]
+                            ELSE ((P.Sell_Price - ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In] 
+                                                   WHERE Product_ID = P.ID ORDER BY DateTime_In DESC), 0)) / 
+                                 ISNULL((SELECT TOP 1 PricePerUnit FROM [Product_In] 
                                   WHERE Product_ID = P.ID ORDER BY DateTime_In DESC), 0)) * 100
                         END, 'N2'
                     ) AS 'อัตรากำไร (%)',
                     FORMAT(
-                        (SELECT MAX(DateTime_Out) FROM [Product_Out]
-                         WHERE Product_ID = P.ID
+                        (SELECT MAX(DateTime_Out) FROM [Product_Out] 
+                         WHERE Product_ID = P.ID 
                          AND DateTime_Out BETWEEN @StartDate AND @EndDate), 'dd/MM/yyyy HH:mm'
                     ) AS 'ขายล่าสุด'
                 FROM [Product] P
                 LEFT JOIN [Product_Category] PC ON P.Category_ID = PC.ID
                 WHERE P.Status = 'True'
                   AND EXISTS (
-                      SELECT 1 FROM [Product_Out] PO
-                      WHERE PO.Product_ID = P.ID
+                      SELECT 1 FROM [Product_Out] PO 
+                      WHERE PO.Product_ID = P.ID 
                       AND PO.DateTime_Out BETWEEN @StartDate AND @EndDate
                   )
                 ORDER BY P.Product_Name";
@@ -636,7 +636,7 @@ namespace Take_Time_BangPhra.Admin.Report
         private void GenerateAffiliateReservationReport()
         {
             string query = @"
-                SELECT
+                SELECT 
                     ID AS 'เลขที่',
                     Affiliate_Name AS 'ชื่อ Affiliate',
                     Customer_Name AS 'ชื่อลูกค้า',
@@ -646,7 +646,7 @@ namespace Take_Time_BangPhra.Admin.Report
                     FORMAT(Price, 'N0') AS 'ราคา',
                     Status AS 'สถานะ',
                     Remark AS 'หมายเหตุ'
-                FROM [Affiliate_Reservation]
+                FROM [Affiliate_Reservation] 
                 WHERE StayDate >= @StartDate AND StayDate <= @EndDate
                 ORDER BY StayDate DESC";
 
@@ -676,7 +676,7 @@ namespace Take_Time_BangPhra.Admin.Report
             gvReport.DataBind();
 
             // Update record count
-            lblRecordCount.Text = dt.Rows.Count > 0 ? string.Format("(พบทั้งหมด {0} รายการ)", dt.Rows.Count) : "";
+            lblRecordCount.Text = dt.Rows.Count > 0 ? $"(พบทั้งหมด {dt.Rows.Count} รายการ)" : "";
         }
 
         private decimal CalculateTotalFromDataTable(DataTable dt, string columnName)
@@ -696,7 +696,7 @@ namespace Take_Time_BangPhra.Admin.Report
             return total;
         }
 
-
+       
 
         private void CalculateSalesSummary(DataTable dt)
         {
@@ -730,11 +730,11 @@ namespace Take_Time_BangPhra.Admin.Report
             double profitMargin = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : 0;
 
             ShowSummary(
-                string.Format("ยอดขายรวม: {0} บาท", totalRevenue:N2),
-                string.Format("ต้นทุนรวม: {0} บาท", totalCost:N2),
-                string.Format("กำไรรวม: {0} บาท", totalProfit:N2),
-                string.Format("อัตรากำไร: {0}%", profitMargin:N2),
-                string.Format("จำนวนสินค้าที่ขาย: {0} รายการ", dt.Rows.Count)
+                $"ยอดขายรวม: {totalRevenue:N2} บาท",
+                $"ต้นทุนรวม: {totalCost:N2} บาท",
+                $"กำไรรวม: {totalProfit:N2} บาท",
+                $"อัตรากำไร: {profitMargin:N2}%",
+                $"จำนวนสินค้าที่ขาย: {dt.Rows.Count} รายการ"
             );
         }
 
@@ -796,7 +796,7 @@ namespace Take_Time_BangPhra.Admin.Report
             R.Status AS 'สถานะ',
             FORMAT(R.TotalPrice, 'N0') AS 'ราคารวม'
         FROM [Reservation] R
-        INNER JOIN Customer C ON C.MobilePhone = R.Customer_MobilePhone
+        INNER JOIN Customer C ON C.MobilePhone = R.Customer_MobilePhone 
         ORDER BY R.ID DESC";
 
             BindReportData(query);
@@ -818,7 +818,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 DateTime.TryParse(txtEndDate.Text, out DateTime endDate))
             {
                 int days = (endDate - startDate).Days + 1;
-                lblDateInfo.Text = string.Format("ระยะเวลา: {0} วัน ({1} เดือน)", days, (days / 30.0):F1);
+                lblDateInfo.Text = $"ระยะเวลา: {days} วัน ({(days / 30.0):F1} เดือน)";
             }
         }
 
@@ -827,8 +827,8 @@ namespace Take_Time_BangPhra.Admin.Report
             if (!string.IsNullOrEmpty(ddlReportType.SelectedValue))
             {
                 string reportName = ddlReportType.SelectedItem.Text;
-                string dateRange = string.Format("{0} ถึง {1}", txtStartDate.Text, txtEndDate.Text);
-                lblReportTitle.Text = string.Format("{0} | {1}", reportName, dateRange);
+                string dateRange = $"{txtStartDate.Text} ถึง {txtEndDate.Text}";
+                lblReportTitle.Text = $"{reportName} | {dateRange}";
             }
         }
 
@@ -944,7 +944,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 this.EnableViewState = false;
 
                 Response.AddHeader("content-disposition",
-                    string.Format("attachment;filename=Report_{0}_{1}.csv", ddlReportType.SelectedItem.Text, DateTime.Now:yyyyMMddHHmmss));
+                    $"attachment;filename=Report_{ddlReportType.SelectedItem.Text}_{DateTime.Now:yyyyMMddHHmmss}.csv");
 
                 // ใช้ ContentType และ Encoding ที่ถูกต้องสำหรับภาษาไทย
                 Response.ContentType = "text/csv; charset=utf-8";
@@ -959,7 +959,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 Response.BinaryWrite(bom);
 
                 // เขียนหัวข้อรายงาน
-                csvContent.AppendLine(string.Format("{0}", CleanText(lblReportTitle.Text)));
+                csvContent.AppendLine($"{CleanText(lblReportTitle.Text)}");
                 csvContent.AppendLine();
 
                 // เขียนหัวคอลัมน์
@@ -1035,18 +1035,18 @@ namespace Take_Time_BangPhra.Admin.Report
             if (value.Contains(",") || value.Contains("\"") || value.Contains("\r") || value.Contains("\n"))
             {
                 value = value.Replace("\"", "\"\"");
-                return "\"{value}\"";
+                return $"\"{value}\"";
             }
 
             return value;
         }
 
-
+       
 
         private void ShowAlert(string type, string message)
         {
             alertMessage.Visible = true;
-            alertMessage.Attributes["class"] = string.Format("alert alert-{0} alert-dismissible fade show", type);
+            alertMessage.Attributes["class"] = $"alert alert-{type} alert-dismissible fade show";
             litAlertMessage.Text = message;
         }
 
@@ -1058,7 +1058,7 @@ namespace Take_Time_BangPhra.Admin.Report
         private void LogError(Exception ex)
         {
             // Log error to file or database
-            string errorMessage = string.Format("[{0}] {1}\n{2}\n", DateTime.Now:yyyy-MM-dd HH:mm:ss, ex.Message, ex.StackTrace);
+            string errorMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.Message}\n{ex.StackTrace}\n";
             System.Diagnostics.Debug.WriteLine(errorMessage);
         }
 

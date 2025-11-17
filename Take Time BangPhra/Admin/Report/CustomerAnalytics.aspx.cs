@@ -37,7 +37,7 @@ namespace Take_Time_BangPhra.Admin.Report
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ CustomerAnalytics Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ CustomerAnalytics Error: {ex.Message}");
                 Response.Redirect("/Default");
             }
         }
@@ -66,7 +66,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 string customerType = ddlCustomerType.SelectedValue;
                 int limit = Convert.ToInt32(ddlLimit.SelectedValue);
 
-                System.Diagnostics.Debug.WriteLine(string.Format("📊 Loading Customer Data: Year={0}, Type={1}, Limit={2}", selectedYear, customerType, limit));
+                System.Diagnostics.Debug.WriteLine($"📊 Loading Customer Data: Year={selectedYear}, Type={customerType}, Limit={limit}");
 
                 // Update year display
                 litSelectedYear.Text = selectedYear.ToString();
@@ -83,12 +83,12 @@ namespace Take_Time_BangPhra.Admin.Report
                 // Load chart data
                 LoadChartData(selectedYear);
 
-                System.Diagnostics.Debug.WriteLine("✅ Customer data loaded successfully");
+                System.Diagnostics.Debug.WriteLine($"✅ Customer data loaded successfully");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadCustomerData Error: {0}", ex.Message));
-                ShowMessage(string.Format("เกิดข้อผิดพลาด: {0}", ex.Message), "error");
+                System.Diagnostics.Debug.WriteLine($"❌ LoadCustomerData Error: {ex.Message}");
+                ShowMessage($"เกิดข้อผิดพลาด: {ex.Message}", "error");
             }
         }
 
@@ -135,11 +135,11 @@ namespace Take_Time_BangPhra.Admin.Report
                     litVIPCustomers.Text = "0";
                 }
 
-                System.Diagnostics.Debug.WriteLine(string.Format("📊 Summary Stats: Total={0}, New={1}, Returning={2}, VIP={3}", litTotalCustomers.Text, litNewCustomers.Text, litReturningCustomers.Text, litVIPCustomers.Text));
+                System.Diagnostics.Debug.WriteLine($"📊 Summary Stats: Total={litTotalCustomers.Text}, New={litNewCustomers.Text}, Returning={litReturningCustomers.Text}, VIP={litVIPCustomers.Text}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadSummaryStats Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ LoadSummaryStats Error: {ex.Message}");
             }
         }
 
@@ -187,11 +187,11 @@ namespace Take_Time_BangPhra.Admin.Report
                 // Update count
                 litRepeatCount.Text = dt != null ? dt.Rows.Count.ToString() : "0";
 
-                System.Diagnostics.Debug.WriteLine(string.Format("🔄 Repeat Customers: {0} found", litRepeatCount.Text));
+                System.Diagnostics.Debug.WriteLine($"🔄 Repeat Customers: {litRepeatCount.Text} found");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadRepeatCustomers Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ LoadRepeatCustomers Error: {ex.Message}");
                 gvRepeatCustomers.DataSource = null;
                 gvRepeatCustomers.DataBind();
                 litRepeatCount.Text = "0";
@@ -221,7 +221,7 @@ namespace Take_Time_BangPhra.Admin.Report
                     whereClause = "HAVING COUNT(*) > 5";
                 }
 
-                string topClause = limit > 0 ? string.Format("TOP {0}", limit) : "";
+                string topClause = limit > 0 ? $"TOP {limit}" : "";
 
                 string query = $@"
                     SELECT {topClause}
@@ -264,11 +264,11 @@ namespace Take_Time_BangPhra.Admin.Report
                 DataTable countDt = codeInstance.DatabaseQuerySafe(conn, countQuery, parameters);
                 litTotalCount.Text = countDt != null && countDt.Rows.Count > 0 ? countDt.Rows[0]["Total"].ToString() : "0";
 
-                System.Diagnostics.Debug.WriteLine(string.Format("📋 All Customers: Showing {0} of {1}", litDisplayCount.Text, litTotalCount.Text));
+                System.Diagnostics.Debug.WriteLine($"📋 All Customers: Showing {litDisplayCount.Text} of {litTotalCount.Text}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadAllCustomers Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ LoadAllCustomers Error: {ex.Message}");
                 gvAllCustomers.DataSource = null;
                 gvAllCustomers.DataBind();
                 litDisplayCount.Text = "0";
@@ -289,7 +289,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 int returningCustomers = Convert.ToInt32(litReturningCustomers.Text);
                 int vipCustomers = Convert.ToInt32(litVIPCustomers.Text);
 
-                hfSegmentationData.Value = string.Format("[{0}, {1}, {2}]", newCustomers, returningCustomers, vipCustomers);
+                hfSegmentationData.Value = $"[{newCustomers}, {returningCustomers}, {vipCustomers}]";
 
                 // Top 10 Customers Chart
                 string query = @"
@@ -319,7 +319,7 @@ namespace Take_Time_BangPhra.Admin.Report
                         {
                             name = name.Substring(0, 17) + "...";
                         }
-                        names.Add("\"{name}\"");
+                        names.Add($"\"{name}\"");
                         amounts.Add(Convert.ToDecimal(row["TotalSpent"]));
                     }
 
@@ -332,11 +332,11 @@ namespace Take_Time_BangPhra.Admin.Report
                     hfTopCustomersData.Value = "[0,0,0,0,0,0,0,0,0,0]";
                 }
 
-                System.Diagnostics.Debug.WriteLine(string.Format("📈 Chart Data: Segmentation={0}, TopCustomers={1}", hfSegmentationData.Value, dt?.Rows.Count ?? 0));
+                System.Diagnostics.Debug.WriteLine($"📈 Chart Data: Segmentation={hfSegmentationData.Value}, TopCustomers={dt?.Rows.Count ?? 0}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadChartData Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ LoadChartData Error: {ex.Message}");
                 hfSegmentationData.Value = "[0,0,0]";
                 hfTopCustomersLabels.Value = "['','','','','','','','','','']";
                 hfTopCustomersData.Value = "[0,0,0,0,0,0,0,0,0,0]";
@@ -381,17 +381,17 @@ namespace Take_Time_BangPhra.Admin.Report
                 csv.Append("\uFEFF");
 
                 // Header
-                csv.AppendLine(string.Format("รายงานวิเคราะห์ลูกค้า - ปี {0}", year));
-                csv.AppendLine(string.Format("วันที่ออกรายงาน:,{0}", DateTime.Now:dd/MM/yyyy HH:mm:ss));
-                csv.AppendLine("ผู้ออกรายงาน:,{Session["User"]?.ToString() ?? "ผู้ใช้งาน"}");
+                csv.AppendLine($"รายงานวิเคราะห์ลูกค้า - ปี {year}");
+                csv.AppendLine($"วันที่ออกรายงาน:,{DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+                csv.AppendLine($"ผู้ออกรายงาน:,{Session["User"]?.ToString() ?? "ผู้ใช้งาน"}");
                 csv.AppendLine();
 
                 // Summary
                 csv.AppendLine("สรุปข้อมูลลูกค้า");
-                csv.AppendLine(string.Format("ลูกค้าทั้งหมด:,{0} ราย", litTotalCustomers.Text));
-                csv.AppendLine(string.Format("ลูกค้าใหม่:,{0} ราย", litNewCustomers.Text));
-                csv.AppendLine(string.Format("ลูกค้าประจำ:,{0} ราย", litReturningCustomers.Text));
-                csv.AppendLine(string.Format("ลูกค้า VIP:,{0} ราย", litVIPCustomers.Text));
+                csv.AppendLine($"ลูกค้าทั้งหมด:,{litTotalCustomers.Text} ราย");
+                csv.AppendLine($"ลูกค้าใหม่:,{litNewCustomers.Text} ราย");
+                csv.AppendLine($"ลูกค้าประจำ:,{litReturningCustomers.Text} ราย");
+                csv.AppendLine($"ลูกค้า VIP:,{litVIPCustomers.Text} ราย");
                 csv.AppendLine();
 
                 // Repeat Customers Section
@@ -411,16 +411,16 @@ namespace Take_Time_BangPhra.Admin.Report
                         string firstVisit = row["FirstVisit"] != DBNull.Value ? Convert.ToDateTime(row["FirstVisit"]).ToString("dd/MM/yyyy") : "";
                         string lastVisit = row["LastVisit"] != DBNull.Value ? Convert.ToDateTime(row["LastVisit"]).ToString("dd/MM/yyyy") : "";
 
-                        csv.AppendLine(string.Format("{0},", rowNum) +
-                            "{row["CustomerName"]}," +
-                            "{row["PhoneNumber"]}," +
-                            string.Format("{0},", bookings) +
-                            string.Format("{0},", type) +
-                            string.Format("{0},", totalSpent:N2) +
-                            string.Format("{0},", avgSpending:N2) +
-                            string.Format("{0},", firstVisit) +
-                            string.Format("{0},", lastVisit) +
-                            "{row["PreferredAccommodation"]}");
+                        csv.AppendLine($"{rowNum}," +
+                            $"{row["CustomerName"]}," +
+                            $"{row["PhoneNumber"]}," +
+                            $"{bookings}," +
+                            $"{type}," +
+                            $"{totalSpent:N2}," +
+                            $"{avgSpending:N2}," +
+                            $"{firstVisit}," +
+                            $"{lastVisit}," +
+                            $"{row["PreferredAccommodation"]}");
                         rowNum++;
                     }
                 }
@@ -430,14 +430,14 @@ namespace Take_Time_BangPhra.Admin.Report
                 Response.ContentType = "text/csv";
                 Response.ContentEncoding = Encoding.UTF8;
                 Response.Charset = "UTF-8";
-                Response.AddHeader("Content-Disposition", string.Format("attachment;filename=CustomerAnalytics_{0}_{1}.csv", year, DateTime.Now:yyyyMMdd));
+                Response.AddHeader("Content-Disposition", $"attachment;filename=CustomerAnalytics_{year}_{DateTime.Now:yyyyMMdd}.csv");
                 Response.Write(csv.ToString());
                 Response.End();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ Export Error: {0}", ex.Message));
-                ShowMessage(string.Format("เกิดข้อผิดพลาดในการ export: {0}", ex.Message), "error");
+                System.Diagnostics.Debug.WriteLine($"❌ Export Error: {ex.Message}");
+                ShowMessage($"เกิดข้อผิดพลาดในการ export: {ex.Message}", "error");
             }
         }
 
@@ -507,7 +507,7 @@ namespace Take_Time_BangPhra.Admin.Report
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetRepeatCustomersDataForExport Error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"❌ GetRepeatCustomersDataForExport Error: {ex.Message}");
                 return null;
             }
         }
@@ -516,7 +516,7 @@ namespace Take_Time_BangPhra.Admin.Report
         {
             string icon = type == "success" ? "✅" : "❌";
             ScriptManager.RegisterStartupScript(this, GetType(), "message",
-                string.Format("alert('{0} {1}');", icon, message), true);
+                $"alert('{icon} {message}');", true);
         }
 
         #endregion

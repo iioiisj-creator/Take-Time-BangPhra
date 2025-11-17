@@ -178,7 +178,7 @@ namespace Take_Time_BangPhra.Payment
             {
                 string receiptId = e.CommandArgument.ToString();
                 // Redirect to receipt viewer or generate PDF
-                Response.Redirect(string.Format("~/ViewReceipt.aspx?id={0}", receiptId));
+                Response.Redirect($"~/ViewReceipt.aspx?id={receiptId}");
             }
         }
 

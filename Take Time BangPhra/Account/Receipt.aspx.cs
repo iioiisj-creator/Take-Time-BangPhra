@@ -47,13 +47,13 @@ namespace Take_Time_BangPhra.Account.Report
             if (!IsPostBack)
             {
                 DataTable dtCustomerType = code.DatabaseQuery(conn, "Select [Customer_Type],ID From Customer_Type");
-
-
+                
+                
                 for (int i = 0; i < dtCustomerType.Rows.Count; i++)
                 {
                     DropDownList8.Items.Add(new ListItem(dtCustomerType.Rows[i][0].ToString(), dtCustomerType.Rows[i][1].ToString()));
                 }
-
+                
                 DropDownList8.DataBind();
 
                 DataTable dtPaidHow = code.DatabaseQuery(SqlDataSource2.ConnectionString, SqlDataSource2.SelectCommand);
@@ -178,7 +178,7 @@ namespace Take_Time_BangPhra.Account.Report
 
                             DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
                         DropDownList2.DataBind();
-
+                       
                         DropDownList4.SelectedIndex = DropDownList4.Items.IndexOf(DropDownList4.Items.FindByValue("1"));
                         DropDownList4.DataBind();
                     }
@@ -195,25 +195,25 @@ namespace Take_Time_BangPhra.Account.Report
                     GridView1.DataBind();
 
                     // 🔍 Debug Page_Load
-                    System.Diagnostics.Debug.WriteLine("=== [Receipt Edit - Page_Load] ===");
-                    System.Diagnostics.Debug.WriteLine(string.Format("ID from DB: {0}", id));
-                    System.Diagnostics.Debug.WriteLine(string.Format("IsPostBack: {0}", IsPostBack));
-                    System.Diagnostics.Debug.WriteLine(string.Format("CheckBox2.Checked: {0}", CheckBox2.Checked));
-                    System.Diagnostics.Debug.WriteLine(string.Format("TextBox5.Text (before): '{0}'", TextBox5.Text));
+                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit - Page_Load] ===");
+                    System.Diagnostics.Debug.WriteLine($"ID from DB: {id}");
+                    System.Diagnostics.Debug.WriteLine($"IsPostBack: {IsPostBack}");
+                    System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text (before): '{TextBox5.Text}'");
 
                     // ⚠️ ไม่ set TextBox5.Text = id ถ้า CheckBox2 ถูก check แล้ว (user กำลังแก้ไขเลขที่)
                     // เพราะจะทำให้ค่าที่ user กรอกหายไปเมื่อ postback
                     if (!CheckBox2.Checked)
                     {
                         TextBox5.Text = id;
-                        System.Diagnostics.Debug.WriteLine(string.Format("✏️ Set TextBox5.Text = {0}", id));
+                        System.Diagnostics.Debug.WriteLine($"✏️ Set TextBox5.Text = {id}");
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine(string.Format("✅ Keep TextBox5.Text = '{0}' (CheckBox2 is checked)", TextBox5.Text));
+                        System.Diagnostics.Debug.WriteLine($"✅ Keep TextBox5.Text = '{TextBox5.Text}' (CheckBox2 is checked)");
                     }
-                    System.Diagnostics.Debug.WriteLine(string.Format("TextBox5.Text (after): '{0}'", TextBox5.Text));
-                    System.Diagnostics.Debug.WriteLine("=============================");
+                    System.Diagnostics.Debug.WriteLine($"TextBox5.Text (after): '{TextBox5.Text}'");
+                    System.Diagnostics.Debug.WriteLine($"=============================");
 
                     TextBox8.Text = Convert.ToDateTime(dtReceipt.Rows[0]["Created_Date"].ToString()).ToString("yyyy-MM-dd") ;
                     TextBox9.Text = dtReceipt.Rows[0]["Reservation_ID"].ToString();
@@ -236,7 +236,7 @@ namespace Take_Time_BangPhra.Account.Report
                             CheckBox5.DataBind();
                             TextBox7.Visible = true;
                             TextBox7.Text = dtcustomer.Rows[0]["Branch_Number"].ToString();
-
+                            
                         }
                     }
                     catch { }
@@ -258,7 +258,7 @@ namespace Take_Time_BangPhra.Account.Report
                         TextBox17.Text = dtcustomer.Rows[0]["Email"].ToString();
                         TextBox18.Text = dtcustomer.Rows[0]["Address1"].ToString();
                     }
-
+                    
 
                     DropDownList2.DataBind();
                     DropDownList2.SelectedIndex = DropDownList2.Items.IndexOf(DropDownList2.Items.FindByText(dtReceipt.Rows[0]["Paid_Type"].ToString()));
@@ -286,7 +286,7 @@ namespace Take_Time_BangPhra.Account.Report
                     {
                         myFrame.Attributes["src"] = "/Documents/Receipt/" + Year + "/" + Month + "/" + dtReceipt.Rows[0]["ID"].ToString() + ".pdf";
                     }
-
+                        
 
                 }
 
@@ -308,14 +308,14 @@ namespace Take_Time_BangPhra.Account.Report
                 }
                 if (command == "edit")
                 {
-
+                    
                 }
                 else
                 {
                     Session["dtDetail"] = dtDetail;
                     TextBox8.Text = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 }
-
+                
                 DataTable dtUpload = new DataTable();
                 try
                 {
@@ -333,7 +333,7 @@ namespace Take_Time_BangPhra.Account.Report
         protected void Button2_Click(object sender, EventArgs e)
         {
             Label1.Text = DropDownList4.SelectedItem.Text;
-
+            
             if (TextBox1.Text.Length > 1 && TextBox2.Text.Length > 0)
             {
                 DataTable dtDetail = (DataTable)Session["dtDetail"];
@@ -414,61 +414,61 @@ namespace Take_Time_BangPhra.Account.Report
                 string docNum = "";
 
                 // 🔍 Debug: ตรวจสอบค่า command ก่อนทำอะไร
-                System.Diagnostics.Debug.WriteLine("");
-                System.Diagnostics.Debug.WriteLine("==================================================");
-                System.Diagnostics.Debug.WriteLine("=== [Button3_Click START] ===");
-                System.Diagnostics.Debug.WriteLine("QueryString['command'] = '{Request.QueryString["command"]}'");
-                System.Diagnostics.Debug.WriteLine("ViewState['EditCommand'] = '{ViewState["EditCommand"]}'");
-                System.Diagnostics.Debug.WriteLine(string.Format("→ Final command = '{0}'", command));
-                System.Diagnostics.Debug.WriteLine("QueryString['uid'] = '{Request.QueryString["uid"]}'");
-                System.Diagnostics.Debug.WriteLine("ViewState['EditUID'] = '{ViewState["EditUID"]}'");
-                System.Diagnostics.Debug.WriteLine(string.Format("→ Final uid = '{0}'", uid));
-                System.Diagnostics.Debug.WriteLine("==================================================");
-                System.Diagnostics.Debug.WriteLine("");
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"==================================================");
+                System.Diagnostics.Debug.WriteLine($"=== [Button3_Click START] ===");
+                System.Diagnostics.Debug.WriteLine($"QueryString['command'] = '{Request.QueryString["command"]}'");
+                System.Diagnostics.Debug.WriteLine($"ViewState['EditCommand'] = '{ViewState["EditCommand"]}'");
+                System.Diagnostics.Debug.WriteLine($"→ Final command = '{command}'");
+                System.Diagnostics.Debug.WriteLine($"QueryString['uid'] = '{Request.QueryString["uid"]}'");
+                System.Diagnostics.Debug.WriteLine($"ViewState['EditUID'] = '{ViewState["EditUID"]}'");
+                System.Diagnostics.Debug.WriteLine($"→ Final uid = '{uid}'");
+                System.Diagnostics.Debug.WriteLine($"==================================================");
+                System.Diagnostics.Debug.WriteLine($"");
 
                 // ✅ ถ้าเป็น edit mode → ดึงข้อมูลเดิม
                 if (command == "edit")
                 {
                     dtReceipt = code.DatabaseQuery(conn, "Select * from Account_Receipt left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
                     id = dtReceipt.Rows[0]["ID"].ToString();
-                    System.Diagnostics.Debug.WriteLine(string.Format("[Edit Mode] Original ID from DB: {0}", id));
+                    System.Diagnostics.Debug.WriteLine($"[Edit Mode] Original ID from DB: {id}");
                 }
 
                 // 🔍 Debug: ดูค่าทั้งหมดก่อนตัดสินใจ
-                System.Diagnostics.Debug.WriteLine("");
-                System.Diagnostics.Debug.WriteLine("=== [Receipt Number Decision] ===");
-                System.Diagnostics.Debug.WriteLine("Mode: {(command == "edit" ? "EDIT" : "CREATE")}");
-                System.Diagnostics.Debug.WriteLine(string.Format("CheckBox2.Checked: {0}", CheckBox2.Checked));
-                System.Diagnostics.Debug.WriteLine(string.Format("TextBox5.Text: '{0}'", TextBox5.Text));
-                System.Diagnostics.Debug.WriteLine(string.Format("TextBox5.ReadOnly: {0}", TextBox5.ReadOnly));
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== [Receipt Number Decision] ===");
+                System.Diagnostics.Debug.WriteLine($"Mode: {(command == "edit" ? "EDIT" : "CREATE")}");
+                System.Diagnostics.Debug.WriteLine($"CheckBox2.Checked: {CheckBox2.Checked}");
+                System.Diagnostics.Debug.WriteLine($"TextBox5.Text: '{TextBox5.Text}'");
+                System.Diagnostics.Debug.WriteLine($"TextBox5.ReadOnly: {TextBox5.ReadOnly}");
 
                 // ✅ Priority 1: ถ้า CheckBox2 checked และมีเลขกรอก → ใช้เลขที่กรอก (ทั้ง CREATE และ EDIT mode)
                 if (CheckBox2.Checked == true && !string.IsNullOrWhiteSpace(TextBox5.Text))
                 {
                     docNum = TextBox5.Text.Trim();
-                    System.Diagnostics.Debug.WriteLine(string.Format("✅ DECISION: Using CUSTOM receipt number from TextBox5: {0}", docNum));
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using CUSTOM receipt number from TextBox5: {docNum}");
                 }
                 // ✅ Priority 2: ถ้าเป็น EDIT mode และไม่ได้กรอกเลข → ใช้เลขเดิม
                 else if (command == "edit")
                 {
                     docNum = id;
-                    System.Diagnostics.Debug.WriteLine(string.Format("✅ DECISION: Using ORIGINAL receipt ID (edit mode): {0}", docNum));
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Using ORIGINAL receipt ID (edit mode): {docNum}");
                 }
                 // ✅ Priority 3: ถ้าเป็น CREATE mode และไม่ได้กรอกเลข → สร้างเลขใหม่
                 else
                 {
                     docNum = code.createDocNumber(conn, "Account_Receipt", "REC", Year, Month, Day);
-                    System.Diagnostics.Debug.WriteLine(string.Format("✅ DECISION: Generated NEW receipt number (create mode): {0}", docNum));
+                    System.Diagnostics.Debug.WriteLine($"✅ DECISION: Generated NEW receipt number (create mode): {docNum}");
                 }
-                System.Diagnostics.Debug.WriteLine("====================================");
-                System.Diagnostics.Debug.WriteLine("");
+                System.Diagnostics.Debug.WriteLine($"====================================");
+                System.Diagnostics.Debug.WriteLine($"");
 
                 // 🔍 Final decision
-                System.Diagnostics.Debug.WriteLine("");
-                System.Diagnostics.Debug.WriteLine("=== FINAL DECISION ===");
-                System.Diagnostics.Debug.WriteLine(string.Format("📋 docNum that will be used: '{0}'", docNum));
-                System.Diagnostics.Debug.WriteLine("======================");
-                System.Diagnostics.Debug.WriteLine("");
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== FINAL DECISION ===");
+                System.Diagnostics.Debug.WriteLine($"📋 docNum that will be used: '{docNum}'");
+                System.Diagnostics.Debug.WriteLine($"======================");
+                System.Diagnostics.Debug.WriteLine($"");
 
                 // ✅ Validate new receipt number (if editing and number changed)
                 if (command == "edit")
@@ -478,25 +478,25 @@ namespace Take_Time_BangPhra.Account.Report
                     // ถ้าเลขที่เปลี่ยน → ต้อง check ว่าเลขใหม่มีอยู่แล้วหรือไม่
                     if (docNum != id)
                     {
-                        System.Diagnostics.Debug.WriteLine(string.Format("[Duplicate Check] Receipt number changed from '{0}' to '{1}'", id, docNum));
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number changed from '{id}' to '{docNum}'");
 
                         DataTable dtCheckDuplicate = code.DatabaseQuery(conn,
                             "SELECT ID FROM Account_Receipt WHERE ID = '" + docNum + "'");
 
                         if (dtCheckDuplicate.Rows.Count > 0)
                         {
-                            System.Diagnostics.Debug.WriteLine(string.Format("❌ [Duplicate Check] Receipt number '{0}' already exists!", docNum));
+                            System.Diagnostics.Debug.WriteLine($"❌ [Duplicate Check] Receipt number '{docNum}' already exists!");
 
                             ClientScript.RegisterStartupScript(this.GetType(), "duplicateReceipt",
                                 "alert('❌ ไม่สามารถใช้เลขที่ " + docNum + " ได้\\n\\nเพราะมีอยู่ในระบบแล้ว\\nกรุณาใช้เลขที่อื่น');", true);
                             return;
                         }
 
-                        System.Diagnostics.Debug.WriteLine(string.Format("✅ [Duplicate Check] Receipt number '{0}' is available", docNum));
+                        System.Diagnostics.Debug.WriteLine($"✅ [Duplicate Check] Receipt number '{docNum}' is available");
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine(string.Format("[Duplicate Check] Receipt number unchanged: '{0}'", docNum));
+                        System.Diagnostics.Debug.WriteLine($"[Duplicate Check] Receipt number unchanged: '{docNum}'");
                     }
                 }
 
@@ -551,29 +551,29 @@ namespace Take_Time_BangPhra.Account.Report
                     if (command == "edit")
                     {
                         dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + uid + "'");
-                        System.Diagnostics.Debug.WriteLine(string.Format("[Edit Mode] Query Receipt by UID: {0}", uid));
+                        System.Diagnostics.Debug.WriteLine($"[Edit Mode] Query Receipt by UID: {uid}");
                     }
                     else
                     {
                         dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] inner join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
-                        System.Diagnostics.Debug.WriteLine(string.Format("[Create Mode] Query Receipt by ID: {0}", RecNumber));
+                        System.Diagnostics.Debug.WriteLine($"[Create Mode] Query Receipt by ID: {RecNumber}");
                     }
 
                     if (dtReceipt.Rows.Count <= 0)
                     {
-                        System.Diagnostics.Debug.WriteLine("⚠️ Receipt not found - this is normal for CREATE mode");
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Receipt not found - this is normal for CREATE mode");
                         //reservation_id = code.DatabaseInsert(conn, "INSERT INTO [dbo].[Reservation] ([Customer_MobilePhone],[CheckinDate],[CheckoutDate],[StayDays],[Status],[TotalPrice],[Deposit],[Remark],[Reserve_By],[Created_Date],NoNameinReceipt) VALUES ('" + TextBox13.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd") + "','" + Convert.ToDateTime(TextBox8.Text).AddDays(Convert.ToDouble(1)).ToString("yyyy-MM-dd") + "'," + "1" + ",N'ชำระเงินแล้ว'," + TextBox6.Text + "," + TextBox6.Text + ",N'" + TextBox6.Text + "', N'" + Session["UserName"].ToString() + "','" + DateTime.Now + "','False') SELECT SCOPE_IDENTITY(); ");
                         //dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.ID = '" + RecNumber + "'");
                     }
                     else
                     {
                         reservation_id = Convert.ToInt32(dtReceipt.Rows[0]["Reservation_ID"].ToString());
-                        System.Diagnostics.Debug.WriteLine(string.Format("✅ Found Receipt - Reservation_ID: {0}", reservation_id));
+                        System.Diagnostics.Debug.WriteLine($"✅ Found Receipt - Reservation_ID: {reservation_id}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine(string.Format("❌ Error querying Receipt: {0}", ex.Message));
+                    System.Diagnostics.Debug.WriteLine($"❌ Error querying Receipt: {ex.Message}");
 
                     // Fallback: try with ID
                     if (command == "edit")
@@ -591,7 +591,7 @@ namespace Take_Time_BangPhra.Account.Report
                     // ✅ Validate that receipt exists before proceeding with edit
                     if (dtReceipt == null || dtReceipt.Rows.Count == 0)
                     {
-                        System.Diagnostics.Debug.WriteLine(string.Format("❌ [Edit Mode Error] Receipt not found for UID: {0}", uid));
+                        System.Diagnostics.Debug.WriteLine($"❌ [Edit Mode Error] Receipt not found for UID: {uid}");
                         ClientScript.RegisterStartupScript(this.GetType(), "receiptNotFound",
                             "alert('❌ ไม่พบใบเสร็จที่ต้องการแก้ไข\\n\\nกรุณาลองใหม่อีกครั้ง');", true);
                         return;
@@ -602,17 +602,17 @@ namespace Take_Time_BangPhra.Account.Report
                     string originalID = id;  // เลขที่ใบเสร็จเดิม
                     string newID = docNum;   // เลขที่ใบเสร็จใหม่
 
-                    System.Diagnostics.Debug.WriteLine("");
-                    System.Diagnostics.Debug.WriteLine("=== [Receipt Edit Mode] ===");
-                    System.Diagnostics.Debug.WriteLine(string.Format("Original ID: {0}", originalID));
-                    System.Diagnostics.Debug.WriteLine(string.Format("New ID: {0}", newID));
-                    System.Diagnostics.Debug.WriteLine(string.Format("UID: {0}", originalUID));
+                    System.Diagnostics.Debug.WriteLine($"");
+                    System.Diagnostics.Debug.WriteLine($"=== [Receipt Edit Mode] ===");
+                    System.Diagnostics.Debug.WriteLine($"Original ID: {originalID}");
+                    System.Diagnostics.Debug.WriteLine($"New ID: {newID}");
+                    System.Diagnostics.Debug.WriteLine($"UID: {originalUID}");
 
                     // ถ้าเลขที่เปลี่ยน → ใช้ INSERT + UPDATE FK + DELETE แทนการ UPDATE PK
                     // เพราะ SQL Server ไม่ยอมให้ UPDATE PK ถ้ายังมี FK อ้างอิงอยู่
                     if (originalID != newID)
                     {
-                        System.Diagnostics.Debug.WriteLine("Receipt ID changed - Using INSERT + UPDATE FK + DELETE pattern...");
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID changed - Using INSERT + UPDATE FK + DELETE pattern...");
 
                         try
                         {
@@ -646,36 +646,36 @@ namespace Take_Time_BangPhra.Account.Report
                                 "'" + customerId + "'," +
                                 "'" + originalUID + "')";
                             code.DatabaseInsert(conn, insertQuery);
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 1: Inserted new Account_Receipt with ID: {0} (with updated data)", newID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 1: Inserted new Account_Receipt with ID: {newID} (with updated data)");
 
                             // 🔗 STEP 2: UPDATE Payment_Slips (FK: Account_Receipt_ID → Account_Receipt.ID)
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Payment_Slips] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 2: Updated Payment_Slips FK: {0} → {1}", originalID, newID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 2: Updated Payment_Slips FK: {originalID} → {newID}");
 
                             // 🔗 STEP 3: UPDATE Payment_History (FK: Receipt_ID → Account_Receipt.ID)
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Payment_History] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 3: Updated Payment_History FK: {0} → {1}", originalID, newID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 3: Updated Payment_History FK: {originalID} → {newID}");
 
                             // 🔗 STEP 4: UPDATE Account_Receipt_Detail (FK: Receipt_ID → Account_Receipt.ID)
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Account_Receipt_Detail] SET Receipt_ID = '" + newID + "' WHERE Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 4: Updated Account_Receipt_Detail FK: {0} → {1}", originalID, newID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 4: Updated Account_Receipt_Detail FK: {originalID} → {newID}");
 
                             // 🔗 STEP 5: UPDATE Product_Out (FK: Account_Receipt_ID → Account_Receipt.ID)
                             code.DatabaseInsert(conn,
                                 "UPDATE [dbo].[Product_Out] SET Account_Receipt_ID = '" + newID + "' WHERE Account_Receipt_ID = '" + originalID + "'");
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 5: Updated Product_Out FK: {0} → {1}", originalID, newID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 5: Updated Product_Out FK: {originalID} → {newID}");
 
                             // 🗑️ STEP 6: DELETE Account_Receipt เก่า (oldID) - ตอนนี้ไม่มี FK อ้างอิงแล้ว
                             code.DatabaseInsert(conn,
                                 "DELETE FROM [dbo].[Account_Receipt] WHERE ID = '" + originalID + "' AND UID = '" + originalUID + "'");
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Step 6: Deleted old Account_Receipt with ID: {0}", originalID));
+                            System.Diagnostics.Debug.WriteLine($"✅ Step 6: Deleted old Account_Receipt with ID: {originalID}");
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine(string.Format("❌ Error updating Receipt ID: {0}", ex.Message));
+                            System.Diagnostics.Debug.WriteLine($"❌ Error updating Receipt ID: {ex.Message}");
                             ClientScript.RegisterStartupScript(this.GetType(), "updateError",
                                 "alert('❌ เกิดข้อผิดพลาดในการเปลี่ยนเลขที่ใบเสร็จ\\n\\n" + ex.Message.Replace("'", "\\'") + "');", true);
                             return;
@@ -684,7 +684,7 @@ namespace Take_Time_BangPhra.Account.Report
                     else
                     {
                         // ถ้าเลขที่ไม่เปลี่ยน → UPDATE ข้อมูลอื่นๆ
-                        System.Diagnostics.Debug.WriteLine("Receipt ID unchanged - Updating data only");
+                        System.Diagnostics.Debug.WriteLine($"Receipt ID unchanged - Updating data only");
 
                         try
                         {
@@ -700,18 +700,18 @@ namespace Take_Time_BangPhra.Account.Report
                                 "Etax = '" + CheckBox5.Checked + "', " +
                                 "Customer_ID = '" + customerId + "' " +
                                 "WHERE UID = '" + originalUID + "'");
-                            System.Diagnostics.Debug.WriteLine("✅ Updated Account_Receipt data");
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Account_Receipt data");
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine(string.Format("❌ Error updating Account_Receipt data: {0}", ex.Message));
+                            System.Diagnostics.Debug.WriteLine($"❌ Error updating Account_Receipt data: {ex.Message}");
                         }
                     }
 
                     // ✅ DELETE และ Re-INSERT Account_Receipt_Detail (เพราะอาจมีการเปลี่ยน items)
                     // ใช้ docNum (เลขที่สุดท้าย) เพื่อให้สอดคล้องกับ INSERT ด้านล่าง
                     code.DatabaseInsert(conn, "DELETE FROM [dbo].[Account_Receipt_Detail] WHERE Receipt_ID = '" + docNum + "'");
-                    System.Diagnostics.Debug.WriteLine(string.Format("✅ Deleted old Account_Receipt_Detail (Receipt_ID={0}) for re-insert", docNum));
+                    System.Diagnostics.Debug.WriteLine($"✅ Deleted old Account_Receipt_Detail (Receipt_ID={docNum}) for re-insert");
 
                     // Store UID for re-use
                     Session["EditReceiptUID"] = originalUID;
@@ -736,7 +736,7 @@ namespace Take_Time_BangPhra.Account.Report
                 // ✅ INSERT Account_Receipt (เฉพาะ CREATE mode, ถ้า EDIT mode → ใช้ UPDATE ด้านบนแทน)
                 if (command != "edit")
                 {
-                    System.Diagnostics.Debug.WriteLine(string.Format("[Receipt CREATE] Inserting Account_Receipt with ID={0}, UID={1}", docNum, receiptUID));
+                    System.Diagnostics.Debug.WriteLine($"[Receipt CREATE] Inserting Account_Receipt with ID={docNum}, UID={receiptUID}");
 
                     if (reservation_id > 0)
                     {
@@ -746,20 +746,20 @@ namespace Take_Time_BangPhra.Account.Report
                     {
                         code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt] ([ID],[Reservation_ID],[Created_Date],[Total_Amount],[Vat],[Total_Amount_Exclude_Vat],[IsDeposit],[UseDeposit],[Paid_Type],[Status],[Created_By_ID],Etax,Customer_ID,UID) VALUES ('" + docNum + "','" + TextBox9.Text + "','" + Convert.ToDateTime(TextBox8.Text).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'," + TextBox6.Text + "," + TextBox4.Text + "," + TextBox3.Text + ",'" + CheckBox1.Checked + "','False',N'" + DropDownList2.SelectedItem.Text + "','Normal'," + Session["UserID"].ToString() + ",'" + CheckBox5.Checked + "','"+ customerId + "','" + receiptUID + "')");
                     }
-                    System.Diagnostics.Debug.WriteLine("[Receipt CREATE] Account_Receipt inserted successfully");
+                    System.Diagnostics.Debug.WriteLine($"[Receipt CREATE] Account_Receipt inserted successfully");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[Receipt EDIT] Skip INSERT Account_Receipt (already updated above)");
+                    System.Diagnostics.Debug.WriteLine($"[Receipt EDIT] Skip INSERT Account_Receipt (already updated above)");
                 }
 
                 // ✅ INSERT Account_Receipt_Detail (ทั้ง CREATE และ EDIT mode - เพราะ DELETE ไปแล้วด้านบน)
-                System.Diagnostics.Debug.WriteLine(string.Format("[Receipt] Inserting {0} detail rows...", dtDetail.Rows.Count));
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserting {dtDetail.Rows.Count} detail rows...");
                 for (int i = 0; i < dtDetail.Rows.Count; i++)
                 {
                     code.DatabaseInsert(conn, "INSERT INTO [dbo].[Account_Receipt_Detail] ([Number],[Receipt_ID],[ProductType_ID],[Product_ID],[Product_Data],[Product_Amount],[Product_Unit],[Price_PerPeice],[Price_Amount]) VALUES (" + dtDetail.Rows[i]["Number"].ToString() + ",'" + docNum + "','" + dtDetail.Rows[i]["ProductType_ID"].ToString() + "',0,N'" + dtDetail.Rows[i]["Product_Data"].ToString() + "'," + dtDetail.Rows[i]["Product_Amount"].ToString() + ",N'" + dtDetail.Rows[i]["Product_Unit"].ToString() + "'," + dtDetail.Rows[i]["Price_PerPeice"].ToString() + "," + dtDetail.Rows[i]["Price_Amount"].ToString() + ")");
                 }
-                System.Diagnostics.Debug.WriteLine(string.Format("[Receipt] Inserted {0} detail rows successfully", dtDetail.Rows.Count));
+                System.Diagnostics.Debug.WriteLine($"[Receipt] Inserted {dtDetail.Rows.Count} detail rows successfully");
 
                 // 🆕 Record/Update payment to Payment_History
                 string actualReservationId = reservation_id > 0 ? reservation_id.ToString() : TextBox9.Text;
@@ -821,7 +821,7 @@ namespace Take_Time_BangPhra.Account.Report
                             };
 
                             code2.DatabaseInsertSafe(conn, updatePaymentQuery, updateParams);
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Updated Payment_History for Receipt: {0}", docNum));
+                            System.Diagnostics.Debug.WriteLine($"✅ Updated Payment_History for Receipt: {docNum}");
                         }
                         else
                         {
@@ -869,14 +869,14 @@ namespace Take_Time_BangPhra.Account.Report
                             };
 
                             code2.DatabaseInsertSafe(conn, insertPaymentQuery, insertParams);
-                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Inserted Payment_History for Receipt: {0}", docNum));
+                            System.Diagnostics.Debug.WriteLine($"✅ Inserted Payment_History for Receipt: {docNum}");
                         }
                     }
                     catch (Exception ex)
                     {
                         code2.Logs(conn, "Payment_History Upsert Error (Account/Receipt)",
                             ex.Message + " - " + ex.StackTrace, "SYSTEM");
-                        System.Diagnostics.Debug.WriteLine(string.Format("❌ Error upserting Payment_History: {0}", ex.Message));
+                        System.Diagnostics.Debug.WriteLine($"❌ Error upserting Payment_History: {ex.Message}");
                         // Don't fail receipt creation if payment history fails
                     }
                 }
@@ -892,7 +892,7 @@ namespace Take_Time_BangPhra.Account.Report
 
                 }
 
-
+                
 
                 DataTable dtbusinessinfo = code.DatabaseQuery(conn, @"SELECT
                     Business_Info.ID AS BusinessInfo_ID, Business_Info.Business_Type_ID, Business_Info.Company_Name,
@@ -904,20 +904,20 @@ namespace Take_Time_BangPhra.Account.Report
                     FROM Business_Info
                     LEFT JOIN Customer_Type ON Business_Type_ID = Customer_Type.ID
                     LEFT JOIN Address ON Address.ID = Business_Info.Address_ID");
-
+                
 
                 // ✅ Query ด้วย UID แทน ID เพราะ UID ไม่เปลี่ยนแปลง (แม้จะแก้ไขเลขที่ใบเสร็จ)
-                System.Diagnostics.Debug.WriteLine("");
-                System.Diagnostics.Debug.WriteLine("=== [Query Receipt for PDF] ===");
-                System.Diagnostics.Debug.WriteLine(string.Format("receiptUID: {0}", receiptUID));
-                System.Diagnostics.Debug.WriteLine(string.Format("docNum: {0}", docNum));
+                System.Diagnostics.Debug.WriteLine($"");
+                System.Diagnostics.Debug.WriteLine($"=== [Query Receipt for PDF] ===");
+                System.Diagnostics.Debug.WriteLine($"receiptUID: {receiptUID}");
+                System.Diagnostics.Debug.WriteLine($"docNum: {docNum}");
 
                 dtReceipt = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt] left join Reservation on Reservation.ID = Reservation_ID Where Account_Receipt.UID = '" + receiptUID + "'");
 
                 // ✅ Validate query result
                 if (dtReceipt == null || dtReceipt.Rows.Count == 0)
                 {
-                    System.Diagnostics.Debug.WriteLine(string.Format("❌ ERROR: Receipt not found for UID: {0}", receiptUID));
+                    System.Diagnostics.Debug.WriteLine($"❌ ERROR: Receipt not found for UID: {receiptUID}");
                     ClientScript.RegisterStartupScript(this.GetType(), "receiptQueryError",
                         "alert('❌ เกิดข้อผิดพลาด: ไม่พบข้อมูลใบเสร็จหลังบันทึก\\n\\nกรุณาติดต่อผู้ดูแลระบบ');", true);
                     return;
@@ -929,26 +929,26 @@ namespace Take_Time_BangPhra.Account.Report
                 // ✅ ใช้ docNum (เลขที่ที่ต้องการแสดงใน PDF) แทน actualReceiptID
                 // เพราะ docNum คือเลขที่ที่เรา INSERT Receipt_Detail ไว้
                 string actualReceiptID = dtReceipt.Rows[0]["ID"].ToString();
-                System.Diagnostics.Debug.WriteLine(string.Format("actualReceiptID from DB: {0}", actualReceiptID));
+                System.Diagnostics.Debug.WriteLine($"actualReceiptID from DB: {actualReceiptID}");
 
                 // ✅ ตรวจสอบว่า actualReceiptID ตรงกับ docNum หรือไม่
                 if (actualReceiptID != docNum)
                 {
-                    System.Diagnostics.Debug.WriteLine(string.Format("⚠️ WARNING: Mismatch! actualReceiptID ({0}) != docNum ({1})", actualReceiptID, docNum));
-                    System.Diagnostics.Debug.WriteLine("⚠️ Using docNum for Receipt_Detail query to match INSERT");
+                    System.Diagnostics.Debug.WriteLine($"⚠️ WARNING: Mismatch! actualReceiptID ({actualReceiptID}) != docNum ({docNum})");
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Using docNum for Receipt_Detail query to match INSERT");
                 }
 
                 // ✅ ใช้ docNum แทน actualReceiptID เพื่อให้ตรงกับ Receipt_Detail ที่เรา INSERT
                 DataTable dtReceiptDetail = code.DatabaseQuery(conn, "SELECT * FROM [Account_Receipt_Detail] inner join Account_ProductType on Account_ProductType.ID = ProductType_ID Where Receipt_ID = '" + docNum + "' order by Number ASC");
 
-                System.Diagnostics.Debug.WriteLine(string.Format("dtReceiptDetail.Rows.Count: {0}", dtReceiptDetail.Rows.Count));
-                System.Diagnostics.Debug.WriteLine("================================");
+                System.Diagnostics.Debug.WriteLine($"dtReceiptDetail.Rows.Count: {dtReceiptDetail.Rows.Count}");
+                System.Diagnostics.Debug.WriteLine($"================================");
 
 
-
+               
                 //GridView1.DataSource = dt;
                 //GridView1.DataBind();
-
+               
                 DataTable dtSignature = new DataTable();
                 try
                 {
@@ -958,7 +958,7 @@ namespace Take_Time_BangPhra.Account.Report
                     dtSignature.Columns.Add("CreatedSignaturePath");
                 }
                 catch { }
-
+                
                 string Signaturepath = System.Configuration.ConfigurationSettings.AppSettings["StaffSignatureFolderPath"].ToString();
                 DataTable dtApprover = code.DatabaseQuery(conn, "Select * from Admin Where IsCEO = 'True'");
                 string ApproverFullName = dtApprover.Rows[0]["FirstName"].ToString() + " " + dtApprover.Rows[0]["LastName"].ToString();
@@ -975,7 +975,7 @@ namespace Take_Time_BangPhra.Account.Report
 
                 try
                 {
-
+                    
 
                     if (CheckBox3.Checked == true)
                     {
@@ -1072,7 +1072,7 @@ namespace Take_Time_BangPhra.Account.Report
 
                         // ✅ PDF filename uses docNum (ใช้เลขที่ที่กรอกถ้า CheckBox2 checked)
                         string pdfFileName = docNum + "_" + uid + ".pdf";
-                        System.Diagnostics.Debug.WriteLine(string.Format("[Receipt] Creating PDF: {0}", pdfFileName));
+                        System.Diagnostics.Debug.WriteLine($"[Receipt] Creating PDF: {pdfFileName}");
 
                         if (File.Exists(path + "\\" + Year + "\\" + Month + "\\" + docNum + "_"+uid+".pdf"))
                         {
@@ -1083,7 +1083,7 @@ namespace Take_Time_BangPhra.Account.Report
                             File.Delete(path + "\\" + Year + "\\" + Month + "\\" + docNum + ".pdf");
                         }
                         using (FileStream fs = new FileStream(path + "\\" + Year + "\\" + Month + "\\" + docNum + "_" + uid + ".pdf", FileMode.Append))
-                        {
+                        { 
                             fs.Write(bytes, 0, bytes.Length);
                         }
                     }
@@ -1143,7 +1143,7 @@ namespace Take_Time_BangPhra.Account.Report
 
 
                                 xmlString = xmlString.Replace("*buyer_taxtype", dtcustomer.Rows[0]["Customer_Code"].ToString());
-
+                                
 
                                 if (dtcustomer.Rows[0]["Customer_Code"].ToString() == "TXID")
                                 {
@@ -1303,7 +1303,7 @@ namespace Take_Time_BangPhra.Account.Report
             {
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาระบุข้อมูลให้ครบถ้วน');", true);
             }
-
+            
         }
 
         public string cleantext(string input)
@@ -1314,8 +1314,8 @@ namespace Take_Time_BangPhra.Account.Report
 
         protected void Button4_Click(object sender, EventArgs e)
         {
-
-
+            
+          
         }
 
         protected void GridView2_RowDeleted(object sender, GridViewDeletedEventArgs e)
@@ -1324,7 +1324,7 @@ namespace Take_Time_BangPhra.Account.Report
 
         protected void GridView2_RowDeleting(object sender, GridViewDeleteEventArgs e)
         {
-
+          
         }
 
         protected void TextBox9_TextChanged(object sender, EventArgs e)
@@ -1409,13 +1409,13 @@ namespace Take_Time_BangPhra.Account.Report
                 // ✅ ใช้ ReadOnly แทน Enabled เพราะ ReadOnly TextBox ยังส่งค่ากลับมาใน postback
                 TextBox5.ReadOnly = false;
                 TextBox5.BackColor = System.Drawing.Color.White;
-                System.Diagnostics.Debug.WriteLine("[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=false (editable)");
+                System.Diagnostics.Debug.WriteLine($"[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=false (editable)");
             }
             else
             {
                 TextBox5.ReadOnly = true;
                 TextBox5.BackColor = System.Drawing.Color.LightGray;
-                System.Diagnostics.Debug.WriteLine("[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=true (readonly)");
+                System.Diagnostics.Debug.WriteLine($"[CheckBox2_CheckedChanged] Set TextBox5.ReadOnly=true (readonly)");
             }
         }
 
@@ -1423,7 +1423,7 @@ namespace Take_Time_BangPhra.Account.Report
         {
             if(CheckBox3.Checked == true)
             {
-
+                
                // TextBox10.Text = "ประสงค์ไม่รับใบกำกับภาษี";
                // TextBox11.Text = "";
                // TextBox12.Text = "";
@@ -1641,7 +1641,7 @@ namespace Take_Time_BangPhra.Account.Report
             }
             else
             {
-
+                
             }
         }
     }

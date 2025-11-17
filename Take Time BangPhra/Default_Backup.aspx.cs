@@ -53,13 +53,13 @@ namespace Take_Time_BangPhra
                 }
                 else
                 {
-
+                    
                     jsonResponse = await FetchGoogleReviews();
                     DatabaseInsert(conn, "INSERT INTO [dbo].[Reviews] ([Date],[json]) VALUES ('"+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+"',N'"+jsonResponse.Replace("'","''")+"');");
                 }
-
+                 
             // Assign the response to a Literal as a JavaScript variable
-            Literal1.Text = string.Format("<script>var jsoninput = {0};</script>", jsonResponse);
+            Literal1.Text = $"<script>var jsoninput = {jsonResponse};</script>";
 
             }
             try
@@ -96,7 +96,7 @@ namespace Take_Time_BangPhra
             catch (Exception ex)
             {
                 // Return an error message if API call fails
-                return "{{\"error\": \"{ex.Message}\"}}";
+                return $"{{\"error\": \"{ex.Message}\"}}";
             }
         }
 
@@ -106,14 +106,14 @@ namespace Take_Time_BangPhra
 
             if (GridView1.SelectedIndex >= 0)
             {
-
+                
                 Response.Redirect("./Default.aspx?selecteddate="+ Calendar1.SelectedDate.ToString("yyyy-MM-dd"));
-
+                
             }
             if (DateTime.Now > Calendar1.SelectedDate.AddDays(1) && Session["permission"] == "No")
             {
                 GridView1.Visible = false;
-
+                
             }
             else
             {
@@ -192,7 +192,7 @@ namespace Take_Time_BangPhra
                     }
                 }
             }
-
+            
         }
 
         public int DatabaseInsert(string connectionString, string query)
@@ -229,14 +229,14 @@ namespace Take_Time_BangPhra
                 catch (SqlException sqlEx)
                 {
                     // Log SQL-specific errors
-                    System.Diagnostics.Debug.WriteLine(string.Format("SQL Error: {0}", sqlEx.Message));
-                    System.Diagnostics.Debug.WriteLine(string.Format("Query: {0}", query));
+                    System.Diagnostics.Debug.WriteLine($"SQL Error: {sqlEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Query: {query}");
                     throw; // Re-throw to handle in calling method
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine(string.Format("General Error: {0}", ex.Message));
-                    System.Diagnostics.Debug.WriteLine(string.Format("Query: {0}", query));
+                    System.Diagnostics.Debug.WriteLine($"General Error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Query: {query}");
                     throw; // Re-throw to handle in calling method
                 }
             }
@@ -398,9 +398,9 @@ namespace Take_Time_BangPhra
                 else
                 {
                     e.Cell.ForeColor = System.Drawing.Color.Transparent;
-
+                    
                 }
-
+                
 
             }
             else

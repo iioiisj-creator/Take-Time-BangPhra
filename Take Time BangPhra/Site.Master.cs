@@ -67,7 +67,7 @@ namespace Take_Time_BangPhra
             catch (Exception ex)
             {
                 // Log error and redirect anyway
-                System.Diagnostics.Debug.WriteLine(string.Format("Logout error: {0}", ex.Message));
+                System.Diagnostics.Debug.WriteLine($"Logout error: {ex.Message}");
                 Response.Redirect("~/Default", true);
             }
         }

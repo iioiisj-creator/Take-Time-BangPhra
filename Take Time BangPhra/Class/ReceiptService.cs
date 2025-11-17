@@ -39,7 +39,7 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 // Update receipt status in database
-                string updateQuery = string.Format("UPDATE [dbo].[Account_Receipt] SET [Status] = 'Cancel' WHERE ID = '{0}'", receiptId);
+                string updateQuery = $"UPDATE [dbo].[Account_Receipt] SET [Status] = 'Cancel' WHERE ID = '{receiptId}'";
                 _dbHelper.ExecuteInsert(updateQuery);
 
                 // Stamp PDF with cancellation mark
@@ -47,7 +47,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error canceling receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error canceling receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -55,7 +55,7 @@ namespace Take_Time_BangPhra.Services
         private async Task StampPdfWithCancellation(string receiptId, string uid)
         {
             // Get receipt details to determine file paths
-            string receiptQuery = string.Format("SELECT * FROM Account_Receipt WHERE ID = '{0}'", receiptId);
+            string receiptQuery = $"SELECT * FROM Account_Receipt WHERE ID = '{receiptId}'";
             DataTable dtRec = _dbHelper.ExecuteQuery(receiptQuery);
 
             if (dtRec.Rows.Count == 0) return;
@@ -70,14 +70,14 @@ namespace Take_Time_BangPhra.Services
 
             if (!File.Exists(inputPdfPath))
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("PDF file not found: {0}", inputPdfPath));
+                System.Diagnostics.Trace.TraceWarning($"PDF file not found: {inputPdfPath}");
                 return;
             }
 
             string cancelImagePath = Path.Combine(_imagesFolderPath, "Cancel.png");
             if (!File.Exists(cancelImagePath))
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("Cancel image not found: {0}", cancelImagePath));
+                System.Diagnostics.Trace.TraceWarning($"Cancel image not found: {cancelImagePath}");
                 return;
             }
 
@@ -113,27 +113,27 @@ namespace Take_Time_BangPhra.Services
         {
             string basePath = Path.Combine(_receiptFolderPath, year, month);
             string fileName = isCancelled ?
-                string.Format("{0}_{1}_Cancel.pdf", receiptId, uid) :
-                string.Format("{0}_{1}.pdf", receiptId, uid);
+                $"{receiptId}_{uid}_Cancel.pdf" :
+                $"{receiptId}_{uid}.pdf";
 
             return Path.Combine(basePath, fileName);
         }
 
         public DataTable GetReceiptsByReservation(string reservationId)
         {
-            string query = string.Format("SELECT * FROM Account_Receipt WHERE Status = 'Normal' AND Reservation_ID = '{0}'", reservationId);
+            string query = $"SELECT * FROM Account_Receipt WHERE Status = 'Normal' AND Reservation_ID = '{reservationId}'";
             return _dbHelper.ExecuteQuery(query);
         }
 
         public DataTable GetReceiptByUid(string uid)
         {
-            string query = string.Format("SELECT * FROM Account_Receipt LEFT JOIN Reservation ON Reservation.ID = Reservation_ID WHERE Account_Receipt.UID = '{0}'", uid);
+            string query = $"SELECT * FROM Account_Receipt LEFT JOIN Reservation ON Reservation.ID = Reservation_ID WHERE Account_Receipt.UID = '{uid}'";
             return _dbHelper.ExecuteQuery(query);
         }
 
         public DataTable GetReceiptDetails(string receiptId)
         {
-            string query = string.Format("SELECT * FROM Account_Receipt_Detail WHERE Receipt_ID = '{0}' ORDER BY Number ASC", receiptId);
+            string query = $"SELECT * FROM Account_Receipt_Detail WHERE Receipt_ID = '{receiptId}' ORDER BY Number ASC";
             return _dbHelper.ExecuteQuery(query);
         }
 
@@ -199,7 +199,7 @@ namespace Take_Time_BangPhra.Services
 
             // Log การปรับสัดส่วน
             _codeHelper.Log(_dbHelper.ConnectionString, "Receipt Amount Adjustment",
-                string.Format("Reservation {0}: Adjusting details from {1} to {2} (ratio: {3})", reservationId, currentTotal:F2, expectedTotal:F2, adjustmentRatio:F4),
+                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotal:F2} (ratio: {adjustmentRatio:F4})",
                 "SYSTEM");
 
             double adjustedTotal = 0;
@@ -292,7 +292,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error creating receipt for reservation {0}: {1}", reservationId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error creating receipt for reservation {reservationId}: {ex.Message}");
                 throw;
             }
         }
@@ -301,12 +301,12 @@ namespace Take_Time_BangPhra.Services
                                     double totalAmount, double vat, double priceExcludeVat,
                                     string paidType, string createdById, bool etax, string customerId = "0")
         {
-            string query = $@"INSERT INTO [dbo].[Account_Receipt]
-                        (ID, [Reservation_ID], [Created_Date], [Total_Amount], [Vat],
-                         [Total_Amount_Exclude_Vat], [IsDeposit], [UseDeposit], Status,
-                         Paid_Type, Created_By_ID, Etax, Customer_ID)
-                        VALUES ('{receiptId}', '{reservationId}', '{docDate:yyyy-MM-dd}',
-                        {totalAmount}, {vat}, {priceExcludeVat}, 'True', 'False', 'Normal',
+            string query = $@"INSERT INTO [dbo].[Account_Receipt] 
+                        (ID, [Reservation_ID], [Created_Date], [Total_Amount], [Vat], 
+                         [Total_Amount_Exclude_Vat], [IsDeposit], [UseDeposit], Status, 
+                         Paid_Type, Created_By_ID, Etax, Customer_ID) 
+                        VALUES ('{receiptId}', '{reservationId}', '{docDate:yyyy-MM-dd}', 
+                        {totalAmount}, {vat}, {priceExcludeVat}, 'True', 'False', 'Normal', 
                         N'{paidType}', N'{createdById}', '{etax}', '{customerId}')";
 
             _dbHelper.ExecuteInsert(query);
@@ -356,11 +356,11 @@ namespace Take_Time_BangPhra.Services
                     )";
 
                 _dbHelper.ExecuteInsert(paymentHistoryQuery);
-                System.Diagnostics.Trace.TraceInformation(string.Format("✅ Created Payment_History for Deposit Receipt {0}", receiptId));
+                System.Diagnostics.Trace.TraceInformation($"✅ Created Payment_History for Deposit Receipt {receiptId}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("⚠️ Failed to create Payment_History for Receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to create Payment_History for Receipt {receiptId}: {ex.Message}");
                 // Continue - Receipt is already created, Payment_History is supplementary
             }
         }
@@ -370,12 +370,12 @@ namespace Take_Time_BangPhra.Services
                                         string paidType, string createdById, DataTable dtReserve,
                                         bool etax, string customerId)
         {
-            string query = $@"INSERT INTO [dbo].[Account_Receipt]
-                            (ID, [Reservation_ID], [Created_Date], [Total_Amount], [Vat],
-                             [Total_Amount_Exclude_Vat], [IsDeposit], [UseDeposit], Status,
-                             Paid_Type, Created_By_ID, Etax, Customer_ID)
-                            VALUES ('{receiptId}', '{reservationId}', '{docDate:yyyy-MM-dd}',
-                            {totalAmount}, {vat}, {priceExcludeVat}, 'False', 'False', 'Normal',
+            string query = $@"INSERT INTO [dbo].[Account_Receipt] 
+                            (ID, [Reservation_ID], [Created_Date], [Total_Amount], [Vat], 
+                             [Total_Amount_Exclude_Vat], [IsDeposit], [UseDeposit], Status, 
+                             Paid_Type, Created_By_ID, Etax, Customer_ID) 
+                            VALUES ('{receiptId}', '{reservationId}', '{docDate:yyyy-MM-dd}', 
+                            {totalAmount}, {vat}, {priceExcludeVat}, 'False', 'False', 'Normal', 
                             N'{paidType}', N'{createdById}', '{etax}', '{customerId}')";
 
             _dbHelper.ExecuteInsert(query);
@@ -436,11 +436,11 @@ namespace Take_Time_BangPhra.Services
                     )";
 
                 _dbHelper.ExecuteInsert(paymentHistoryQuery);
-                System.Diagnostics.Trace.TraceInformation(string.Format("✅ Created Payment_History for Regular Receipt {0}", receiptId));
+                System.Diagnostics.Trace.TraceInformation($"✅ Created Payment_History for Regular Receipt {receiptId}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("⚠️ Failed to create Payment_History for Receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to create Payment_History for Receipt {receiptId}: {ex.Message}");
                 // Continue - Receipt is already created, Payment_History is supplementary
             }
         }
@@ -450,22 +450,22 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 string docCreateThaiDate = docDate.ToString("ddMM") + (docDate.Year + 543).ToString();
-                string subject = string.Format("[{0}][INV][{1}]", docCreateThaiDate, receiptId);
+                string subject = $"[{docCreateThaiDate}][INV][{receiptId}]";
                 string body = @"เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br />
-                          หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้
+                          หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ 
                           ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />
                           ขอแสดงความนับถือ<br />
                           หจก.แอม แฮปปี้เนส (Take Time)";
 
                 byte[] bytes = System.IO.File.ReadAllBytes(pdfFilePath);
                 var memoryStream = new System.IO.MemoryStream(bytes);
-                var attachment = new System.Net.Mail.Attachment(memoryStream, string.Format("{0}_etax.pdf", receiptId));
+                var attachment = new System.Net.Mail.Attachment(memoryStream, $"{receiptId}_etax.pdf");
 
                 _emailService.SendEmail(toEmail, subject, body, new System.Net.Mail.Attachment[] { attachment });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error sending receipt email for {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error sending receipt email for {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -518,7 +518,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error generating PDF for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error generating PDF for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -534,7 +534,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error generating e-Tax document for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error generating e-Tax document for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -589,8 +589,8 @@ namespace Take_Time_BangPhra.Services
             DataTable dtApprover = _dbHelper.ExecuteQuery("SELECT * FROM Admin WHERE IsCEO = 'True'");
             if (dtApprover.Rows.Count > 0)
             {
-                string approverName = "{dtApprover.Rows[0]["FirstName"]} {dtApprover.Rows[0]["LastName"]}";
-                string approverSignature = string.Format("File:\\{0}\\{1}.png", _staffSignatureFolderPath, approverName.ToLower());
+                string approverName = $"{dtApprover.Rows[0]["FirstName"]} {dtApprover.Rows[0]["LastName"]}";
+                string approverSignature = $"File:\\{_staffSignatureFolderPath}\\{approverName.ToLower()}.png";
 
                 dtSignature.Rows.Add(approverName, approverSignature, approverName, approverSignature);
             }
@@ -605,7 +605,7 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 string uid = dtReceipt.Rows[0]["UID"].ToString();
-                string pdfPath = Path.Combine(outputPath, string.Format("{0}_{1}.pdf", receiptId, uid));
+                string pdfPath = Path.Combine(outputPath, $"{receiptId}_{uid}.pdf");
 
                 // Create report viewer
                 ReportViewer reportViewer = new ReportViewer();
@@ -655,11 +655,11 @@ namespace Take_Time_BangPhra.Services
                     fs.Write(bytes, 0, bytes.Length);
                 }
 
-                System.Diagnostics.Trace.TraceInformation(string.Format("PDF generated successfully: {0}", pdfPath));
+                System.Diagnostics.Trace.TraceInformation($"PDF generated successfully: {pdfPath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error generating PDF report for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error generating PDF report for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -681,17 +681,17 @@ namespace Take_Time_BangPhra.Services
 
                     if (province.Contains("กรุงเทพ"))
                     {
-                        dtBusinessInfoReport.Rows[0]["Address"] = string.Format("{0} {1} แขวง {2} เขต {3} {4} {5}", address, address1, subDistrict, district, province, postalCode);
+                        dtBusinessInfoReport.Rows[0]["Address"] = $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                     }
                     else
                     {
-                        dtBusinessInfoReport.Rows[0]["Address"] = string.Format("{0} {1} ต.{2} อ.{3} จ.{4} {5}", address, address1, subDistrict, district, province, postalCode);
+                        dtBusinessInfoReport.Rows[0]["Address"] = $"{address} {address1} ต.{subDistrict} อ.{district} จ.{province} {postalCode}";
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("Error preparing business info data: {0}", ex.Message));
+                System.Diagnostics.Trace.TraceWarning($"Error preparing business info data: {ex.Message}");
             }
 
             return dtBusinessInfoReport;
@@ -725,7 +725,7 @@ namespace Take_Time_BangPhra.Services
 
                         if (customerTypeId == "1" && branchNumber != "00000")
                         {
-                            dtCustomerReport.Rows[0]["FullName"] = string.Format("{0} สาขาที่ {1}", fullName, branchNumber);
+                            dtCustomerReport.Rows[0]["FullName"] = $"{fullName} สาขาที่ {branchNumber}";
                         }
 
                         // Format address
@@ -738,18 +738,18 @@ namespace Take_Time_BangPhra.Services
 
                         if (province.Contains("กรุงเทพ"))
                         {
-                            dtCustomerReport.Rows[0]["Address"] = string.Format("{0} {1} แขวง {2} เขต {3} {4} {5}", address, address1, subDistrict, district, province, postalCode);
+                            dtCustomerReport.Rows[0]["Address"] = $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                         }
                         else
                         {
-                            dtCustomerReport.Rows[0]["Address"] = string.Format("{0} {1} ต.{2} อ.{3} จ.{4} {5}", address, address1, subDistrict, district, province, postalCode);
+                            dtCustomerReport.Rows[0]["Address"] = $"{address} {address1} ต.{subDistrict} อ.{district} จ.{province} {postalCode}";
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceWarning(string.Format("Error preparing customer data: {0}", ex.Message));
+                System.Diagnostics.Trace.TraceWarning($"Error preparing customer data: {ex.Message}");
             }
 
             return dtCustomerReport;
@@ -780,7 +780,7 @@ namespace Take_Time_BangPhra.Services
                 string uid = GetReceiptUid(receiptId);
                 string year = docDate.Year.ToString();
                 string month = docDate.Month.ToString();
-                string xmlFilePath = Path.Combine(_receiptFolderPath, year, month, string.Format("{0}_{1}.xml", receiptId, uid));
+                string xmlFilePath = Path.Combine(_receiptFolderPath, year, month, $"{receiptId}_{uid}.xml");
 
                 // Get required data for XML
                 DataTable dtReceipt = GetReceiptByUid(receiptId);
@@ -796,7 +796,7 @@ namespace Take_Time_BangPhra.Services
                 string templatePath = Path.Combine(_baseFolderPath, "Resources", "template.xml");
                 if (!File.Exists(templatePath))
                 {
-                    throw new FileNotFoundException(string.Format("e-Tax template not found: {0}", templatePath));
+                    throw new FileNotFoundException($"e-Tax template not found: {templatePath}");
                 }
 
                 string xmlString = File.ReadAllText(templatePath);
@@ -807,11 +807,11 @@ namespace Take_Time_BangPhra.Services
                 // Save XML file
                 File.WriteAllText(xmlFilePath, xmlString, System.Text.Encoding.UTF8);
 
-                System.Diagnostics.Trace.TraceInformation(string.Format("e-Tax XML generated successfully: {0}", xmlFilePath));
+                System.Diagnostics.Trace.TraceInformation($"e-Tax XML generated successfully: {xmlFilePath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error generating e-Tax XML for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error generating e-Tax XML for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -914,7 +914,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error replacing XML placeholders for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error replacing XML placeholders for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -932,11 +932,11 @@ namespace Take_Time_BangPhra.Services
 
                 if (province.Contains("กรุงเทพ"))
                 {
-                    return string.Format("{0} {1} แขวง {2} เขต {3} {4} {5}", address, address1, subDistrict, district, province, postalCode);
+                    return $"{address} {address1} แขวง {subDistrict} เขต {district} {province} {postalCode}";
                 }
                 else
                 {
-                    return string.Format("{0} {1} ต.{2} อ.{3} จ.{4} {5}", address, address1, subDistrict, district, province, postalCode);
+                    return $"{address} {address1} ต.{subDistrict} อ.{district} จ.{province} {postalCode}";
                 }
             }
             catch
@@ -956,7 +956,7 @@ namespace Take_Time_BangPhra.Services
 
         private string GetReceiptUid(string receiptId)
         {
-            DataTable dt = _dbHelper.ExecuteQuery(string.Format("SELECT UID FROM Account_Receipt WHERE ID = '{0}'", receiptId));
+            DataTable dt = _dbHelper.ExecuteQuery($"SELECT UID FROM Account_Receipt WHERE ID = '{receiptId}'");
             if (dt.Rows.Count > 0)
             {
                 return dt.Rows[0]["UID"].ToString();
@@ -972,13 +972,13 @@ namespace Take_Time_BangPhra.Services
                 string year = docDate.Year.ToString();
                 string month = docDate.Month.ToString();
 
-                string pdfFilePath = Path.Combine(_receiptFolderPath, year, month, string.Format("{0}_{1}.pdf", receiptId, uid));
-                string xmlFilePath = Path.Combine(_receiptFolderPath, year, month, string.Format("{0}_{1}.xml", receiptId, uid));
-                string outputPath = Path.Combine(_receiptFolderPath, year, month, string.Format("{0}_{1}_etax.pdf", receiptId, uid));
+                string pdfFilePath = Path.Combine(_receiptFolderPath, year, month, $"{receiptId}_{uid}.pdf");
+                string xmlFilePath = Path.Combine(_receiptFolderPath, year, month, $"{receiptId}_{uid}.xml");
+                string outputPath = Path.Combine(_receiptFolderPath, year, month, $"{receiptId}_{uid}_etax.pdf");
 
                 if (!File.Exists(pdfFilePath) || !File.Exists(xmlFilePath))
                 {
-                    throw new FileNotFoundException(string.Format("Required files not found for PDF/A-3 creation: {0}, {1}", pdfFilePath, xmlFilePath));
+                    throw new FileNotFoundException($"Required files not found for PDF/A-3 creation: {pdfFilePath}, {xmlFilePath}");
                 }
 
                 // Use ECertificateAPI to create PDF/A-3 invoice
@@ -992,11 +992,11 @@ namespace Take_Time_BangPhra.Services
                 // Send email if e-Tax is enabled
                 SendETaxEmail(receiptId, docDate, outputPath);
 
-                System.Diagnostics.Trace.TraceInformation(string.Format("PDF/A-3 invoice created successfully: {0}", outputPath));
+                System.Diagnostics.Trace.TraceInformation($"PDF/A-3 invoice created successfully: {outputPath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error creating PDF/A-3 invoice for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error creating PDF/A-3 invoice for receipt {receiptId}: {ex.Message}");
                 throw;
             }
         }
@@ -1019,9 +1019,9 @@ namespace Take_Time_BangPhra.Services
 
                 // Prepare email content
                 string thaiDate = FormatThaiDate(docDate);
-                string subject = string.Format("[{0}][INV][{1}]", thaiDate, receiptId);
+                string subject = $"[{thaiDate}][INV][{receiptId}]";
                 string body = @"เรียน ลูกค้าผู้มีอุปการะคุณ <br /><br />
-                      หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้
+                      หจก.แอม แฮปปี้เนส (Take Time) ได้แนบใบกำกับภาษี/ใบเสร็จรับเงินมาพร้อมกับอีเมล์ฉบับนี้ 
                       ท่านสามารถเปิดดูได้โดยคลิกไฟล์แนบ (PDF File)<br />
                       ขอแสดงความนับถือ<br />
                       หจก.แอม แฮปปี้เนส (Take Time)";
@@ -1030,17 +1030,17 @@ namespace Take_Time_BangPhra.Services
                 byte[] pdfBytes = File.ReadAllBytes(pdfFilePath);
                 using (var memoryStream = new System.IO.MemoryStream(pdfBytes))
                 {
-                    var attachment = new System.Net.Mail.Attachment(memoryStream, string.Format("{0}_etax.pdf", receiptId));
+                    var attachment = new System.Net.Mail.Attachment(memoryStream, $"{receiptId}_etax.pdf");
 
                     // Send email using centralized EmailService
                     _emailService.SendEmail(customerEmail, subject, body, new System.Net.Mail.Attachment[] { attachment });
                 }
 
-                System.Diagnostics.Trace.TraceInformation(string.Format("e-Tax email sent successfully to {0}", customerEmail));
+                System.Diagnostics.Trace.TraceInformation($"e-Tax email sent successfully to {customerEmail}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError(string.Format("Error sending e-Tax email for receipt {0}: {1}", receiptId, ex.Message));
+                System.Diagnostics.Trace.TraceError($"Error sending e-Tax email for receipt {receiptId}: {ex.Message}");
                 // Don't throw - email failure shouldn't break the main process
             }
         }
@@ -1051,7 +1051,7 @@ namespace Take_Time_BangPhra.Services
             string month = date.Month.ToString("00");
             int year = date.Year + 543; // Convert to Buddhist year
 
-            return string.Format("{0}{1}{2}", day, month, year);
+            return $"{day}{month}{year}";
         }
     }
 }
