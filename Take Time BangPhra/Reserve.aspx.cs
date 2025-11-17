@@ -1039,7 +1039,7 @@ namespace Take_Time_BangPhra
                                     { "@excludeReservationId", Convert.ToInt32(id) }
                                 };
 
-                                DataTable dtSumPeople = code.DatabaseQuerySafe(conn, sumPeopleQuery, sumParams);
+                                DataTable dtSumPeople = code2.DatabaseQuerySafe(conn, sumPeopleQuery, sumParams);
                                 int currentPeopleStay = Convert.ToInt32(dtSumPeople.Rows[0]["TotalPeopleStay"]);
 
                                 // หาจำนวนคนที่ต้องการจองใหม่สำหรับห้องนี้
