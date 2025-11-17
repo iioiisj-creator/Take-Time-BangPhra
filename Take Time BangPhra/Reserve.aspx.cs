@@ -993,82 +993,65 @@ namespace Take_Time_BangPhra
                 catch { id = "0"; }
                 int checkdup = 0;
                 DataTable dtAccom = (DataTable)Session["dtAccommodation"];
-                var reservationDA = new ReservationDataAccess(conn);
+
+                // ✅ Use AccommodationAvailabilityService for centralized logic
+                var availabilityService = new AccommodationAvailabilityService(conn);
 
                 for (int i = 0;i<Convert.ToInt32(DropDownList1.SelectedValue);i++)
                 {
                     for(int j = 0;j<listcheck.Count;j++)
                     {
-                        // 🔒 SECURE: Using parameterized query via ReservationDataAccess
-                        DateTime checkinDate = code2.ParseDate(TextBox12.Text).Value.AddDays(i);
-                        DataTable dtReserveAccomDup = reservationDA.CheckDuplicateAccommodation(
-                            checkinDate,
-                            listcheck[j],
-                            Convert.ToInt32(id)
-                        );
+                        // Find accommodation info
+                        string accomName = listcheck[j];
+                        int accommodationId = 0;
+                        int requestedPeople = 1;
 
-                        if(dtReserveAccomDup.Rows.Count > 0)
+                        // Get accommodation ID and requested people count
+                        foreach (GridViewRow row in GridView1.Rows)
                         {
-                            // ✅ แยกการตรวจสอบตามประเภทห้อง
-                            bool isLimitWithPeople = dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "True" ||
-                                                      dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "1";
-
-                            if (!isLimitWithPeople)
+                            if (row.Cells[1].Text == accomName)
                             {
-                                // ห้องปกติ: ไม่ให้จองซ้ำเลย
-                                checkdup = 1;
-                            }
-                            else
-                            {
-                                // ✅ LimitWithPeople = True: เช็คว่าจองเกินผู้เข้าพักสูงสุดหรือไม่
-                                int limitPeople = Convert.ToInt32(dtReserveAccomDup.Rows[0]["People"].ToString());
-
-                                // ดึงจำนวนคนที่จองแล้วในวันและห้องนี้
-                                string sumPeopleQuery = @"
-                                    SELECT ISNULL(SUM(Reservation_Accommodation.Amount), 0) as TotalPeopleStay
-                                    FROM Reservation_Accommodation
-                                    INNER JOIN Reservation ON Reservation.ID = Reservation_ID
-                                    INNER JOIN Accommodation ON Accommodation.ID = Accommodation_ID
-                                    WHERE CheckinDate = @checkinDate
-                                    AND Accommodation.AccomName = @accomName
-                                    AND Reservation_ID != @excludeReservationId";
-
-                                var sumParams = new Dictionary<string, object>
+                                CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                if (chk != null && chk.Checked)
                                 {
-                                    { "@checkinDate", checkinDate.ToString("yyyy-MM-dd") },
-                                    { "@accomName", listcheck[j] },
-                                    { "@excludeReservationId", Convert.ToInt32(id) }
-                                };
+                                    accommodationId = Convert.ToInt32(dtAccom.Rows[row.RowIndex]["ID"]);
 
-                                DataTable dtSumPeople = code2.DatabaseQuerySafe(conn, sumPeopleQuery, sumParams);
-                                int currentPeopleStay = Convert.ToInt32(dtSumPeople.Rows[0]["TotalPeopleStay"]);
-
-                                // หาจำนวนคนที่ต้องการจองใหม่สำหรับห้องนี้
-                                int newPeopleStay = 0;
-                                foreach (GridViewRow row in GridView1.Rows)
-                                {
-                                    if (row.Cells[1].Text == listcheck[j])
+                                    TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                    if (txtPeopleStay != null && !string.IsNullOrEmpty(txtPeopleStay.Text))
                                     {
-                                        CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
-                                        if (chk != null && chk.Checked)
-                                        {
-                                            TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
-                                            if (txtPeopleStay != null)
-                                            {
-                                                newPeopleStay = Convert.ToInt32(txtPeopleStay.Text);
-                                            }
-                                        }
-                                        break;
+                                        int.TryParse(txtPeopleStay.Text, out requestedPeople);
                                     }
                                 }
-
-                                // ถ้าผู้เข้าพักรวม > Limit_People → ห้องเต็ม
-                                if (currentPeopleStay + newPeopleStay > limitPeople)
-                                {
-                                    checkdup = 1;
-                                }
+                                break;
                             }
                         }
+
+                        if (accommodationId > 0)
+                        {
+                            // ✅ Check availability for this date
+                            DateTime checkinDate = code2.ParseDate(TextBox12.Text).Value.AddDays(i);
+                            DateTime checkoutDate = checkinDate.AddDays(1);
+
+                            var availabilityResult = availabilityService.CheckAvailability(
+                                accommodationId,
+                                accomName,
+                                checkinDate,
+                                checkoutDate,
+                                requestedPeople,
+                                Convert.ToInt32(id)
+                            );
+
+                            if (!availabilityResult.IsAvailable)
+                            {
+                                checkdup = 1;
+                                break; // Exit inner loop
+                            }
+                        }
+                    }
+
+                    if (checkdup == 1)
+                    {
+                        break; // Exit outer loop
                     }
                 }
                 if(checkdup == 1)
@@ -1331,41 +1314,35 @@ namespace Take_Time_BangPhra
                                                     // Only check availability for NEW rooms
                                                     if (!isExistingRoom)
                                                     {
-                                                        // Check for conflicts (exclude current reservation)
-                                                        DataTable dtConflicts = reservationDA.CheckAccommodationAvailability(
+                                                        // ✅ Get requested people count
+                                                        int requestedPeople = 1; // Default
+                                                        TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                                        if (txtPeopleStay != null && !string.IsNullOrEmpty(txtPeopleStay.Text))
+                                                        {
+                                                            int.TryParse(txtPeopleStay.Text, out requestedPeople);
+                                                        }
+
+                                                        // ✅ Use AccommodationAvailabilityService
+                                                        var availabilityService = new AccommodationAvailabilityService(conn);
+                                                        var availabilityResult = availabilityService.CheckAvailability(
                                                             accommodationId,
+                                                            accomName,
                                                             editCheckinDate.Value,
                                                             editCheckoutDate,
-                                                            Convert.ToInt32(id) // Exclude current reservation from conflict check
+                                                            requestedPeople,
+                                                            Convert.ToInt32(id) // Exclude current reservation
                                                         );
 
-                                                        if (dtConflicts.Rows.Count > 0)
+                                                        if (!availabilityResult.IsAvailable)
                                                         {
-                                                            // Room is already booked!
-                                                            string conflictCustomer = dtConflicts.Rows[0]["CustomerName"]?.ToString() ?? "ลูกค้าท่านอื่น";
-                                                            string conflictPhone = dtConflicts.Rows[0]["MobilePhone"]?.ToString() ?? "";
-                                                            DateTime conflictCheckin = Convert.ToDateTime(dtConflicts.Rows[0]["CheckinDate"]);
-                                                            DateTime conflictCheckout = Convert.ToDateTime(dtConflicts.Rows[0]["CheckoutDate"]);
-                                                            int conflictReservationId = Convert.ToInt32(dtConflicts.Rows[0]["ReservationID"]);
-
-                                                            string errorMessage = $@"❌ ห้อง '{accomName}' ถูกจองไปแล้ว!
-
-📋 รายละเอียด:
-• ผู้จอง: {conflictCustomer}
-• เบอร์โทร: {conflictPhone}
-• วันที่เข้าพัก: {conflictCheckin:dd/MM/yyyy}
-• วันที่ออก: {conflictCheckout:dd/MM/yyyy}
-• หมายเลขการจอง: {conflictReservationId}
-
-⚠️ ไม่สามารถเพิ่มห้องนี้ได้ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
-
+                                                            // Room is not available!
                                                             ClientScript.RegisterStartupScript(this.GetType(), "editRoomConflict",
-                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+                                                                $"alert('{availabilityResult.ErrorMessage.Replace("'", "\\'")}');", true);
 
                                                             code2.Logs(conn, "Edit Reservation Conflict - Race Condition Prevented",
                                                                 $"Reservation ID: {id}, Room: {accomName} (ID: {accommodationId}), " +
                                                                 $"Requested: {editCheckinDate.Value:yyyy-MM-dd} to {editCheckoutDate:yyyy-MM-dd}, " +
-                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                $"People: {requestedPeople}, Details: {availabilityResult.ConflictDetails ?? "Room not available"}",
                                                                 Session["User"]?.ToString() ?? "User");
 
                                                             return; // Stop edit process
