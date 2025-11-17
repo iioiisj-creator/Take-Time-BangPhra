@@ -414,7 +414,7 @@
                     <asp:TemplateField HeaderText="ความมั่นใจ">
                         <ItemTemplate>
                             <%# Eval("OCR_Confidence") != DBNull.Value
-                                ? $"<div class='confidence-bar'><div class='confidence-fill' style='width: {Eval("OCR_Confidence")}%'></div></div> {Eval("OCR_Confidence"):N0}%"
+                                ? string.Format("<div class='confidence-bar'><div class='confidence-fill' style='width: {0}%'></div></div> {1:N0}%", Eval("OCR_Confidence"), Eval("OCR_Confidence"))
                                 : "<span style='color: #999;'>-</span>" %>
                         </ItemTemplate>
                     </asp:TemplateField>
