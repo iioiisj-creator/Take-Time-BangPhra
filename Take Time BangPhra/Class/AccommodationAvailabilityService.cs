@@ -12,12 +12,12 @@ namespace Take_Time_BangPhra.Class
     public class AccommodationAvailabilityService
     {
         private readonly string _connectionString;
-        private readonly Code _code;
+        private readonly code _code;
 
         public AccommodationAvailabilityService(string connectionString)
         {
             _connectionString = connectionString;
-            _code = new Code();
+            _code = new code();
         }
 
         /// <summary>
