@@ -2819,6 +2819,7 @@ namespace Take_Time_BangPhra
                                             if (checkinDate.HasValue && checkinDate > DateTime.Parse("1999-01-01"))
                                             {
                                                 DateTime checkoutDate = checkinDate.Value.AddDays(Convert.ToDouble(DropDownList1.SelectedValue));
+                                                var availabilityService = new AccommodationAvailabilityService(conn);
 
                                                 // Check each selected room for availability
                                                 foreach (GridViewRow row in GridView1.Rows)
@@ -2829,41 +2830,36 @@ namespace Take_Time_BangPhra
                                                         int accommodationId = Convert.ToInt32(dtAccommodation.Rows[row.RowIndex]["ID"]);
                                                         string accomName = dtAccommodation.Rows[row.RowIndex]["AccomName"].ToString();
 
-                                                        // Check for conflicts
-                                                        DataTable dtConflicts = reservationDA.CheckAccommodationAvailability(
+                                                        // ✅ Get requested people count
+                                                        int requestedPeople = 1; // Default
+                                                        TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                                        if (txtPeopleStay != null && !string.IsNullOrEmpty(txtPeopleStay.Text))
+                                                        {
+                                                            int.TryParse(txtPeopleStay.Text, out requestedPeople);
+                                                        }
+
+                                                        // ✅ Check availability (supports both regular and LimitWithPeople rooms)
+                                                        var availabilityResult = availabilityService.CheckAvailability(
                                                             accommodationId,
+                                                            accomName,
                                                             checkinDate.Value,
                                                             checkoutDate,
+                                                            requestedPeople,
                                                             0 // excludeReservationId = 0 for new reservations
                                                         );
 
-                                                        if (dtConflicts.Rows.Count > 0)
+                                                        if (!availabilityResult.IsAvailable)
                                                         {
-                                                            // Room is already booked!
-                                                            string conflictCustomer = dtConflicts.Rows[0]["CustomerName"]?.ToString() ?? "ลูกค้าท่านอื่น";
-                                                            string conflictPhone = dtConflicts.Rows[0]["MobilePhone"]?.ToString() ?? "";
-                                                            DateTime conflictCheckin = Convert.ToDateTime(dtConflicts.Rows[0]["CheckinDate"]);
-                                                            DateTime conflictCheckout = Convert.ToDateTime(dtConflicts.Rows[0]["CheckoutDate"]);
-                                                            int conflictReservationId = Convert.ToInt32(dtConflicts.Rows[0]["ReservationID"]);
-
-                                                            string errorMessage = $@"❌ ห้อง '{accomName}' ถูกจองไปแล้ว!
-
-📋 รายละเอียด:
-• ผู้จอง: {conflictCustomer}
-• เบอร์โทร: {conflictPhone}
-• วันที่เข้าพัก: {conflictCheckin:dd/MM/yyyy}
-• วันที่ออก: {conflictCheckout:dd/MM/yyyy}
-• หมายเลขการจอง: {conflictReservationId}
-
-⚠️ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
-
+                                                            // Room is not available!
                                                             ClientScript.RegisterStartupScript(this.GetType(), "roomConflict",
-                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+                                                                $"alert('{availabilityResult.ErrorMessage.Replace("'", "\\'")}');", true);
 
                                                             code2.Logs(conn, "Reservation Conflict - Race Condition Prevented",
                                                                 $"Room: {accomName} (ID: {accommodationId}), " +
                                                                 $"Requested: {checkinDate.Value:yyyy-MM-dd} to {checkoutDate:yyyy-MM-dd}, " +
-                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                $"People: {requestedPeople}, " +
+                                                                $"IsLimitWithPeople: {availabilityResult.IsLimitWithPeople}, " +
+                                                                $"Details: {availabilityResult.ConflictDetails ?? "Not available"}",
                                                                 Session["User"]?.ToString() ?? "User");
 
                                                             return; // Stop reservation process
