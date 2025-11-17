@@ -61,7 +61,7 @@ namespace Take_Time_BangPhra
             string accom = Request.QueryString["accom"];
             string couponcode = Request.QueryString["couponcode"];
             Page.MaintainScrollPositionOnPostBack = true;
-            
+
             if (!IsPostBack)
             {
                 DataTable dtPaidHow = code.DatabaseQuery(SqlDataSource1.ConnectionString, SqlDataSource1.SelectCommand);
@@ -133,7 +133,7 @@ namespace Take_Time_BangPhra
                     }
                     if(Session["User"].ToString() == "Owner" || Session["User"].ToString() == "Admin")
                     {
-                        CheckBox6.Visible = true; 
+                        CheckBox6.Visible = true;
                     }
                 }
                 catch { }
@@ -148,7 +148,7 @@ namespace Take_Time_BangPhra
                     CheckBox4.Visible = true;
                     if (!IsPostBack)
                     {
-                        
+
 
                         DropDownList2.Enabled = true;
                         DropDownList2.Items.Insert(0, new ListItem("---โปรดเลือกวิธีการชำระ---", "0"));
@@ -425,7 +425,7 @@ namespace Take_Time_BangPhra
                         {
                             DepositAmount += 500;
                         }
-                            
+
                         string ReserveDate = "";
                         try
                         {
@@ -598,7 +598,7 @@ namespace Take_Time_BangPhra
             {
                 // Log error for debugging
                 code2.Logs(conn, "Reserve - Get Product Charges Error",
-                    $"Reservation ID: {id}, Error: {ex.Message}",
+                    string.Format("Reservation ID: {0}, Error: {1}", id, ex.Message),
                     Session["User"]?.ToString());
                 ProductCharges = 0;
             }
@@ -747,8 +747,8 @@ namespace Take_Time_BangPhra
                             }
                         }
                         catch { }
-                    
-                    
+
+
                     }
                     catch { }
 
@@ -778,7 +778,7 @@ namespace Take_Time_BangPhra
                     }
                     catch { }
 
-                    
+
 
                     try
                     {
@@ -835,7 +835,7 @@ namespace Take_Time_BangPhra
                             TextBox18.Text = dtCustomer.Rows[0]["Branch_Number"].ToString();
                         }
 
-                        
+
 
                     }
                     catch { }
@@ -1202,7 +1202,7 @@ namespace Take_Time_BangPhra
                             checkpaymentselect = 1;
                             ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('⚠️ กรุณาเลือกวิธีชำระเงิน (ธนาคาร/เงินสด)\\nเพื่อบันทึกการชำระเงิน');", true);
                             code2.Logs(conn, "Reserve Validation Error",
-                                $"Command: {command}, Reservation ID: {id}, Error: Payment method not selected",
+                                string.Format("Command: {0}, Reservation ID: {1}, Error: Payment method not selected", command, id),
                                 Session["User"]?.ToString());
                         }
                         else
@@ -1359,12 +1359,12 @@ namespace Take_Time_BangPhra
 ⚠️ ไม่สามารถเพิ่มห้องนี้ได้ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
 
                                                             ClientScript.RegisterStartupScript(this.GetType(), "editRoomConflict",
-                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+                                                                "alert('{errorMessage.Replace("'", "\\'")}');", true);
 
                                                             code2.Logs(conn, "Edit Reservation Conflict - Race Condition Prevented",
-                                                                $"Reservation ID: {id}, Room: {accomName} (ID: {accommodationId}), " +
-                                                                $"Requested: {editCheckinDate.Value:yyyy-MM-dd} to {editCheckoutDate:yyyy-MM-dd}, " +
-                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                string.Format("Reservation ID: {0}, Room: {1} (ID: {2}), ", id, accomName, accommodationId) +
+                                                                string.Format("Requested: {0} to {1}, ", editCheckinDate.Value:yyyy-MM-dd, editCheckoutDate:yyyy-MM-dd) +
+                                                                string.Format("Conflicts with Reservation ID: {0}", conflictReservationId),
                                                                 Session["User"]?.ToString() ?? "User");
 
                                                             return; // Stop edit process
@@ -1404,7 +1404,7 @@ namespace Take_Time_BangPhra
                                                         Convert.ToInt32(id),
                                                         Convert.ToInt32(oldAccomId)
                                                     );
-                                                    msg += $"🗑️ ยกเลิกห้อง: {dtoldAccom.Rows[x]["AccomName"]}\r\n";
+                                                    msg += "🗑️ ยกเลิกห้อง: {dtoldAccom.Rows[x]["AccomName"]}\r\n";
                                                     checkoldAccomRemoved++;
                                                 }
                                             }
@@ -1492,7 +1492,7 @@ namespace Take_Time_BangPhra
                                                     }
                                                 }
                                             }
-                                                
+
                                         }
 
                                         foreach (GridViewRow row in GridView1.Rows)
@@ -1749,7 +1749,7 @@ namespace Take_Time_BangPhra
                                         {
                                             // 📝 Log edit mode entry
                                             code2.Logs(conn, "Reserve Edit Mode",
-                                                $"Reservation ID: {id}, CheckBox2: {CheckBox2.Checked}, TextBox10: {TextBox10.Text}, FileUpload: {FileUpload1.HasFile}",
+                                                string.Format("Reservation ID: {0}, CheckBox2: {1}, TextBox10: {2}, FileUpload: {3}", id, CheckBox2.Checked, TextBox10.Text, FileUpload1.HasFile),
                                                 Session["User"]?.ToString());
 
                                             decimal Deposit = Convert.ToDecimal(TextBox5.Text);
@@ -1765,7 +1765,7 @@ namespace Take_Time_BangPhra
                                                     ClientScript.RegisterStartupScript(this.GetType(), "myalert",
                                                         "alert('⚠️ กรุณากรอกยอดมัดจำเพิ่มให้ถูกต้อง');", true);
                                                     code2.Logs(conn, "Reserve Edit Error",
-                                                        $"Reservation ID: {id}, Error: Invalid additional deposit amount: {TextBox10.Text}",
+                                                        string.Format("Reservation ID: {0}, Error: Invalid additional deposit amount: {1}", id, TextBox10.Text),
                                                         Session["User"]?.ToString());
                                                     return;
                                                 }
@@ -1782,7 +1782,7 @@ namespace Take_Time_BangPhra
 
                                                 // 📝 Log before receipt creation
                                                 code2.Logs(conn, "Reserve Edit - Creating Additional Deposit Receipt",
-                                                    $"Reservation ID: {id}, Amount: {additionalDeposit}, CheckBox4: {CheckBox4.Checked}",
+                                                    string.Format("Reservation ID: {0}, Amount: {1}, CheckBox4: {2}", id, additionalDeposit, CheckBox4.Checked),
                                                     Session["User"]?.ToString());
 
                                                 if (CheckBox4.Checked == false)
@@ -1794,7 +1794,7 @@ namespace Take_Time_BangPhra
 
                                                     // 📝 Log after receipt creation
                                                     code2.Logs(conn, "Reserve Edit - Receipt Created",
-                                                        $"Reservation ID: {id}, Receipt ID: {receiptId}",
+                                                        string.Format("Reservation ID: {0}, Receipt ID: {1}", id, receiptId),
                                                         Session["User"]?.ToString());
 
                                                     // ✅ Upload slip AFTER createReceipt with Receipt_ID
@@ -1807,7 +1807,7 @@ namespace Take_Time_BangPhra
                                                     {
                                                         MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
                                                         code2.Logs(conn, "Reserve Edit - Manual Payment",
-                                                            $"Marked charges as PAID without receipt for Reservation {id}",
+                                                            string.Format("Marked charges as PAID without receipt for Reservation {0}", id),
                                                             Session["User"]?.ToString());
 
                                                         // ✅ Create Payment_History record (without Receipt_ID)
@@ -1865,13 +1865,13 @@ namespace Take_Time_BangPhra
                                                             {
                                                                 long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                                                                 Session["PaymentHistoryId"] = paymentHistoryId;
-                                                                System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (no receipt)");
+                                                                System.Diagnostics.Debug.WriteLine(string.Format("✅ Created Payment_History ID: {0} (no receipt)", paymentHistoryId));
                                                             }
                                                         }
                                                         catch (Exception exPayment)
                                                         {
                                                             code2.Logs(conn, "Reserve Edit - Payment_History Insert Error",
-                                                                $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                                string.Format("Reservation {0}: {1}", id, exPayment.Message), "SYSTEM");
                                                         }
 
                                                         // ✅ Upload slip without receipt (NULL Receipt_ID)
@@ -1880,7 +1880,7 @@ namespace Take_Time_BangPhra
                                                     catch (Exception ex)
                                                     {
                                                         code2.Logs(conn, "Reserve Edit - Manual Payment Error",
-                                                            $"Reservation {id}, Error: {ex.Message}",
+                                                            string.Format("Reservation {0}, Error: {1}", id, ex.Message),
                                                             Session["User"]?.ToString());
                                                     }
                                                 }
@@ -1941,14 +1941,14 @@ namespace Take_Time_BangPhra
 
                                                 // 📝 Log calculated price
                                                 code2.Logs(conn, "Reserve Edit - Price Calculation",
-                                                    $"Reservation ID: {id}, Old Price: {TextBox4.Text}, " +
-                                                    $"New Calculated Price: {calculatedTotalPrice}",
+                                                    string.Format("Reservation ID: {0}, Old Price: {1}, ", id, TextBox4.Text) +
+                                                    string.Format("New Calculated Price: {0}", calculatedTotalPrice),
                                                     Session["User"]?.ToString());
                                             }
                                             catch (Exception ex)
                                             {
                                                 code2.Logs(conn, "Reserve Edit - Price Calculation Error",
-                                                    $"Reservation ID: {id}, Error: {ex.Message}, Using TextBox4: {TextBox4.Text}",
+                                                    string.Format("Reservation ID: {0}, Error: {1}, Using TextBox4: {2}", id, ex.Message, TextBox4.Text),
                                                     Session["User"]?.ToString());
                                                 // Fallback to TextBox4 if calculation fails
                                                 calculatedTotalPrice = Convert.ToDecimal(TextBox4.Text);
@@ -2039,13 +2039,13 @@ namespace Take_Time_BangPhra
                                                     if (dtOldCustomer.Rows[0]["Name"].ToString() != TextBox2.Text)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"👤 เปลี่ยนชื่อ: {dtOldCustomer.Rows[0]["Name"]} → {TextBox2.Text}");
+                                                        changeDetails.AppendLine("👤 เปลี่ยนชื่อ: {dtOldCustomer.Rows[0]["Name"]} → {TextBox2.Text}");
                                                     }
 
                                                     if (dtOldCustomer.Rows[0]["NickName"].ToString() != TextBox3.Text)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"🎭 เปลี่ยนชื่อเล่น: {dtOldCustomer.Rows[0]["NickName"]} → {TextBox3.Text}");
+                                                        changeDetails.AppendLine("🎭 เปลี่ยนชื่อเล่น: {dtOldCustomer.Rows[0]["NickName"]} → {TextBox3.Text}");
                                                     }
                                                 }
 
@@ -2065,19 +2065,19 @@ namespace Take_Time_BangPhra
                                                     if (oldCheckin != newCheckin)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"📅 เปลี่ยนเช็คอิน: {oldCheckin.ToString("dd MMM yyyy")} → {newCheckin.ToString("dd MMM yyyy")}");
+                                                        changeDetails.AppendLine("📅 เปลี่ยนเช็คอิน: {oldCheckin.ToString("dd MMM yyyy")} → {newCheckin.ToString("dd MMM yyyy")}");
                                                     }
 
                                                     if (oldCheckout != newCheckout)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"📅 เปลี่ยนเช็คเอ้าท์: {oldCheckout.ToString("dd MMM yyyy")} → {newCheckout.ToString("dd MMM yyyy")}");
+                                                        changeDetails.AppendLine("📅 เปลี่ยนเช็คเอ้าท์: {oldCheckout.ToString("dd MMM yyyy")} → {newCheckout.ToString("dd MMM yyyy")}");
                                                     }
 
                                                     if (oldStayDays != newStayDays)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"🕐 เปลี่ยนจำนวนคืน: {oldStayDays} → {newStayDays} คืน");
+                                                        changeDetails.AppendLine(string.Format("🕐 เปลี่ยนจำนวนคืน: {0} → {1} คืน", oldStayDays, newStayDays));
                                                     }
 
                                                     // ตรวจสอบการเปลี่ยนแปลงราคา
@@ -2086,7 +2086,7 @@ namespace Take_Time_BangPhra
                                                     if (oldPrice != newPrice)
                                                     {
                                                         hasAnyChanges = true;
-                                                        changeDetails.AppendLine($"💰 เปลี่ยนราคา: {oldPrice:N0} → {newPrice:N0} บาท");
+                                                        changeDetails.AppendLine(string.Format("💰 เปลี่ยนราคา: {0} → {1} บาท", oldPrice:N0, newPrice:N0));
                                                     }
                                                 }
 
@@ -2097,7 +2097,7 @@ namespace Take_Time_BangPhra
                                                 // รายการห้องเดิม
                                                 foreach (DataRow row in dtoldAccom.Rows)
                                                 {
-                                                    string roomInfo = $"{row["AccomName"]} ({row["Amount"]} คน)";
+                                                    string roomInfo = "{row["AccomName"]} ({row["Amount"]} คน)";
                                                     oldRoomList.Add(roomInfo);
                                                 }
 
@@ -2108,7 +2108,7 @@ namespace Take_Time_BangPhra
                                                     if (chk != null && chk.Checked)
                                                     {
                                                         TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay")) as TextBox;
-                                                        string roomInfo = $"{row.Cells[1].Text} ({txtPeopleStay.Text} คน)";
+                                                        string roomInfo = string.Format("{0} ({1} คน)", row.Cells[1].Text, txtPeopleStay.Text);
                                                         newRoomList.Add(roomInfo);
                                                     }
                                                 }
@@ -2137,14 +2137,14 @@ namespace Take_Time_BangPhra
                                                     var addedRooms = newRoomList.Except(oldRoomList).ToList();
                                                     foreach (var room in addedRooms)
                                                     {
-                                                        changeDetails.AppendLine($"   ➕ {room}");
+                                                        changeDetails.AppendLine(string.Format("   ➕ {0}", room));
                                                     }
 
                                                     // หาห้องที่ลบ
                                                     var removedRooms = oldRoomList.Except(newRoomList).ToList();
                                                     foreach (var room in removedRooms)
                                                     {
-                                                        changeDetails.AppendLine($"   ➖ {room}");
+                                                        changeDetails.AppendLine(string.Format("   ➖ {0}", room));
                                                     }
 
                                                     // หาห้องที่แก้ไข
@@ -2152,7 +2152,7 @@ namespace Take_Time_BangPhra
                                                     foreach (var room in commonRooms)
                                                     {
                                                         // แสดงห้องที่ยังคงอยู่แต่อาจมีการเปลี่ยนแปลงอื่น
-                                                        changeDetails.AppendLine($"   ✅ {room}");
+                                                        changeDetails.AppendLine(string.Format("   ✅ {0}", room));
                                                     }
                                                 }
 
@@ -2163,7 +2163,7 @@ namespace Take_Time_BangPhra
                                                 // รายการของเดิม
                                                 foreach (DataRow row in dtoldItem.Rows)
                                                 {
-                                                    string itemInfo = $"{row["ItemName"]} ({row["Amount"]} ชิ้น)";
+                                                    string itemInfo = "{row["ItemName"]} ({row["Amount"]} ชิ้น)";
                                                     oldItemList.Add(itemInfo);
                                                 }
 
@@ -2174,7 +2174,7 @@ namespace Take_Time_BangPhra
                                                     if (chk != null && chk.Checked)
                                                     {
                                                         TextBox txtAmount = (row.Cells[2].FindControl("txtAmount")) as TextBox;
-                                                        string itemInfo = $"{row.Cells[1].Text} ({txtAmount.Text} ชิ้น)";
+                                                        string itemInfo = string.Format("{0} ({1} ชิ้น)", row.Cells[1].Text, txtAmount.Text);
                                                         newItemList.Add(itemInfo);
                                                     }
                                                 }
@@ -2201,13 +2201,13 @@ namespace Take_Time_BangPhra
                                                     var addedItems = newItemList.Except(oldItemList).ToList();
                                                     foreach (var item in addedItems)
                                                     {
-                                                        changeDetails.AppendLine($"   ➕ {item}");
+                                                        changeDetails.AppendLine(string.Format("   ➕ {0}", item));
                                                     }
 
                                                     var removedItems = oldItemList.Except(newItemList).ToList();
                                                     foreach (var item in removedItems)
                                                     {
-                                                        changeDetails.AppendLine($"   ➖ {item}");
+                                                        changeDetails.AppendLine(string.Format("   ➖ {0}", item));
                                                     }
                                                 }
 
@@ -2216,7 +2216,7 @@ namespace Take_Time_BangPhra
                                                 if (oldRemark != TextBox6.Text)
                                                 {
                                                     hasAnyChanges = true;
-                                                    changeDetails.AppendLine($"💬 เปลี่ยนหมายเหตุ: {oldRemark} → {TextBox6.Text}");
+                                                    changeDetails.AppendLine(string.Format("💬 เปลี่ยนหมายเหตุ: {0} → {1}", oldRemark, TextBox6.Text));
                                                 }
 
                                                 // ส่งข้อความถ้ามีการเปลี่ยนแปลงใดๆ
@@ -2249,8 +2249,8 @@ namespace Take_Time_BangPhra
                                             // ✅ Edit mode always redirects to ReserveTable
                                             // 📝 Log edit completion
                                             code2.Logs(conn, "Reserve Edit - Completed",
-                                                $"Reservation ID: {id}, HasAdditionalDeposit: {CheckBox2.Checked}, " +
-                                                $"TotalPrice: {TextBox4.Text}, Deposit: {Deposit}",
+                                                string.Format("Reservation ID: {0}, HasAdditionalDeposit: {1}, ", id, CheckBox2.Checked) +
+                                                string.Format("TotalPrice: {0}, Deposit: {1}", TextBox4.Text, Deposit),
                                                 Session["User"]?.ToString());
 
                                             // 📊 All edit operations redirect to ReserveTable
@@ -2290,7 +2290,7 @@ namespace Take_Time_BangPhra
                                                         {
                                                             MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
                                                             code2.Logs(conn, "Reserve RentMore - Manual Payment",
-                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                string.Format("Marked charges as PAID without receipt for Reservation {0}", id),
                                                                 Session["User"]?.ToString());
 
                                                             // ✅ Create Payment_History record (without Receipt_ID)
@@ -2348,13 +2348,13 @@ namespace Take_Time_BangPhra
                                                                 {
                                                                     long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                                                                     Session["PaymentHistoryId"] = paymentHistoryId;
-                                                                    System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (rentmore, no receipt)");
+                                                                    System.Diagnostics.Debug.WriteLine(string.Format("✅ Created Payment_History ID: {0} (rentmore, no receipt)", paymentHistoryId));
                                                                 }
                                                             }
                                                             catch (Exception exPayment)
                                                             {
                                                                 code2.Logs(conn, "Reserve RentMore - Payment_History Insert Error",
-                                                                    $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                                    string.Format("Reservation {0}: {1}", id, exPayment.Message), "SYSTEM");
                                                             }
 
                                                             // ✅ Upload slip without receipt (NULL Receipt_ID)
@@ -2363,7 +2363,7 @@ namespace Take_Time_BangPhra
                                                         catch (Exception ex)
                                                         {
                                                             code2.Logs(conn, "Reserve RentMore - Manual Payment Error",
-                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                string.Format("Reservation {0}, Error: {1}", id, ex.Message),
                                                                 Session["User"]?.ToString());
                                                         }
                                                     }
@@ -2502,7 +2502,7 @@ namespace Take_Time_BangPhra
                                                     {
                                                         MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
                                                         code2.Logs(conn, "Reserve CheckIn - Manual Payment (No Deposit)",
-                                                            $"Marked charges as PAID without receipt for Reservation {id}",
+                                                            string.Format("Marked charges as PAID without receipt for Reservation {0}", id),
                                                             Session["User"]?.ToString());
 
                                                         // ✅ Create Payment_History record (without Receipt_ID)
@@ -2560,13 +2560,13 @@ namespace Take_Time_BangPhra
                                                             {
                                                                 long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                                                                 Session["PaymentHistoryId"] = paymentHistoryId;
-                                                                System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (checkin, no receipt, no deposit)");
+                                                                System.Diagnostics.Debug.WriteLine(string.Format("✅ Created Payment_History ID: {0} (checkin, no receipt, no deposit)", paymentHistoryId));
                                                             }
                                                         }
                                                         catch (Exception exPayment)
                                                         {
                                                             code2.Logs(conn, "Reserve CheckIn - Payment_History Insert Error",
-                                                                $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                                string.Format("Reservation {0}: {1}", id, exPayment.Message), "SYSTEM");
                                                         }
 
                                                         // ✅ Upload slip without receipt (NULL Receipt_ID)
@@ -2575,7 +2575,7 @@ namespace Take_Time_BangPhra
                                                     catch (Exception ex)
                                                     {
                                                         code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
-                                                            $"Reservation {id}, Error: {ex.Message}",
+                                                            string.Format("Reservation {0}, Error: {1}", id, ex.Message),
                                                             Session["User"]?.ToString());
                                                     }
                                                 }
@@ -2617,7 +2617,7 @@ namespace Take_Time_BangPhra
                                                         {
                                                             MarkProductChargesAsPaid(Convert.ToInt32(id), "MANUAL_PAYMENT");
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment (Exact Deposit)",
-                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                string.Format("Marked charges as PAID without receipt for Reservation {0}", id),
                                                                 Session["User"]?.ToString());
 
                                                             // ✅ Create Payment_History record (without Receipt_ID)
@@ -2675,13 +2675,13 @@ namespace Take_Time_BangPhra
                                                                 {
                                                                     long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                                                                     Session["PaymentHistoryId"] = paymentHistoryId;
-                                                                    System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} (checkin, no receipt, exact deposit)");
+                                                                    System.Diagnostics.Debug.WriteLine(string.Format("✅ Created Payment_History ID: {0} (checkin, no receipt, exact deposit)", paymentHistoryId));
                                                                 }
                                                             }
                                                             catch (Exception exPayment)
                                                             {
                                                                 code2.Logs(conn, "Reserve CheckIn - Payment_History Insert Error",
-                                                                    $"Reservation {id}: {exPayment.Message}", "SYSTEM");
+                                                                    string.Format("Reservation {0}: {1}", id, exPayment.Message), "SYSTEM");
                                                             }
 
                                                             // ✅ Upload slip without receipt (NULL Receipt_ID)
@@ -2690,7 +2690,7 @@ namespace Take_Time_BangPhra
                                                         catch (Exception ex)
                                                         {
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
-                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                string.Format("Reservation {0}, Error: {1}", id, ex.Message),
                                                                 Session["User"]?.ToString());
                                                         }
                                                     }
@@ -2760,12 +2760,12 @@ namespace Take_Time_BangPhra
                                                             catch (Exception exPayment)
                                                             {
                                                                 code2.Logs(conn, "Reserve CheckIn (Discount) - Payment_History Insert Error",
-                                                                    $"Reservation {id}, Error: {exPayment.Message}",
+                                                                    string.Format("Reservation {0}, Error: {1}", id, exPayment.Message),
                                                                     Session["User"]?.ToString());
                                                             }
 
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment (With Discount)",
-                                                                $"Marked charges as PAID without receipt for Reservation {id}",
+                                                                string.Format("Marked charges as PAID without receipt for Reservation {0}", id),
                                                                 Session["User"]?.ToString());
 
                                                             // ✅ Upload slip without receipt (NULL Receipt_ID)
@@ -2774,7 +2774,7 @@ namespace Take_Time_BangPhra
                                                         catch (Exception ex)
                                                         {
                                                             code2.Logs(conn, "Reserve CheckIn - Manual Payment Error",
-                                                                $"Reservation {id}, Error: {ex.Message}",
+                                                                string.Format("Reservation {0}, Error: {1}", id, ex.Message),
                                                                 Session["User"]?.ToString());
                                                         }
                                                     }
@@ -2793,7 +2793,7 @@ namespace Take_Time_BangPhra
                                                                 "สถานะการจองยังไม่เปลี่ยนแปลง";
 
                                             ClientScript.RegisterStartupScript(this.GetType(), "checkinWarning",
-                                                $"alert('{alertMessage}');", true);
+                                                string.Format("alert('{0}');", alertMessage), true);
 
                                             // Log การพยายามเช็คอินโดยไม่ชำระเงิน
                                             try
@@ -2801,8 +2801,8 @@ namespace Take_Time_BangPhra
                                                 var loggingService = new LoggingService(conn);
                                                 loggingService.LogAccountingOperation(
                                                     "CheckInAttemptWithoutPayment",
-                                                    $"User attempted to check-in Reservation ID: {id} without payment checkbox. " +
-                                                    $"User: {Session["UserName"]?.ToString() ?? "Unknown"}",
+                                                    string.Format("User attempted to check-in Reservation ID: {0} without payment checkbox. ", id) +
+                                                    "User: {Session["UserName"]?.ToString() ?? "Unknown"}",
                                                     false,
                                                     Session["UserID"] != null ? (int?)Convert.ToInt32(Session["UserID"]) : null,
                                                     Convert.ToInt64(id));
@@ -2815,7 +2815,7 @@ namespace Take_Time_BangPhra
                                         if (FileUpload1.HasFile && CheckBox2.Checked)
                                         {
                                             // Reload the same checkin page to show the slip
-                                            Response.Redirect($"./Reserve?command=checkin&id={id}&check={TextBox1.Text}", false);
+                                            Response.Redirect(string.Format("./Reserve?command=checkin&id={0}&check={1}", id, TextBox1.Text), false);
                                             HttpContext.Current.ApplicationInstance.CompleteRequest();
                                         }
                                         else
@@ -2880,12 +2880,12 @@ namespace Take_Time_BangPhra
 ⚠️ กรุณาเลือกห้องอื่น หรือเลือกวันที่อื่น";
 
                                                             ClientScript.RegisterStartupScript(this.GetType(), "roomConflict",
-                                                                $"alert('{errorMessage.Replace("'", "\\'")}');", true);
+                                                                "alert('{errorMessage.Replace("'", "\\'")}');", true);
 
                                                             code2.Logs(conn, "Reservation Conflict - Race Condition Prevented",
-                                                                $"Room: {accomName} (ID: {accommodationId}), " +
-                                                                $"Requested: {checkinDate.Value:yyyy-MM-dd} to {checkoutDate:yyyy-MM-dd}, " +
-                                                                $"Conflicts with Reservation ID: {conflictReservationId}",
+                                                                string.Format("Room: {0} (ID: {1}), ", accomName, accommodationId) +
+                                                                string.Format("Requested: {0} to {1}, ", checkinDate.Value:yyyy-MM-dd, checkoutDate:yyyy-MM-dd) +
+                                                                string.Format("Conflicts with Reservation ID: {0}", conflictReservationId),
                                                                 Session["User"]?.ToString() ?? "User");
 
                                                             return; // Stop reservation process
@@ -2940,7 +2940,7 @@ namespace Take_Time_BangPhra
                                         catch (Exception ex)
                                         {
                                             code2.Logs(conn, "Reservation Creation Error", ex.Message + " - " + ex.StackTrace, "SYSTEM");
-                                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", $"alert('เกิดข้อผิดพลาดในการสร้างการจอง: {ex.Message}');", true);
+                                            ClientScript.RegisterStartupScript(this.GetType(), "myalert", string.Format("alert('เกิดข้อผิดพลาดในการสร้างการจอง: {0}');", ex.Message), true);
                                             return;
                                         }
                                         string ID = "";
@@ -3015,7 +3015,7 @@ namespace Take_Time_BangPhra
                                                 {
                                                     long paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                                                     Session["PaymentHistoryId"] = paymentHistoryId;
-                                                    System.Diagnostics.Debug.WriteLine($"Created Payment_History ID: {paymentHistoryId}");
+                                                    System.Diagnostics.Debug.WriteLine(string.Format("Created Payment_History ID: {0}", paymentHistoryId));
                                                 }
                                             }
                                             catch (Exception ex)
@@ -3187,7 +3187,7 @@ namespace Take_Time_BangPhra
                                                 catch (Exception ex)
                                                 {
                                                     code2.Logs(conn, "Reserve Mode - Upload Slip Error",
-                                                        $"Reservation: {ID}, Receipt: {receiptId}, Error: {ex.Message}",
+                                                        string.Format("Reservation: {0}, Receipt: {1}, Error: {2}", ID, receiptId, ex.Message),
                                                         Session["User"]?.ToString());
                                                 }
                                             }
@@ -3202,7 +3202,7 @@ namespace Take_Time_BangPhra
                                             catch (Exception ex)
                                             {
                                                 code2.Logs(conn, "Reserve Mode - Manual Payment Upload Slip Error",
-                                                    $"Reservation: {ID}, Error: {ex.Message}",
+                                                    string.Format("Reservation: {0}, Error: {1}", ID, ex.Message),
                                                     Session["User"]?.ToString());
                                             }
                                         }
@@ -3253,7 +3253,7 @@ namespace Take_Time_BangPhra
 💵 มัดจำ: {Convert.ToDecimal(TextBox5.Text):N2} บาท
 💳 ยอดคงเหลือ: {(Convert.ToDecimal(TextBox4.Text) - Convert.ToDecimal(TextBox5.Text)):N2} บาท
 
-{(!string.IsNullOrWhiteSpace(TextBox6.Text) ? $"💬 หมายเหตุ: {TextBox6.Text}\n" : "")}👨‍💼 ลงจองโดย: {Session["UserName"]?.ToString() ?? "System"}
+{(!string.IsNullOrWhiteSpace(TextBox6.Text) ? string.Format("💬 หมายเหตุ: {0}\n", TextBox6.Text) : "")}👨‍💼 ลงจองโดย: {Session["UserName"]?.ToString() ?? "System"}
 ━━━━━━━━━━━━━━━━━";
 
                                             var bot = new TelegramBot2(ConfigurationSettings.AppSettings["TelegramTokenTakeTime"].ToString());
@@ -3264,7 +3264,7 @@ namespace Take_Time_BangPhra
                                             if (FileUpload1.HasFile)
                                             {
                                                 // Reload the same reserve page to show the slip
-                                                Response.Redirect($"./Reserve?command=reserve&date={TextBox12.Text}", false);
+                                                Response.Redirect(string.Format("./Reserve?command=reserve&date={0}", TextBox12.Text), false);
                                                 HttpContext.Current.ApplicationInstance.CompleteRequest();
                                             }
                                             else
@@ -3279,7 +3279,7 @@ namespace Take_Time_BangPhra
                                             // ✅ Reload page to show uploaded slip image even on Telegram error
                                             if (FileUpload1.HasFile)
                                             {
-                                                Response.Redirect($"./Reserve?command=reserve&date={TextBox12.Text}", false);
+                                                Response.Redirect(string.Format("./Reserve?command=reserve&date={0}", TextBox12.Text), false);
                                                 HttpContext.Current.ApplicationInstance.CompleteRequest();
                                             }
                                             else
@@ -3291,7 +3291,7 @@ namespace Take_Time_BangPhra
                                         //SendLineNotify("ลูกค้าจองห้องพักใหม่หมายเลขการจอง: "+Reservation_ID+"\r\nหมายเลขโทรศัพท์: "+ TextBox1.Text + "\r\nเช็คอินวันที่: " + code2.ParseDate(TextBox12.Text).ToString("dd MMMM yyyy") + "\r\nเช็คเอ้าท์วันที่: " + code2.ParseDate(TextBox12.Text).AddDays(Convert.ToDouble(DropDownList1.SelectedValue)).ToString("dd MMMM yyyy") + "\r\n"+msg);
 
 
-                                        
+
                                     }
                                 }
                                 catch(Exception ex)
@@ -3309,9 +3309,9 @@ namespace Take_Time_BangPhra
                                         }
                                     }
                                     catch { }
-                                    
+
                                 }
-                                
+
                             }
                             else
                             {
@@ -3386,7 +3386,7 @@ namespace Take_Time_BangPhra
                     }
                 }
             }
-                
+
         }
         private static UserCredential Login(string googleClientId, string googleClientSecret, string[] scopes)
         {
@@ -3437,7 +3437,7 @@ namespace Take_Time_BangPhra
 
         public void SendEmail(string SMTP,int Port,bool EnableSsl,bool UseDefaultCredentials, string from,string password, string to, string cc, string subject, string body, Attachment[] data)
         {
-            
+
             MailMessage mail = new MailMessage(from, to);
             SmtpClient client = new SmtpClient();
             client.Host = SMTP;
@@ -3537,19 +3537,19 @@ namespace Take_Time_BangPhra
                         {
                             paymentHistoryId = Convert.ToInt64(dtPaymentId.Rows[0][0]);
                             Session["PaymentHistoryId"] = paymentHistoryId;
-                            System.Diagnostics.Debug.WriteLine($"✅ Created Payment_History ID: {paymentHistoryId} for slip upload");
+                            System.Diagnostics.Debug.WriteLine(string.Format("✅ Created Payment_History ID: {0} for slip upload", paymentHistoryId));
                         }
                     }
                     catch (Exception ex)
                     {
                         code2.Logs(conn, "uploadSlip - Payment_History Insert Error",
-                            $"Reservation {reservationID}: {ex.Message}", "SYSTEM");
+                            string.Format("Reservation {0}: {1}", reservationID, ex.Message), "SYSTEM");
                         // Continue with upload even if Payment_History fails (use timestamp as fallback)
                     }
                 }
 
                 // Generate unique filename pattern: {ReservationID}_{Phone}_{PaymentHistoryId}.jpg
-                string uniqueSuffix = paymentHistoryId.HasValue ? $"_{paymentHistoryId.Value}" : $"_{DateTime.Now:yyyyMMddHHmmss}";
+                string uniqueSuffix = paymentHistoryId.HasValue ? string.Format("_{0}", paymentHistoryId.Value) : string.Format("_{0:yyyyMMddHHmmss}", DateTime.Now);
                 string tempFilename = TextBox1.Text + ".jpg";
                 string finalFilename = reservationID + "_" + TextBox1.Text + uniqueSuffix + ".jpg";
 
@@ -3572,7 +3572,7 @@ namespace Take_Time_BangPhra
                                 catch (Exception deleteEx)
                                 {
                                     code2.Logs(conn, "uploadSlip - Delete Destination Warning",
-                                        $"Reservation {reservationID}: Could not delete existing file: {deleteEx.Message}",
+                                        string.Format("Reservation {0}: Could not delete existing file: {1}", reservationID, deleteEx.Message),
                                         Session["User"]?.ToString() ?? "SYSTEM");
                                 }
                             }
@@ -3589,7 +3589,7 @@ namespace Take_Time_BangPhra
                     catch (Exception moveEx)
                     {
                         code2.Logs(conn, "uploadSlip - File Move Error",
-                            $"Reservation {reservationID}: {moveEx.Message}",
+                            string.Format("Reservation {0}: {1}", reservationID, moveEx.Message),
                             Session["User"]?.ToString() ?? "SYSTEM");
 
                         // If move fails, try to at least show the temp file
@@ -3616,9 +3616,9 @@ namespace Take_Time_BangPhra
                             if (!allowedExtensions.Contains(fileExtension))
                             {
                                 code2.Logs(conn, "uploadSlip - Invalid File Type",
-                                    $"Reservation {reservationID}: Attempted to upload {fileExtension}",
+                                    string.Format("Reservation {0}: Attempted to upload {1}", reservationID, fileExtension),
                                     Session["User"]?.ToString() ?? "SYSTEM");
-                                throw new Exception($"ไม่รองรับไฟล์ประเภท {fileExtension}\nกรุณาอัพโหลด JPG, PNG, GIF หรือ PDF เท่านั้น");
+                                throw new Exception(string.Format("ไม่รองรับไฟล์ประเภท {0}\nกรุณาอัพโหลด JPG, PNG, GIF หรือ PDF เท่านั้น", fileExtension));
                             }
 
                             // 🔒 Validate file size (max 10MB)
@@ -3626,9 +3626,9 @@ namespace Take_Time_BangPhra
                             if (FileUpload1.PostedFile.ContentLength > maxFileSize)
                             {
                                 code2.Logs(conn, "uploadSlip - File Too Large",
-                                    $"Reservation {reservationID}: File size {FileUpload1.PostedFile.ContentLength / 1024 / 1024}MB",
+                                    string.Format("Reservation {0}: File size {1}MB", reservationID, FileUpload1.PostedFile.ContentLength / 1024 / 1024),
                                     Session["User"]?.ToString() ?? "SYSTEM");
-                                throw new Exception($"ไฟล์ใหญ่เกินไป ({FileUpload1.PostedFile.ContentLength / 1024 / 1024}MB)\nขนาดสูงสุดที่รองรับคือ 10MB");
+                                throw new Exception(string.Format("ไฟล์ใหญ่เกินไป ({0}MB)\nขนาดสูงสุดที่รองรับคือ 10MB", FileUpload1.PostedFile.ContentLength / 1024 / 1024));
                             }
 
                             // ✅ Ensure Upload/Slip directory exists
@@ -3650,7 +3650,7 @@ namespace Take_Time_BangPhra
                             catch (Exception deleteEx)
                             {
                                 code2.Logs(conn, "uploadSlip - Delete Temp File Warning",
-                                    $"Reservation {reservationID}: Could not delete temp file: {deleteEx.Message}",
+                                    string.Format("Reservation {0}: Could not delete temp file: {1}", reservationID, deleteEx.Message),
                                     Session["User"]?.ToString() ?? "SYSTEM");
                                 // Continue even if delete fails
                             }
@@ -3667,11 +3667,11 @@ namespace Take_Time_BangPhra
                         catch (Exception saveEx)
                         {
                             code2.Logs(conn, "uploadSlip - SaveAs Error",
-                                $"Reservation {reservationID}: {saveEx.Message}",
+                                string.Format("Reservation {0}: {1}", reservationID, saveEx.Message),
                                 Session["User"]?.ToString() ?? "SYSTEM");
 
                             // Show error to user but don't crash
-                            System.Diagnostics.Debug.WriteLine($"❌ Upload error: {saveEx.Message}");
+                            System.Diagnostics.Debug.WriteLine(string.Format("❌ Upload error: {0}", saveEx.Message));
                             // Continue processing - slip can be uploaded later
                         }
                     }
@@ -3757,7 +3757,7 @@ namespace Take_Time_BangPhra
                                 };
 
                                 code2.DatabaseInsertSafe(conn, updatePaymentQuery, updateParams);
-                                System.Diagnostics.Debug.WriteLine($"Created Payment_Slip ID: {paymentSlipId}, linked to Payment_History ID: {paymentHistoryId}");
+                                System.Diagnostics.Debug.WriteLine(string.Format("Created Payment_Slip ID: {0}, linked to Payment_History ID: {1}", paymentSlipId, paymentHistoryId));
 
                                 // 🆕 Process OCR for uploaded slip
                                 try
@@ -3767,7 +3767,7 @@ namespace Take_Time_BangPhra
                                 catch (Exception ocrEx)
                                 {
                                     code2.Logs(conn, "Reserve OCR Processing Error",
-                                        $"SlipID: {paymentSlipId}, Error: {ocrEx.Message}", "SYSTEM");
+                                        string.Format("SlipID: {0}, Error: {1}", paymentSlipId, ocrEx.Message), "SYSTEM");
                                     // Don't fail the upload if OCR fails
                                 }
                             }
@@ -3812,11 +3812,11 @@ namespace Take_Time_BangPhra
 
                 // Log result for monitoring
                 string logMessage = ocrResult.Success
-                    ? $"OCR Success - Amount: {ocrResult.Amount:N2}, Confidence: {ocrResult.Confidence:N2}%"
-                    : $"OCR Failed - {ocrResult.ErrorMessage}";
+                    ? string.Format("OCR Success - Amount: {0}, Confidence: {1}%", ocrResult.Amount:N2, ocrResult.Confidence:N2)
+                    : string.Format("OCR Failed - {0}", ocrResult.ErrorMessage);
 
                 code2.Logs(conn, "Reserve OCR Processing",
-                    $"SlipID: {slipId}, {logMessage}", "SYSTEM");
+                    string.Format("SlipID: {0}, {1}", slipId, logMessage), "SYSTEM");
             }
             catch (Exception ex)
             {
@@ -3831,7 +3831,7 @@ namespace Take_Time_BangPhra
                 // Note: Payment_Slips table does NOT have OCR columns
                 // Just log the error
                 code2.Logs(conn, "Reserve ProcessSlipOCR Error",
-                    $"SlipID: {slipId}, Error: {ex.Message}", "SYSTEM");
+                    string.Format("SlipID: {0}, Error: {1}", slipId, ex.Message), "SYSTEM");
             }
         }
 
@@ -3960,7 +3960,7 @@ namespace Take_Time_BangPhra
                     if (Math.Abs(receiptTotal - Total_Amount) > 0.01)
                     {
                         code2.Logs(conn, "Receipt Total Mismatch",
-                            $"Receipt {ReceiptID}: Expected {Total_Amount}, Calculated {receiptTotal}",
+                            string.Format("Receipt {0}: Expected {1}, Calculated {2}", ReceiptID, Total_Amount, receiptTotal),
                             "SYSTEM");
                     }
                 }
@@ -4034,7 +4034,7 @@ namespace Take_Time_BangPhra
                     };
 
                     code2.DatabaseInsertSafe(conn, insertPaymentQuery, paymentParams);
-                    System.Diagnostics.Debug.WriteLine($"Created Payment_History for Receipt: {ReceiptID}");
+                    System.Diagnostics.Debug.WriteLine(string.Format("Created Payment_History for Receipt: {0}", ReceiptID));
                 }
                 catch (Exception ex)
                 {
@@ -4058,12 +4058,12 @@ namespace Take_Time_BangPhra
                     {
                         pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_" + uid + "_etax.pdf";
                     }
-                    else 
+                    else
                     {
                         pdfpath = path + "\\" + docDate.Year.ToString() + "\\" + docDate.Month.ToString() + "\\" + dtReceipt.Rows[0]["ID"].ToString() + "_etax.pdf";
                     }
 
-                       
+
 
                     string pdfFilePath = pdfpath;
                     byte[] bytes = System.IO.File.ReadAllBytes(pdfFilePath);
@@ -4186,7 +4186,7 @@ namespace Take_Time_BangPhra
 
             // Log การปรับสัดส่วน
             code2.Logs(conn, "Receipt Amount Adjustment",
-                $"Reservation {reservationId}: Adjusting details from {currentTotal:F2} to {expectedTotalExcludingCharges:F2} (ratio: {adjustmentRatio:F4}), Product Charges: {productChargesTotal:F2} (excluded from adjustment)",
+                string.Format("Reservation {0}: Adjusting details from {1} to {2} (ratio: {3}), Product Charges: {4} (excluded from adjustment)", reservationId, currentTotal:F2, expectedTotalExcludingCharges:F2, adjustmentRatio:F4, productChargesTotal:F2),
                 "SYSTEM");
 
             double adjustedTotal = 0;
@@ -4244,7 +4244,7 @@ namespace Take_Time_BangPhra
             if (Math.Abs(totalDifference) > 0.5)
             {
                 code2.Logs(conn, "Receipt Adjustment Warning",
-                    $"Reservation {reservationId}: Final total mismatch! Expected: {expectedTotal:F2}, Actual: {finalTotal:F2}, Difference: {totalDifference:F2}",
+                    string.Format("Reservation {0}: Final total mismatch! Expected: {1}, Actual: {2}, Difference: {3}", reservationId, expectedTotal:F2, finalTotal:F2, totalDifference:F2),
                     "SYSTEM");
             }
         }
@@ -4478,7 +4478,7 @@ namespace Take_Time_BangPhra
             try
             {
 
-               
+
 
                 Account.Report.DataSet1 dataSet1 = new Account.Report.DataSet1();
                 dataSet1.Tables.Add(dtbusinessinfo);
@@ -4523,7 +4523,7 @@ namespace Take_Time_BangPhra
 
 
                 }
-            
+
             catch { }
 
             if (CheckBox5.Checked == true)
@@ -4671,7 +4671,7 @@ namespace Take_Time_BangPhra
 
         protected void TextBox5_TextChanged(object sender, EventArgs e)
         {
-            
+
             int minDeposit = Convert.ToInt32(Label2.Text);
             try
             {
@@ -4706,7 +4706,7 @@ namespace Take_Time_BangPhra
 
         protected void TextBox1_TextChanged(object sender, EventArgs e)
         {
-            
+
             TextBox1.Text = TextBox1.Text.Replace("ชื่อเล่น", "").Replace("ชื่อ", "").Replace("คะ", "").Replace("ค่ะ", "").Replace("ค่า", "").Replace("ครับ", "").Replace("คับ", "").Replace("เบอร์", "").Replace("เบอ", "");
             string[] txt1input = TextBox1.Text.Split(' ');
             int phoneid = -1;
@@ -4804,7 +4804,7 @@ namespace Take_Time_BangPhra
                 LEFT JOIN Customer_Type ON Customer_Type_ID = Customer_Type.ID
                 LEFT JOIN Address ON Address.ID = Customer.Address_ID
                 WHERE MobilePhone = '" + TextBox1.Text + "'");
-            
+
             if (dtCustomer.Rows.Count >= 1)
             {
                 try //Address
@@ -4852,7 +4852,7 @@ namespace Take_Time_BangPhra
                 TextBox1.Text = TextBox1.Text.Remove(TextBox1.Text.Length - 1);
             }
 
-            
+
         }
 
         protected void Calendar1_DayRender(object sender, DayRenderEventArgs e)
@@ -4931,10 +4931,10 @@ namespace Take_Time_BangPhra
                     catch (Exception ex)
                     {
                         ClientScript.RegisterStartupScript(this.GetType(), "uploadError",
-                            $"alert('❌ เกิดข้อผิดพลาด: {ex.Message.Replace("'", "\\'")}');", true);
+                            "alert('❌ เกิดข้อผิดพลาด: {ex.Message.Replace("'", "\\'")}');", true);
 
                         code2.Logs(conn, "Button3_Click Error",
-                            $"Phone: {TextBox1.Text}, Error: {ex.Message}",
+                            string.Format("Phone: {0}, Error: {1}", TextBox1.Text, ex.Message),
                             Session["User"]?.ToString() ?? "SYSTEM");
                     }
                 }
@@ -5321,12 +5321,12 @@ namespace Take_Time_BangPhra
                                 }
                                 else
                                 {
-                                    
+
                                 }
                             }
                             else
                             {
-                                
+
                             }
 
                         }
@@ -5477,7 +5477,7 @@ namespace Take_Time_BangPhra
                                 {
                                     ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('กรุณาเลือกวันที่ต้องการจองก่อน');", true);
                                 }
-                                
+
                                 if (dtVoucher.Rows.Count >= 1)
                                 {
                                     Price = Convert.ToInt32(dtVoucher.Rows[0]["PriceTo"].ToString()).ToString();
@@ -5502,7 +5502,7 @@ namespace Take_Time_BangPhra
                             {
                                 Price = dtRatePlan.Rows[j]["Price"].ToString();
                             }
-                            
+
                         }
                     }
                 }
@@ -5708,15 +5708,15 @@ namespace Take_Time_BangPhra
 
             // Get all reservations that overlap with our date range
             string reservationQuery = $@"
-SELECT ra.* 
+SELECT ra.*
 FROM Reservation r
 JOIN Reservation_Accommodation ra ON r.ID = ra.Reservation_ID
-WHERE r.CheckinDate < '{checkOutDate.ToString("yyyy-MM-dd")}' 
+WHERE r.CheckinDate < '{checkOutDate.ToString("yyyy-MM-dd")}'
 AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
 
             if (command == "edit" || command == "checkin" || command == "rentmore")
             {
-                reservationQuery += $" AND r.ID != {id}";
+                reservationQuery += string.Format(" AND r.ID != {0}", id);
             }
 
             DataTable dtAllReservations = code.DatabaseQuery(conn, reservationQuery);
@@ -5758,7 +5758,7 @@ AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
                     int available = maxCapacity - totalReserved;
                     accomRow["AvailableAmount"] = available;
                     accomRow["StatusOnDate"] = available > 0 ?
-                        $"Available ({available} left)" : "Fully Booked";
+                        string.Format("Available ({0} left)", available) : "Fully Booked";
 
                     // Mark for removal if no availability
                     if (available <= 0)
@@ -6334,7 +6334,7 @@ AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
         {
             if(DropDownList8.SelectedValue == "1")
             {
-                CheckBox3.Checked = false; 
+                CheckBox3.Checked = false;
                 CheckBox4.Checked = false;
                 CheckBox3_CheckedChanged(null, null);
                 TextBox18.Visible = true;
@@ -6348,16 +6348,16 @@ AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
 public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime checkOutDate, string accommodationId = null)
 {
     DataTable dtAvailableAccommodations = new DataTable();
-    
+
     try
     {
         // Get all active accommodations
         string accomQuery = "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC";
         if (!string.IsNullOrEmpty(accommodationId))
         {
-            accomQuery = $"SELECT * FROM Accommodation WHERE Status = 1 AND ID = {accommodationId} ORDER BY OrderID ASC";
+            accomQuery = string.Format("SELECT * FROM Accommodation WHERE Status = 1 AND ID = {0} ORDER BY OrderID ASC", accommodationId);
         }
-        
+
         DataTable dtAccommodation = code.DatabaseQuery(conn, accomQuery);
 
         // Add status column
@@ -6368,11 +6368,11 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
         for (DateTime date = checkInDate; date < checkOutDate; date = date.AddDays(1))
         {
             // Get reservations for this date
-            DataTable dtReservation = code.DatabaseQuery(conn, 
-                $"SELECT * FROM Reservation RIGHT JOIN Reservation_Accommodation " +
-                $"ON Reservation.ID = Reservation_Accommodation.Reservation_ID " +
-                $"WHERE '{date.ToString("yyyy-MM-dd")}' >= CheckinDate " +
-                $"AND '{date.ToString("yyyy-MM-dd")}' < CheckoutDate");
+            DataTable dtReservation = code.DatabaseQuery(conn,
+                "SELECT * FROM Reservation RIGHT JOIN Reservation_Accommodation " +
+                "ON Reservation.ID = Reservation_Accommodation.Reservation_ID " +
+                "WHERE '{date.ToString("yyyy-MM-dd")}' >= CheckinDate " +
+                "AND '{date.ToString("yyyy-MM-dd")}' < CheckoutDate");
 
             // Check each accommodation's availability
             for (int j = 0; j < dtAccommodation.Rows.Count; j++)
@@ -6404,13 +6404,13 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 {
                     int available = Convert.ToInt32(dtAccommodation.Rows[j]["People"]) - totalReserved;
                     dtAccommodation.Rows[j]["AvailableAmount"] = available;
-                    dtAccommodation.Rows[j]["StatusOnDate"] = available > 0 ? 
-                        $"Available ({available} left)" : "Fully Booked";
+                    dtAccommodation.Rows[j]["StatusOnDate"] = available > 0 ?
+                        string.Format("Available ({0} left)", available) : "Fully Booked";
                 }
                 else
                 {
                     dtAccommodation.Rows[j]["AvailableAmount"] = totalReserved > 0 ? 0 : 1;
-                    dtAccommodation.Rows[j]["StatusOnDate"] = totalReserved > 0 ? 
+                    dtAccommodation.Rows[j]["StatusOnDate"] = totalReserved > 0 ?
                         "Fully Booked" : "Available";
                 }
             }
@@ -6610,7 +6610,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
             {
                 string phoneNumber = string.IsNullOrEmpty(TextBox1.Text) ? "N/A" : TextBox1.Text;
                 string checkInDate = string.IsNullOrEmpty(TextBox12.Text) ? "N/A" : TextBox12.Text;
-                string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Coupon: {couponCode} | Type: {couponType} | Phone: {phoneNumber} | Check-in: {checkInDate} | Result: {result}";
+                string logMessage = string.Format("[{0}] Coupon: {1} | Type: {2} | Phone: {3} | Check-in: {4} | Result: {5}", DateTime.Now:yyyy-MM-dd HH:mm:ss, couponCode, couponType, phoneNumber, checkInDate, result);
 
                 // Log to application log file
                 System.IO.File.AppendAllText(
@@ -6694,7 +6694,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
             {
                 // Log error but don't break the page
                 code2.Logs(conn, "LoadPaymentHistory Error",
-                    $"Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
+                    "Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
                     "SYSTEM");
 
                 divPaymentHistory.Visible = false;
@@ -6723,7 +6723,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
 
                 // Build full URL
                 string fullUrl = ResolveUrl("~/" + slipPath);
-                return $"<a href='{fullUrl}' target='_blank' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>📄 ดูสลิป</a>";
+                return string.Format("<a href='{0}' target='_blank' style='display: inline-block; padding: 5px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px;'>📄 ดูสลิป</a>", fullUrl);
             }
             catch
             {
@@ -6786,7 +6786,7 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
             {
                 // Log error but don't break the page
                 code2.Logs(conn, "LoadProductCharges Error",
-                    $"Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
+                    "Reservation ID: {Request.QueryString["id"]}, Error: {ex.Message}",
                     "SYSTEM");
 
                 divProductCharges.Visible = false;
@@ -6838,14 +6838,14 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
 
                     // Log success (removed alert to prevent blocking postback)
                     code2.Logs(conn, "gvProductCharges_RowCommand Success",
-                        $"Deleted ChargeID: {chargeId}",
+                        string.Format("Deleted ChargeID: {0}", chargeId),
                         adminId?.ToString() ?? "SYSTEM");
                 }
                 catch (Exception ex)
                 {
                     // Log error (removed alert to prevent blocking postback)
                     code2.Logs(conn, "gvProductCharges_RowCommand Error",
-                        $"ChargeID: {e.CommandArgument}, Error: {ex.Message}",
+                        string.Format("ChargeID: {0}, Error: {1}", e.CommandArgument, ex.Message),
                         Session["User"]?.ToString() ?? "SYSTEM");
                 }
             }
@@ -6878,14 +6878,14 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                     }
 
                     code2.Logs(conn, "AddProductChargesToReceipt",
-                        $"Added {dtCharges.Rows.Count} product charges to receipt for Reservation {reservationId}",
+                        string.Format("Added {0} product charges to receipt for Reservation {1}", dtCharges.Rows.Count, reservationId),
                         Session["User"]?.ToString() ?? "SYSTEM");
                 }
             }
             catch (Exception ex)
             {
                 code2.Logs(conn, "AddProductChargesToReceipt Error",
-                    $"Reservation ID: {reservationId}, Error: {ex.Message}",
+                    string.Format("Reservation ID: {0}, Error: {1}", reservationId, ex.Message),
                     Session["User"]?.ToString() ?? "SYSTEM");
                 // Don't throw - allow receipt creation to continue without product charges
             }
@@ -6901,14 +6901,14 @@ public DataTable CheckReservationAvailability(DateTime checkInDate, DateTime che
                 if (affectedRows > 0)
                 {
                     code2.Logs(conn, "MarkProductChargesAsPaid",
-                        $"Marked {affectedRows} charges as paid for Reservation {reservationId}, Receipt {receiptId}",
+                        string.Format("Marked {0} charges as paid for Reservation {1}, Receipt {2}", affectedRows, reservationId, receiptId),
                         Session["User"]?.ToString() ?? "SYSTEM");
                 }
             }
             catch (Exception ex)
             {
                 code2.Logs(conn, "MarkProductChargesAsPaid Error",
-                    $"Reservation ID: {reservationId}, Receipt ID: {receiptId}, Error: {ex.Message}",
+                    string.Format("Reservation ID: {0}, Receipt ID: {1}, Error: {2}", reservationId, receiptId, ex.Message),
                     Session["User"]?.ToString() ?? "SYSTEM");
                 // Don't throw - receipt is already created, this is just supplementary
             }

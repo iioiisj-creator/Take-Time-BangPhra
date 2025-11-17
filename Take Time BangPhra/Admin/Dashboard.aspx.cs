@@ -34,7 +34,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ Dashboard Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ Dashboard Error: {0}", ex.Message));
                 // Redirect to default page on error
                 Response.Redirect("/Default");
             }
@@ -62,11 +62,11 @@ namespace Take_Time_BangPhra.Admin
                 // Load Alerts
                 LoadActionAlerts();
 
-                System.Diagnostics.Debug.WriteLine($"✅ Dashboard loaded successfully");
+                System.Diagnostics.Debug.WriteLine("✅ Dashboard loaded successfully");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadDashboardData Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadDashboardData Error: {0}", ex.Message));
                 // Show error message
                 litRevenueToday.Text = "N/A";
                 litBookingsToday.Text = "N/A";
@@ -95,7 +95,7 @@ namespace Take_Time_BangPhra.Admin
                     string trendClass = percentChange >= 0 ? "trend-up" : "trend-down";
                     string trendIcon = percentChange >= 0 ? "↑" : "↓";
 
-                    litRevenueTrend.Text = $"<span class='{trendClass}'>{trendIcon} {Math.Abs(percentChange):N1}% vs เมื่อวาน</span>";
+                    litRevenueTrend.Text = string.Format("<span class='{0}'>{1} {2}% vs เมื่อวาน</span>", trendClass, trendIcon, Math.Abs(percentChange):N1);
                 }
                 else
                 {
@@ -116,13 +116,13 @@ namespace Take_Time_BangPhra.Admin
                 // 3. Occupancy Rate
                 var occupancyData = GetOccupancyRate(today);
                 litOccupancyRate.Text = occupancyData.Item1.ToString("N0");
-                litOccupancyDetails.Text = $"{occupancyData.Item2} / {occupancyData.Item3} ห้องถูกจอง";
+                litOccupancyDetails.Text = string.Format("{0} / {1} ห้องถูกจอง", occupancyData.Item2, occupancyData.Item3);
 
-                System.Diagnostics.Debug.WriteLine($"📊 Today Stats: Revenue=฿{revenueToday:N0}, Bookings={bookingsToday}, Occupancy={occupancyData.Item1}%");
+                System.Diagnostics.Debug.WriteLine(string.Format("📊 Today Stats: Revenue=฿{0}, Bookings={1}, Occupancy={2}%", revenueToday:N0, bookingsToday, occupancyData.Item1));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadTodayStats Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadTodayStats Error: {0}", ex.Message));
                 litRevenueToday.Text = "0";
                 litBookingsToday.Text = "0";
                 litOccupancyRate.Text = "0";
@@ -149,18 +149,18 @@ namespace Take_Time_BangPhra.Admin
                     decimal profitMargin = (netProfit / revenue) * 100;
                     string profitClass = netProfit >= 0 ? "trend-up" : "trend-down";
 
-                    litProfitMargin.Text = $"<span class='{profitClass}'>Margin: {profitMargin:N1}%</span>";
+                    litProfitMargin.Text = string.Format("<span class='{0}'>Margin: {1}%</span>", profitClass, profitMargin:N1);
                 }
                 else
                 {
                     litProfitMargin.Text = "<span class='trend-neutral'>N/A</span>";
                 }
 
-                System.Diagnostics.Debug.WriteLine($"💹 Month Stats: Revenue=฿{revenue:N0}, Expenses=฿{expenses:N0}, Net=฿{netProfit:N0}");
+                System.Diagnostics.Debug.WriteLine(string.Format("💹 Month Stats: Revenue=฿{0}, Expenses=฿{1}, Net=฿{2}", revenue:N0, expenses:N0, netProfit:N0));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadMonthStats Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadMonthStats Error: {0}", ex.Message));
                 litNetProfit.Text = "0";
             }
         }
@@ -183,16 +183,16 @@ namespace Take_Time_BangPhra.Admin
 
                     // Format as [timestamp, value]
                     long timestamp = new DateTimeOffset(date).ToUnixTimeMilliseconds();
-                    chartData.Add($"[{timestamp}, {revenue}]");
+                    chartData.Add(string.Format("[{0}, {1}]", timestamp, revenue));
                 }
 
                 hfRevenueTrendData.Value = "[" + string.Join(",", chartData) + "]";
 
-                System.Diagnostics.Debug.WriteLine($"📈 Revenue Trend Chart: {chartData.Count} data points");
+                System.Diagnostics.Debug.WriteLine(string.Format("📈 Revenue Trend Chart: {0} data points", chartData.Count));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadRevenueTrendChart Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadRevenueTrendChart Error: {0}", ex.Message));
                 hfRevenueTrendData.Value = "[]";
             }
         }
@@ -210,13 +210,13 @@ namespace Take_Time_BangPhra.Admin
                 decimal ktb = GetRevenueByPaymentMethod(startOfMonth, endOfMonth, "กรุงไทย");
                 decimal director = GetRevenueByPaymentMethod(startOfMonth, endOfMonth, "กรรมการ");
 
-                hfPaymentMethodData.Value = $"[{cash}, {kbank}, {ktb}, {director}]";
+                hfPaymentMethodData.Value = string.Format("[{0}, {1}, {2}, {3}]", cash, kbank, ktb, director);
 
-                System.Diagnostics.Debug.WriteLine($"💳 Payment Method: Cash={cash}, KBANK={kbank}, KTB={ktb}, Director={director}");
+                System.Diagnostics.Debug.WriteLine(string.Format("💳 Payment Method: Cash={0}, KBANK={1}, KTB={2}, Director={3}", cash, kbank, ktb, director));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadPaymentMethodChart Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadPaymentMethodChart Error: {0}", ex.Message));
                 hfPaymentMethodData.Value = "[0,0,0,0]";
             }
         }
@@ -234,11 +234,11 @@ namespace Take_Time_BangPhra.Admin
                 // Format as array
                 hfTopAccommodationsData.Value = "[" + string.Join(",", data) + "]";
 
-                System.Diagnostics.Debug.WriteLine($"🏆 Top Accommodations: {string.Join(", ", data)}");
+                System.Diagnostics.Debug.WriteLine("🏆 Top Accommodations: {string.Join(", ", data)}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadTopAccommodationsChart Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadTopAccommodationsChart Error: {0}", ex.Message));
                 hfTopAccommodationsData.Value = "[0,0,0,0,0]";
             }
         }
@@ -262,7 +262,7 @@ namespace Take_Time_BangPhra.Admin
                         Type = "warning",
                         Icon = "⚠️",
                         Title = "ยอดค้างชำระ",
-                        Description = $"มีลูกค้า {outstandingCount} ราย ที่มียอดค้างชำระ",
+                        Description = string.Format("มีลูกค้า {0} ราย ที่มียอดค้างชำระ", outstandingCount),
                         ActionUrl = "/ReserveTable"
                     });
                 }
@@ -276,7 +276,7 @@ namespace Take_Time_BangPhra.Admin
                         Type = "danger",
                         Icon = "📦",
                         Title = "สินค้าใกล้หมด",
-                        Description = $"มีสินค้า {lowStockCount} รายการที่สต็อกเหลือน้อย",
+                        Description = string.Format("มีสินค้า {0} รายการที่สต็อกเหลือน้อย", lowStockCount),
                         ActionUrl = "/Product/Stock"
                     });
                 }
@@ -291,7 +291,7 @@ namespace Take_Time_BangPhra.Admin
                         Type = "info",
                         Icon = "📋",
                         Title = "งานประจำวัน",
-                        Description = $"วันนี้มี {todayCheckIns} เช็คอิน และ {todayCheckOuts} เช็คเอาท์",
+                        Description = string.Format("วันนี้มี {0} เช็คอิน และ {1} เช็คเอาท์", todayCheckIns, todayCheckOuts),
                         ActionUrl = "/ReserveTable"
                     });
                 }
@@ -310,11 +310,11 @@ namespace Take_Time_BangPhra.Admin
                     litNoAlerts.Visible = true;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"🔔 Alerts: {alerts.Count} items");
+                System.Diagnostics.Debug.WriteLine(string.Format("🔔 Alerts: {0} items", alerts.Count));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadActionAlerts Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ LoadActionAlerts Error: {0}", ex.Message));
                 litNoAlerts.Visible = true;
             }
         }
@@ -351,7 +351,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetRevenue Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetRevenue Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -384,7 +384,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetExpenses Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetExpenses Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -417,7 +417,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetBookingsCount Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetBookingsCount Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -445,7 +445,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetCheckInsCount Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetCheckInsCount Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -473,7 +473,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetCheckOutsCount Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetCheckOutsCount Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -510,7 +510,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetOccupancyRate Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetOccupancyRate Error: {0}", ex.Message));
                 return new Tuple<decimal, int, int>(0, 0, 0);
             }
         }
@@ -545,7 +545,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetRevenueByPaymentMethod Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetRevenueByPaymentMethod Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -560,7 +560,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetTopAccommodations Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetTopAccommodations Error: {0}", ex.Message));
                 return new List<int> { 0, 0, 0, 0, 0 };
             }
         }
@@ -586,7 +586,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetOutstandingPaymentsCount Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetOutstandingPaymentsCount Error: {0}", ex.Message));
                 return 0;
             }
         }
@@ -621,7 +621,7 @@ namespace Take_Time_BangPhra.Admin
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetLowStockItemsCount Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetLowStockItemsCount Error: {0}", ex.Message));
                 return 0;
             }
         }

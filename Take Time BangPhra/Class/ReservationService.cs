@@ -20,25 +20,25 @@ namespace Take_Time_BangPhra.Services
 
         public DataTable GetReservationsForDate(DateTime date)
         {
-            string query = $"Select * From Reservation inner join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone Where '{date:yyyy-MM-dd}' >= CheckinDate AND '{date:yyyy-MM-dd}' < CheckoutDate AND (Reservation.Status != N'ยกเลิกคืนเงิน' AND Reservation.Status != N'ยกเลิกไม่คืนเงิน')";
+            string query = string.Format("Select * From Reservation inner join Customer on Customer.MobilePhone = Reservation.Customer_MobilePhone Where '{0}' >= CheckinDate AND '{1}' < CheckoutDate AND (Reservation.Status != N'ยกเลิกคืนเงิน' AND Reservation.Status != N'ยกเลิกไม่คืนเงิน')", date:yyyy-MM-dd, date:yyyy-MM-dd);
             return _dbHelper.ExecuteQuery(query);
         }
 
         public DataTable GetReservationAccommodations(DateTime date)
         {
-            string query = $"Select * From Reservation right join Reservation_Accommodation on Reservation.ID = Reservation_Accommodation.Reservation_ID inner join Accommodation on Accommodation.ID = Reservation_Accommodation.Accommodation_ID Where '{date:yyyy-MM-dd}' >= CheckinDate AND '{date:yyyy-MM-dd}' < CheckoutDate order by Accommodation.orderID asc";
+            string query = string.Format("Select * From Reservation right join Reservation_Accommodation on Reservation.ID = Reservation_Accommodation.Reservation_ID inner join Accommodation on Accommodation.ID = Reservation_Accommodation.Accommodation_ID Where '{0}' >= CheckinDate AND '{1}' < CheckoutDate order by Accommodation.orderID asc", date:yyyy-MM-dd, date:yyyy-MM-dd);
             return _dbHelper.ExecuteQuery(query);
         }
 
         public DataTable GetReservationItems(DateTime date)
         {
-            string query = $"Select * From Reservation right join Reservation_Items on Reservation.ID = Reservation_Items.Reservation_ID inner join Items on Items.ID = Reservation_Items.Items_ID Where '{date:yyyy-MM-dd}' >= CheckinDate AND '{date:yyyy-MM-dd}' < CheckoutDate order by Items_ID asc";
+            string query = string.Format("Select * From Reservation right join Reservation_Items on Reservation.ID = Reservation_Items.Reservation_ID inner join Items on Items.ID = Reservation_Items.Items_ID Where '{0}' >= CheckinDate AND '{1}' < CheckoutDate order by Items_ID asc", date:yyyy-MM-dd, date:yyyy-MM-dd);
             return _dbHelper.ExecuteQuery(query);
         }
 
         public DataTable GetReservationDetails(string reservationId)
         {
-            string query = $"SELECT * FROM [Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID=Accommodation_ID Where Reservation.ID = {reservationId}";
+            string query = string.Format("SELECT * FROM [Reservation_Accommodation] inner join Reservation on Reservation.ID = Reservation_ID inner join Accommodation on Accommodation.ID=Accommodation_ID Where Reservation.ID = {0}", reservationId);
             return _dbHelper.ExecuteQuery(query);
         }
 
@@ -47,15 +47,15 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 string query = $@"
-            SELECT a.* 
+            SELECT a.*
             FROM Accommodation a
-            WHERE a.Status = 1 
+            WHERE a.Status = 1
             AND a.ID NOT IN (
-                SELECT ra.Accommodation_ID 
+                SELECT ra.Accommodation_ID
                 FROM Reservation_Accommodation ra
                 INNER JOIN Reservation r ON r.ID = ra.Reservation_ID
-                WHERE '{date:yyyy-MM-dd}' >= r.CheckinDate 
-                AND '{date:yyyy-MM-dd}' < r.CheckoutDate 
+                WHERE '{date:yyyy-MM-dd}' >= r.CheckinDate
+                AND '{date:yyyy-MM-dd}' < r.CheckoutDate
                 AND r.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน', N'เช็คเอ้าท์แล้ว')
                 AND a.LimitWithPeople = 'False'
             )
@@ -65,7 +65,7 @@ namespace Take_Time_BangPhra.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Error in GetAvailableAccommodations: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Error in GetAvailableAccommodations: {0}", ex.Message));
                 // Fallback to basic query
                 return _dbHelper.ExecuteQuery("SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
             }
@@ -79,23 +79,23 @@ namespace Take_Time_BangPhra.Services
                 string query = $@"
             SELECT i.*,
                    (i.Amount - ISNULL((
-                       SELECT SUM(ri.Amount) 
+                       SELECT SUM(ri.Amount)
                        FROM Reservation_Items ri
                        INNER JOIN Reservation r ON r.ID = ri.Reservation_ID
-                       WHERE ri.Items_ID = i.ID 
-                       AND '{date:yyyy-MM-dd}' >= r.CheckinDate 
-                       AND '{date:yyyy-MM-dd}' < r.CheckoutDate 
+                       WHERE ri.Items_ID = i.ID
+                       AND '{date:yyyy-MM-dd}' >= r.CheckinDate
+                       AND '{date:yyyy-MM-dd}' < r.CheckoutDate
                        AND r.Status NOT IN (N'ยกเลิกคืนเงิน', N'ยกเลิกไม่คืนเงิน', N'เช็คเอ้าท์แล้ว')
                    ), 0)) as AvailableAmount
             FROM Items i
-            WHERE i.Status = 1 
+            WHERE i.Status = 1
             ORDER BY i.OrderID ASC";
 
                 return _dbHelper.ExecuteQuery(query);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Error in GetAvailableItems: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Error in GetAvailableItems: {0}", ex.Message));
                 // Fallback to basic query
                 return _dbHelper.ExecuteQuery("SELECT * FROM Items WHERE Status = 1 ORDER BY OrderID ASC");
             }
@@ -108,7 +108,7 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 string query = $@"
-            SELECT 
+            SELECT
                 a.ID,
                 a.AccomName,
                 a.Price,
@@ -120,12 +120,12 @@ namespace Take_Time_BangPhra.Services
             FROM Accommodation a
             WHERE a.Status = 1
             AND (
-                a.LimitWithPeople = 'True' 
+                a.LimitWithPeople = 'True'
                 OR a.ID NOT IN (
-                    SELECT ra.Accommodation_ID 
+                    SELECT ra.Accommodation_ID
                     FROM Reservation_Accommodation ra
                     INNER JOIN Reservation r ON r.ID = ra.Reservation_ID
-                    WHERE '{date:yyyy-MM-dd}' >= r.CheckinDate 
+                    WHERE '{date:yyyy-MM-dd}' >= r.CheckinDate
                     AND '{date:yyyy-MM-dd}' < r.CheckoutDate
                     AND r.Status NOT IN ('ยกเลิกแล้ว', 'Cancelled')
                     AND r.ID != {excludeReservationId}
@@ -138,7 +138,7 @@ namespace Take_Time_BangPhra.Services
             catch (Exception ex)
             {
                 // Fallback to all accommodations
-                System.Diagnostics.Trace.TraceError($"GetAvailableAccommodationsForDate error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("GetAvailableAccommodationsForDate error: {0}", ex.Message));
                 return GetAllAccommodations();
             }
         }
@@ -147,7 +147,7 @@ namespace Take_Time_BangPhra.Services
             try
             {
                 string query = @"
-            SELECT 
+            SELECT
                 a.ID,
                 a.AccomName,
                 a.Price,
@@ -165,14 +165,14 @@ namespace Take_Time_BangPhra.Services
             catch (Exception ex)
             {
                 // Log error
-                System.Diagnostics.Trace.TraceError($"GetAllAccommodations error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("GetAllAccommodations error: {0}", ex.Message));
                 return new DataTable();
             }
         }
 
         public DataTable GetCustomerReservationHistory(string phoneNumber)
         {
-            string query = $"SELECT count([Customer_MobilePhone]) as CountReserved FROM [Reservation] Where Customer_MobilePhone = '{phoneNumber}' AND Status = N'เช็คอินแล้ว'";
+            string query = string.Format("SELECT count([Customer_MobilePhone]) as CountReserved FROM [Reservation] Where Customer_MobilePhone = '{0}' AND Status = N'เช็คอินแล้ว'", phoneNumber);
             return _dbHelper.ExecuteQuery(query);
         }
 
@@ -190,24 +190,24 @@ namespace Take_Time_BangPhra.Services
                         WHERE Reservation_ID = {reservationId}
                         AND Status = 'COMPLETED'");
 
-                    System.Diagnostics.Trace.TraceInformation($"✅ Cancelled Payment_History for Reservation {reservationId}");
+                    System.Diagnostics.Trace.TraceInformation(string.Format("✅ Cancelled Payment_History for Reservation {0}", reservationId));
                 }
                 catch (Exception phEx)
                 {
-                    System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
+                    System.Diagnostics.Trace.TraceWarning(string.Format("⚠️ Failed to cancel Payment_History: {0}", phEx.Message));
                     // Continue - this is non-critical
                 }
 
                 // Update reservation status
-                _dbHelper.ExecuteInsert($"UPDATE [dbo].[Reservation] SET TotalPrice = 0, Deposit = 0 , [Status] = N'ยกเลิกคืนเงิน' WHERE ID = {reservationId}");
-                _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {reservationId}");
-                _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {reservationId}");
+                _dbHelper.ExecuteInsert(string.Format("UPDATE [dbo].[Reservation] SET TotalPrice = 0, Deposit = 0 , [Status] = N'ยกเลิกคืนเงิน' WHERE ID = {0}", reservationId));
+                _dbHelper.ExecuteInsert(string.Format("DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {0}", reservationId));
+                _dbHelper.ExecuteInsert(string.Format("DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {0}", reservationId));
 
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Error canceling reservation with refund {reservationId}: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Error canceling reservation with refund {0}: {1}", reservationId, ex.Message));
                 return false;
             }
         }
@@ -226,24 +226,24 @@ namespace Take_Time_BangPhra.Services
                         WHERE Reservation_ID = {reservationId}
                         AND Status = 'COMPLETED'");
 
-                    System.Diagnostics.Trace.TraceInformation($"✅ Cancelled Payment_History for Reservation {reservationId}");
+                    System.Diagnostics.Trace.TraceInformation(string.Format("✅ Cancelled Payment_History for Reservation {0}", reservationId));
                 }
                 catch (Exception phEx)
                 {
-                    System.Diagnostics.Trace.TraceWarning($"⚠️ Failed to cancel Payment_History: {phEx.Message}");
+                    System.Diagnostics.Trace.TraceWarning(string.Format("⚠️ Failed to cancel Payment_History: {0}", phEx.Message));
                     // Continue - this is non-critical
                 }
 
                 // Update reservation status (Deposit is NOT reset to 0 - customer doesn't get refund)
-                _dbHelper.ExecuteInsert($"UPDATE [dbo].[Reservation] SET TotalPrice = 0, [Status] = N'ยกเลิกไม่คืนเงิน' WHERE ID = {reservationId}");
-                _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {reservationId}");
-                _dbHelper.ExecuteInsert($"DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {reservationId}");
+                _dbHelper.ExecuteInsert(string.Format("UPDATE [dbo].[Reservation] SET TotalPrice = 0, [Status] = N'ยกเลิกไม่คืนเงิน' WHERE ID = {0}", reservationId));
+                _dbHelper.ExecuteInsert(string.Format("DELETE FROM [dbo].[Reservation_Accommodation] WHERE Reservation_ID = {0}", reservationId));
+                _dbHelper.ExecuteInsert(string.Format("DELETE FROM [dbo].[Reservation_Items] WHERE Reservation_ID = {0}", reservationId));
 
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"Error canceling reservation without refund {reservationId}: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Error canceling reservation without refund {0}: {1}", reservationId, ex.Message));
                 return false;
             }
         }

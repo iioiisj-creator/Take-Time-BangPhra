@@ -67,12 +67,12 @@ namespace Take_Time_BangPhra.Affiliate
             catch (Exception ex)
             {
                 // Log the actual error for debugging
-                System.Diagnostics.Trace.TraceError($"Affiliate Login Error: {ex.Message}");
+                System.Diagnostics.Trace.TraceError(string.Format("Affiliate Login Error: {0}", ex.Message));
                 code.Logs(conn, "Affiliate-Login-Error", TextBox1.Text + " - " + ex.Message, TextBox1.Text);
                 ClientScript.RegisterStartupScript(this.GetType(), "myalert", "alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');", true);
             }
         }
 
-        
+
     }
 }

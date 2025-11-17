@@ -93,7 +93,7 @@ namespace Take_Time_BangPhra.Admin.Report
             GetDateRange(out startDate, out endDate, out periodDisplay);
 
             // Display period
-            litPeriodDisplay.Text = $"<div style='margin-bottom: 20px; color: #718096; font-size: 15px;'><strong>ช่วงเวลา:</strong> {periodDisplay}</div>";
+            litPeriodDisplay.Text = string.Format("<div style='margin-bottom: 20px; color: #718096; font-size: 15px;'><strong>ช่วงเวลา:</strong> {0}</div>", periodDisplay);
 
             // Calculate P&L components
             decimal totalRevenue = CalculateTotalRevenue(startDate, endDate);
@@ -126,10 +126,10 @@ namespace Take_Time_BangPhra.Admin.Report
             decimal expensesPercent = totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0;
             decimal netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-            litCOGSPercent.Text = $"{cogsPercent:N2}% ของรายได้";
-            litGrossMargin.Text = $"{grossMargin:N2}%";
-            litExpensesPercent.Text = $"{expensesPercent:N2}% ของรายได้";
-            litNetMargin.Text = $"{netMargin:N2}%";
+            litCOGSPercent.Text = string.Format("{0}% ของรายได้", cogsPercent:N2);
+            litGrossMargin.Text = string.Format("{0}%", grossMargin:N2);
+            litExpensesPercent.Text = string.Format("{0}% ของรายได้", expensesPercent:N2);
+            litNetMargin.Text = string.Format("{0}%", netMargin:N2);
 
             // Trend (compare with previous period)
             DateTime prevStartDate, prevEndDate;
@@ -141,7 +141,7 @@ namespace Take_Time_BangPhra.Admin.Report
                 decimal revenueChange = ((totalRevenue - prevRevenue) / prevRevenue) * 100;
                 string trendClass = revenueChange >= 0 ? "positive" : "negative";
                 string trendIcon = revenueChange >= 0 ? "↑" : "↓";
-                litRevenueTrend.Text = $"<span class='{trendClass}'>{trendIcon} {Math.Abs(revenueChange):N2}% จากช่วงก่อนหน้า</span>";
+                litRevenueTrend.Text = string.Format("<span class='{0}'>{1} {2}% จากช่วงก่อนหน้า</span>", trendClass, trendIcon, Math.Abs(revenueChange):N2);
             }
             else
             {
@@ -155,18 +155,18 @@ namespace Take_Time_BangPhra.Admin.Report
             litServiceRevenue.Text = serviceRevenue.ToString("N2");
             litOtherRevenue.Text = otherRevenue.ToString("N2");
 
-            litAccomRevenuePercent.Text = totalRevenue > 0 ? $"{(accomRevenue / totalRevenue) * 100:N2}%" : "0.00%";
-            litProductRevenuePercent.Text = totalRevenue > 0 ? $"{(productRevenue / totalRevenue) * 100:N2}%" : "0.00%";
-            litServiceRevenuePercent.Text = totalRevenue > 0 ? $"{(serviceRevenue / totalRevenue) * 100:N2}%" : "0.00%";
-            litOtherRevenuePercent.Text = totalRevenue > 0 ? $"{(otherRevenue / totalRevenue) * 100:N2}%" : "0.00%";
+            litAccomRevenuePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (accomRevenue / totalRevenue) * 100:N2) : "0.00%";
+            litProductRevenuePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (productRevenue / totalRevenue) * 100:N2) : "0.00%";
+            litServiceRevenuePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (serviceRevenue / totalRevenue) * 100:N2) : "0.00%";
+            litOtherRevenuePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (otherRevenue / totalRevenue) * 100:N2) : "0.00%";
 
             litProductCOGS.Text = totalCOGS.ToString("N2");
             litTotalCOGSDetail.Text = totalCOGS.ToString("N2");
-            litProductCOGSPercent.Text = totalRevenue > 0 ? $"{cogsPercent:N2}%" : "0.00%";
-            litTotalCOGSPercentDetail.Text = totalRevenue > 0 ? $"{cogsPercent:N2}%" : "0.00%";
+            litProductCOGSPercent.Text = totalRevenue > 0 ? string.Format("{0}%", cogsPercent:N2) : "0.00%";
+            litTotalCOGSPercentDetail.Text = totalRevenue > 0 ? string.Format("{0}%", cogsPercent:N2) : "0.00%";
 
             litGrossProfitDetail.Text = grossProfit.ToString("N2");
-            litGrossProfitPercent.Text = $"{grossMargin:N2}%";
+            litGrossProfitPercent.Text = string.Format("{0}%", grossMargin:N2);
 
             litSalaryExpense.Text = salaryExpense.ToString("N2");
             litUtilityExpense.Text = utilityExpense.ToString("N2");
@@ -174,20 +174,20 @@ namespace Take_Time_BangPhra.Admin.Report
             litOtherExpense.Text = otherExpense.ToString("N2");
             litTotalExpensesDetail.Text = totalExpenses.ToString("N2");
 
-            litSalaryExpensePercent.Text = totalRevenue > 0 ? $"{(salaryExpense / totalRevenue) * 100:N2}%" : "0.00%";
-            litUtilityExpensePercent.Text = totalRevenue > 0 ? $"{(utilityExpense / totalRevenue) * 100:N2}%" : "0.00%";
-            litMaintenanceExpensePercent.Text = totalRevenue > 0 ? $"{(maintenanceExpense / totalRevenue) * 100:N2}%" : "0.00%";
-            litOtherExpensePercent.Text = totalRevenue > 0 ? $"{(otherExpense / totalRevenue) * 100:N2}%" : "0.00%";
-            litTotalExpensesPercent.Text = $"{expensesPercent:N2}%";
+            litSalaryExpensePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (salaryExpense / totalRevenue) * 100:N2) : "0.00%";
+            litUtilityExpensePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (utilityExpense / totalRevenue) * 100:N2) : "0.00%";
+            litMaintenanceExpensePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (maintenanceExpense / totalRevenue) * 100:N2) : "0.00%";
+            litOtherExpensePercent.Text = totalRevenue > 0 ? string.Format("{0}%", (otherExpense / totalRevenue) * 100:N2) : "0.00%";
+            litTotalExpensesPercent.Text = string.Format("{0}%", expensesPercent:N2);
 
             litNetProfitDetail.Text = netProfit.ToString("N2");
-            litNetProfitPercent.Text = $"{netMargin:N2}%";
+            litNetProfitPercent.Text = string.Format("{0}%", netMargin:N2);
 
             // Metrics
-            litGrossMarginMetric.Text = $"{grossMargin:N2}%";
-            litNetMarginMetric.Text = $"{netMargin:N2}%";
-            litCOGSRatio.Text = $"{cogsPercent:N2}%";
-            litOpExRatio.Text = $"{expensesPercent:N2}%";
+            litGrossMarginMetric.Text = string.Format("{0}%", grossMargin:N2);
+            litNetMarginMetric.Text = string.Format("{0}%", netMargin:N2);
+            litCOGSRatio.Text = string.Format("{0}%", cogsPercent:N2);
+            litOpExRatio.Text = string.Format("{0}%", expensesPercent:N2);
 
             // Load comparison chart data
             LoadComparisonChart(startDate, endDate);
@@ -204,7 +204,7 @@ namespace Take_Time_BangPhra.Admin.Report
                     int month = int.Parse(ddlMonth.SelectedValue);
                     startDate = new DateTime(year, month, 1);
                     endDate = startDate.AddMonths(1).AddDays(-1);
-                    periodDisplay = $"{ddlMonth.SelectedItem.Text} {year}";
+                    periodDisplay = string.Format("{0} {1}", ddlMonth.SelectedItem.Text, year);
                     break;
 
                 case "QUARTER":
@@ -214,22 +214,22 @@ namespace Take_Time_BangPhra.Admin.Report
                         case "Q1":
                             startDate = new DateTime(year, 1, 1);
                             endDate = new DateTime(year, 3, 31);
-                            periodDisplay = $"ไตรมาส 1/{year} (ม.ค.-มี.ค.)";
+                            periodDisplay = string.Format("ไตรมาส 1/{0} (ม.ค.-มี.ค.)", year);
                             break;
                         case "Q2":
                             startDate = new DateTime(year, 4, 1);
                             endDate = new DateTime(year, 6, 30);
-                            periodDisplay = $"ไตรมาส 2/{year} (เม.ย.-มิ.ย.)";
+                            periodDisplay = string.Format("ไตรมาส 2/{0} (เม.ย.-มิ.ย.)", year);
                             break;
                         case "Q3":
                             startDate = new DateTime(year, 7, 1);
                             endDate = new DateTime(year, 9, 30);
-                            periodDisplay = $"ไตรมาส 3/{year} (ก.ค.-ก.ย.)";
+                            periodDisplay = string.Format("ไตรมาส 3/{0} (ก.ค.-ก.ย.)", year);
                             break;
                         default: // Q4
                             startDate = new DateTime(year, 10, 1);
                             endDate = new DateTime(year, 12, 31);
-                            periodDisplay = $"ไตรมาส 4/{year} (ต.ค.-ธ.ค.)";
+                            periodDisplay = string.Format("ไตรมาส 4/{0} (ต.ค.-ธ.ค.)", year);
                             break;
                     }
                     break;
@@ -237,13 +237,13 @@ namespace Take_Time_BangPhra.Admin.Report
                 case "YEAR":
                     startDate = new DateTime(year, 1, 1);
                     endDate = new DateTime(year, 12, 31);
-                    periodDisplay = $"ปี {year}";
+                    periodDisplay = string.Format("ปี {0}", year);
                     break;
 
                 default: // CUSTOM
                     startDate = DateTime.Now.AddMonths(-1);
                     endDate = DateTime.Now;
-                    periodDisplay = $"{startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
+                    periodDisplay = string.Format("{0} - {1}", startDate:dd/MM/yyyy, endDate:dd/MM/yyyy);
                     break;
             }
         }
@@ -384,7 +384,7 @@ namespace Take_Time_BangPhra.Admin.Report
             for (int i = 0; i < excludeTypes.Length; i++)
             {
                 if (i > 0) typeCondition.Append(" AND ");
-                typeCondition.Append($"Type != @ExcludeType{i}");
+                typeCondition.Append(string.Format("Type != @ExcludeType{0}", i));
             }
 
             string query = $@"
@@ -403,7 +403,7 @@ namespace Take_Time_BangPhra.Admin.Report
 
             for (int i = 0; i < excludeTypes.Length; i++)
             {
-                parameters.Add($"@ExcludeType{i}", excludeTypes[i]);
+                parameters.Add(string.Format("@ExcludeType{0}", i), excludeTypes[i]);
             }
 
             DataTable dt = codeInstance.DatabaseQuerySafe(conn, query, parameters);
@@ -437,7 +437,7 @@ namespace Take_Time_BangPhra.Admin.Report
                     case "QUARTER":
                         start = currentStartDate.AddMonths(-i * 3);
                         end = start.AddMonths(3).AddDays(-1);
-                        label = $"Q{((start.Month - 1) / 3) + 1}/{start.Year}";
+                        label = string.Format("Q{0}/{1}", ((start.Month - 1) / 3) + 1, start.Year);
                         break;
 
                     case "YEAR":
@@ -486,8 +486,8 @@ namespace Take_Time_BangPhra.Admin.Report
 
             // Header
             csv.AppendLine("งบกำไรขาดทุน (Profit & Loss Statement)");
-            csv.AppendLine($"ช่วงเวลา: {periodDisplay}");
-            csv.AppendLine($"วันที่ออกรายงาน: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+            csv.AppendLine(string.Format("ช่วงเวลา: {0}", periodDisplay));
+            csv.AppendLine(string.Format("วันที่ออกรายงาน: {0}", DateTime.Now:dd/MM/yyyy HH:mm:ss));
             csv.AppendLine("");
 
             // Column headers
@@ -513,40 +513,40 @@ namespace Take_Time_BangPhra.Admin.Report
 
             // Revenue section
             csv.AppendLine("รายได้ (REVENUE),,");
-            csv.AppendLine($"  รายได้จากห้องพัก,{accomRevenue:N2},{(totalRevenue > 0 ? (accomRevenue / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  รายได้จากสินค้า,{productRevenue:N2},{(totalRevenue > 0 ? (productRevenue / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  รายได้จากบริการ,{serviceRevenue:N2},{(totalRevenue > 0 ? (serviceRevenue / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  รายได้อื่นๆ,{otherRevenue:N2},{(totalRevenue > 0 ? (otherRevenue / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"รายได้รวม,{totalRevenue:N2},100.00%");
+            csv.AppendLine(string.Format("  รายได้จากห้องพัก,{0},{1}%", accomRevenue:N2, (totalRevenue > 0 ? (accomRevenue / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  รายได้จากสินค้า,{0},{1}%", productRevenue:N2, (totalRevenue > 0 ? (productRevenue / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  รายได้จากบริการ,{0},{1}%", serviceRevenue:N2, (totalRevenue > 0 ? (serviceRevenue / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  รายได้อื่นๆ,{0},{1}%", otherRevenue:N2, (totalRevenue > 0 ? (otherRevenue / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("รายได้รวม,{0},100.00%", totalRevenue:N2));
             csv.AppendLine("");
 
             // COGS section
             csv.AppendLine("ต้นทุนขาย (COST OF GOODS SOLD),,");
-            csv.AppendLine($"  ต้นทุนสินค้า,{totalCOGS:N2},{(totalRevenue > 0 ? (totalCOGS / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"ต้นทุนขายรวม,{totalCOGS:N2},{(totalRevenue > 0 ? (totalCOGS / totalRevenue) * 100 : 0):N2}%");
+            csv.AppendLine(string.Format("  ต้นทุนสินค้า,{0},{1}%", totalCOGS:N2, (totalRevenue > 0 ? (totalCOGS / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("ต้นทุนขายรวม,{0},{1}%", totalCOGS:N2, (totalRevenue > 0 ? (totalCOGS / totalRevenue) * 100 : 0):N2));
             csv.AppendLine("");
 
             // Gross profit
-            csv.AppendLine($"กำไรขั้นต้น (GROSS PROFIT),{grossProfit:N2},{(totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0):N2}%");
+            csv.AppendLine(string.Format("กำไรขั้นต้น (GROSS PROFIT),{0},{1}%", grossProfit:N2, (totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0):N2));
             csv.AppendLine("");
 
             // Operating expenses
             csv.AppendLine("ค่าใช้จ่ายในการดำเนินงาน (OPERATING EXPENSES),,");
-            csv.AppendLine($"  เงินเดือนพนักงาน,{salaryExpense:N2},{(totalRevenue > 0 ? (salaryExpense / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  ค่าสาธารณูปโภค,{utilityExpense:N2},{(totalRevenue > 0 ? (utilityExpense / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  ค่าซ่อมบำรุง,{maintenanceExpense:N2},{(totalRevenue > 0 ? (maintenanceExpense / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"  ค่าใช้จ่ายอื่นๆ,{otherExpense:N2},{(totalRevenue > 0 ? (otherExpense / totalRevenue) * 100 : 0):N2}%");
-            csv.AppendLine($"ค่าใช้จ่ายรวม,{totalExpenses:N2},{(totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0):N2}%");
+            csv.AppendLine(string.Format("  เงินเดือนพนักงาน,{0},{1}%", salaryExpense:N2, (totalRevenue > 0 ? (salaryExpense / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  ค่าสาธารณูปโภค,{0},{1}%", utilityExpense:N2, (totalRevenue > 0 ? (utilityExpense / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  ค่าซ่อมบำรุง,{0},{1}%", maintenanceExpense:N2, (totalRevenue > 0 ? (maintenanceExpense / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("  ค่าใช้จ่ายอื่นๆ,{0},{1}%", otherExpense:N2, (totalRevenue > 0 ? (otherExpense / totalRevenue) * 100 : 0):N2));
+            csv.AppendLine(string.Format("ค่าใช้จ่ายรวม,{0},{1}%", totalExpenses:N2, (totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0):N2));
             csv.AppendLine("");
 
             // Net profit
-            csv.AppendLine($"กำไรสุทธิ (NET PROFIT),{netProfit:N2},{(totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0):N2}%");
+            csv.AppendLine(string.Format("กำไรสุทธิ (NET PROFIT),{0},{1}%", netProfit:N2, (totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0):N2));
 
             // Send to browser
             Response.Clear();
             Response.ContentType = "text/csv";
             Response.ContentEncoding = Encoding.UTF8;
-            Response.AddHeader("Content-Disposition", $"attachment;filename=PL_Statement_{periodDisplay.Replace("/", "-").Replace(" ", "_")}.csv");
+            Response.AddHeader("Content-Disposition", "attachment;filename=PL_Statement_{periodDisplay.Replace("/", "-").Replace(" ", "_")}.csv");
             Response.Write(csv.ToString());
             Response.End();
         }

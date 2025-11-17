@@ -204,7 +204,7 @@ namespace Take_Time_BangPhra
             catch (Exception ex)
             {
                 // Log error for debugging
-                System.Diagnostics.Trace.TraceError($"DatabaseQuerySafe Error: {ex.Message}\nQuery: {query}");
+                System.Diagnostics.Trace.TraceError(string.Format("DatabaseQuerySafe Error: {0}\nQuery: {1}", ex.Message, query));
                 throw; // Re-throw to allow proper error handling upstream
             }
 
@@ -305,7 +305,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"DatabaseInsertSafe Error: {ex.Message}\nQuery: {query}");
+                System.Diagnostics.Trace.TraceError(string.Format("DatabaseInsertSafe Error: {0}\nQuery: {1}", ex.Message, query));
                 throw;
             }
 
@@ -427,7 +427,7 @@ namespace Take_Time_BangPhra
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError($"DatabaseInsertReturnSafe Error: {ex.Message}\nQuery: {query}");
+                System.Diagnostics.Trace.TraceError(string.Format("DatabaseInsertReturnSafe Error: {0}\nQuery: {1}", ex.Message, query));
                 throw;
             }
 

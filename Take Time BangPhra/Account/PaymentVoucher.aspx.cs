@@ -604,7 +604,7 @@ namespace Take_Time_BangPhra.Account.Report
                 string specificPattern = "";
                 if (!string.IsNullOrEmpty(paymentId) && !string.IsNullOrEmpty(paymentUid))
                 {
-                    specificPattern = $"{paymentId}_{paymentUid}_*{searchPattern}";
+                    specificPattern = string.Format("{0}_{1}_*{2}", paymentId, paymentUid, searchPattern);
                 }
                 else
                 {
@@ -618,21 +618,21 @@ namespace Take_Time_BangPhra.Account.Report
                 {
                     // ใช้ไฟล์แรกที่พบ
                     string actualFileName = System.IO.Path.GetFileName(matchingFiles[0]);
-                    string virtualPath = $"~/Documents/Payment/{year}/{month}/{actualFileName}";
+                    string virtualPath = string.Format("~/Documents/Payment/{0}/{1}/{2}", year, month, actualFileName);
 
-                    System.Diagnostics.Debug.WriteLine($"📂 GetFileUrl: Pattern='{specificPattern}', Found='{actualFileName}'");
+                    System.Diagnostics.Debug.WriteLine(string.Format("📂 GetFileUrl: Pattern='{0}', Found='{1}'", specificPattern, actualFileName));
 
                     return ResolveUrl(virtualPath);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"⚠️ GetFileUrl: File not found for pattern '{specificPattern}' in {folderPath}");
+                    System.Diagnostics.Debug.WriteLine(string.Format("⚠️ GetFileUrl: File not found for pattern '{0}' in {1}", specificPattern, folderPath));
                     return "#";
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ GetFileUrl Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(string.Format("❌ GetFileUrl Error: {0}", ex.Message));
                 return "#";
             }
         }
