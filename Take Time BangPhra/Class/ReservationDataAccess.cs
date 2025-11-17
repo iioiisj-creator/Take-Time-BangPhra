@@ -152,7 +152,10 @@ namespace Take_Time_BangPhra
             };
 
             return _code.DatabaseQuerySafe(_connectionString,
-                @"SELECT * FROM [Taketime].[dbo].[Reservation_Accommodation]
+                @"SELECT Reservation_Accommodation.*,
+                         Reservation.Name, Reservation.Status,
+                         Accommodation.LimitWithPeople, Accommodation.Limit_People
+                  FROM [Taketime].[dbo].[Reservation_Accommodation]
                   INNER JOIN Reservation ON Reservation.ID = Reservation_ID
                   INNER JOIN Accommodation ON Accommodation.ID = Accommodation_ID
                   WHERE CheckinDate = @checkinDate
