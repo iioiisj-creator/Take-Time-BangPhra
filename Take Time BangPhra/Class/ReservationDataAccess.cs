@@ -159,7 +159,7 @@ namespace Take_Time_BangPhra
                   INNER JOIN Reservation ON Reservation.ID = Reservation_ID
                   INNER JOIN Accommodation ON Accommodation.ID = Accommodation_ID
                   WHERE CheckinDate = @checkinDate
-                  AND AccomName = @accomName
+                  AND Accommodation.AccomName = @accomName
                   AND Reservation_ID != @excludeReservationId",
                 parameters);
         }

@@ -1025,11 +1025,12 @@ namespace Take_Time_BangPhra
 
                                 // ดึงจำนวนคนที่จองแล้วในวันและห้องนี้
                                 string sumPeopleQuery = @"
-                                    SELECT ISNULL(SUM(People_Stay), 0) as TotalPeopleStay
+                                    SELECT ISNULL(SUM(Reservation_Accommodation.Amount), 0) as TotalPeopleStay
                                     FROM Reservation_Accommodation
                                     INNER JOIN Reservation ON Reservation.ID = Reservation_ID
+                                    INNER JOIN Accommodation ON Accommodation.ID = Accommodation_ID
                                     WHERE CheckinDate = @checkinDate
-                                    AND AccomName = @accomName
+                                    AND Accommodation.AccomName = @accomName
                                     AND Reservation_ID != @excludeReservationId";
 
                                 var sumParams = new Dictionary<string, object>
