@@ -5668,48 +5668,9 @@ namespace Take_Time_BangPhra
                     "alert('กรุณาติดต่อ Admin กรณีต้องการจองเกิน 3 เดือน');", true);
             }
 
-            // Get accommodations
-            DataTable dtAccommodation;
-
-            // ✅ FIX: For edit/checkin/rentmore modes, load from Reservation_Accommodation to preserve prices
-            // For new reservations, load all available accommodations
-            if ((command == "edit" || command == "checkin" || command == "rentmore") && !string.IsNullOrEmpty(id))
-            {
-                // Edit mode: Load existing accommodations with saved prices from Reservation_Accommodation
-                // Then merge with all accommodations for availability checking
-                var reservationDA = new ReservationDataAccess(conn);
-                DataTable dtExistingAccom = reservationDA.GetReservationWithAccommodations(Convert.ToInt32(id), check);
-
-                // Get all accommodations for display
-                dtAccommodation = code.DatabaseQuery(conn,
-                    "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
-
-                // Merge existing accommodation prices into dtAccommodation
-                foreach (DataRow existingRow in dtExistingAccom.Rows)
-                {
-                    int accomId = Convert.ToInt32(existingRow["Accommodation_ID"]);
-                    decimal savedPrice = Convert.ToDecimal(existingRow["Price"]);
-                    int savedAmount = Convert.ToInt32(existingRow["Amount"]);
-
-                    // Find matching accommodation and update its price
-                    foreach (DataRow accomRow in dtAccommodation.Rows)
-                    {
-                        if (Convert.ToInt32(accomRow["ID"]) == accomId)
-                        {
-                            // Override default price with saved price
-                            accomRow["Price"] = savedPrice;
-                            accomRow["Amount"] = savedAmount; // Save amount too for LimitWithPeople
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // New reservation: Load all active accommodations
-                dtAccommodation = code.DatabaseQuery(conn,
-                    "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
-            }
+            // Get all active accommodations
+            DataTable dtAccommodation = code.DatabaseQuery(conn,
+                "SELECT * FROM Accommodation WHERE Status = 1 ORDER BY OrderID ASC");
 
             // Add status columns
             if (!dtAccommodation.Columns.Contains("StatusOnDate"))
@@ -5806,20 +5767,39 @@ AND r.CheckoutDate > '{checkInDate.ToString("yyyy-MM-dd")}'";
             }
 
             // Set prices
+            // ✅ FIX: For edit modes, try to preserve prices from Session first (user may have edited them)
+            // If no Session data, use DB prices
+            DataTable dtOldAccommodation = Session["dtAccommodation"] as DataTable;
+            bool hasOldPrices = (dtOldAccommodation != null &&
+                                 (command == "edit" || command == "checkin" || command == "rentmore"));
+
             foreach (DataRow accomRow in dtAccommodation.Rows)
             {
                 if (accomRow.RowState == DataRowState.Deleted) continue;
 
-                // ✅ FIX: Only set price from DB for NEW reservations
-                // For edit/checkin/rentmore modes, preserve existing prices from database
-                // This prevents overriding manually-edited prices (especially LimitWithPeople)
-                if (command != "edit" && command != "checkin" && command != "rentmore")
+                string accomId = accomRow["ID"].ToString();
+                bool priceFound = false;
+
+                // Try to get price from Session (preserves manual edits)
+                if (hasOldPrices)
                 {
-                    // New reservation: Get price from AccommodationPrice table or default
-                    accomRow["Price"] = AccomPrice(accomRow["ID"].ToString(), checkInDate);
+                    foreach (DataRow oldRow in dtOldAccommodation.Rows)
+                    {
+                        if (oldRow["ID"].ToString() == accomId)
+                        {
+                            // Found in Session - use saved price (may be manually edited)
+                            accomRow["Price"] = oldRow["Price"];
+                            priceFound = true;
+                            break;
+                        }
+                    }
                 }
-                // For edit modes: Price is already loaded from Reservation_Accommodation table
-                // No need to override it here
+
+                // If not found in Session, get from DB
+                if (!priceFound)
+                {
+                    accomRow["Price"] = AccomPrice(accomId, checkInDate);
+                }
             }
 
             // Bind to grid
