@@ -371,10 +371,36 @@ namespace Take_Time_BangPhra
                         int numberOfGuests = Convert.ToInt32(txtPeopleStay.Text);
                         int numberOfNights = Convert.ToInt32(DropDownList1.SelectedValue);
 
-                        // Get base price per person per night
-                        int basePricePerPerson = Convert.ToInt32(AccomPrice(
-                            dtAccommodation.Rows[i]["ID"].ToString(),
-                            code2.ParseDate(TextBox12.Text).Value));
+                        // ✅ FIX: On PostBack, use price from GridView (preserves manual edits for LimitWithPeople)
+                        // Only query DB price on initial load or when CheckBox6 unchecked AND not PostBack
+                        bool useGridViewPrice = IsPostBack || CheckBox6.Checked == true;
+                        int basePricePerPerson = 0;
+
+                        if (useGridViewPrice)
+                        {
+                            // ✅ Use current price from GridView (preserves manual edits)
+                            if (int.TryParse(row.Cells[4].Text, out basePricePerPerson))
+                            {
+                                // basePricePerPerson ได้รับค่าจาก GridView แล้ว
+                            }
+                            else
+                            {
+                                // Fallback to query DB if invalid
+                                basePricePerPerson = Convert.ToInt32(AccomPrice(
+                                    dtAccommodation.Rows[i]["ID"].ToString(),
+                                    code2.ParseDate(TextBox12.Text).Value));
+                            }
+                        }
+                        else
+                        {
+                            // Get base price per person per night from DB
+                            basePricePerPerson = Convert.ToInt32(AccomPrice(
+                                dtAccommodation.Rows[i]["ID"].ToString(),
+                                code2.ParseDate(TextBox12.Text).Value));
+
+                            // Display base price per person in GridView
+                            GridView1.Rows[i].Cells[4].Text = basePricePerPerson.ToString("0");
+                        }
 
                         // Calculate total: price × people × nights
                         int totalPriceAllNights = basePricePerPerson * numberOfGuests * numberOfNights;
@@ -384,7 +410,10 @@ namespace Take_Time_BangPhra
                         // This will be saved to database and used for recalculation later
                         // Database will store: Amount=5 (people), Price=100 (per person per night)
                         // When querying back: 100 × 5 × 2 = 1,000฿ ✅
-                        GridView1.Rows[i].Cells[4].Text = basePricePerPerson.ToString("0");
+                        if (!useGridViewPrice)
+                        {
+                            GridView1.Rows[i].Cells[4].Text = basePricePerPerson.ToString("0");
+                        }
                     }
                     else
                     {
@@ -978,9 +1007,66 @@ namespace Take_Time_BangPhra
                             Convert.ToInt32(id)
                         );
 
-                        if(dtReserveAccomDup.Rows.Count > 0 && (dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "False" || dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "0"))
+                        if(dtReserveAccomDup.Rows.Count > 0)
                         {
-                            checkdup = 1;
+                            // ✅ แยกการตรวจสอบตามประเภทห้อง
+                            bool isLimitWithPeople = dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "True" ||
+                                                      dtReserveAccomDup.Rows[0]["LimitWithPeople"].ToString() == "1";
+
+                            if (!isLimitWithPeople)
+                            {
+                                // ห้องปกติ: ไม่ให้จองซ้ำเลย
+                                checkdup = 1;
+                            }
+                            else
+                            {
+                                // ✅ LimitWithPeople = True: เช็คว่าจองเกินผู้เข้าพักสูงสุดหรือไม่
+                                int limitPeople = Convert.ToInt32(dtReserveAccomDup.Rows[0]["Limit_People"].ToString());
+
+                                // ดึงจำนวนคนที่จองแล้วในวันและห้องนี้
+                                string sumPeopleQuery = @"
+                                    SELECT ISNULL(SUM(People_Stay), 0) as TotalPeopleStay
+                                    FROM Reservation_Accommodation
+                                    INNER JOIN Reservation ON Reservation.ID = Reservation_ID
+                                    WHERE CheckinDate = @checkinDate
+                                    AND AccomName = @accomName
+                                    AND Reservation_ID != @excludeReservationId";
+
+                                var sumParams = new Dictionary<string, object>
+                                {
+                                    { "@checkinDate", checkinDate.ToString("yyyy-MM-dd") },
+                                    { "@accomName", listcheck[j] },
+                                    { "@excludeReservationId", Convert.ToInt32(id) }
+                                };
+
+                                DataTable dtSumPeople = code.DatabaseQuerySafe(conn, sumPeopleQuery, sumParams);
+                                int currentPeopleStay = Convert.ToInt32(dtSumPeople.Rows[0]["TotalPeopleStay"]);
+
+                                // หาจำนวนคนที่ต้องการจองใหม่สำหรับห้องนี้
+                                int newPeopleStay = 0;
+                                foreach (GridViewRow row in GridView1.Rows)
+                                {
+                                    if (row.Cells[1].Text == listcheck[j])
+                                    {
+                                        CheckBox chk = (row.Cells[0].FindControl("chkSelect") as CheckBox);
+                                        if (chk != null && chk.Checked)
+                                        {
+                                            TextBox txtPeopleStay = (row.Cells[2].FindControl("txtPeopleStay") as TextBox);
+                                            if (txtPeopleStay != null)
+                                            {
+                                                newPeopleStay = Convert.ToInt32(txtPeopleStay.Text);
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                // ถ้าผู้เข้าพักรวม > Limit_People → ห้องเต็ม
+                                if (currentPeopleStay + newPeopleStay > limitPeople)
+                                {
+                                    checkdup = 1;
+                                }
+                            }
                         }
                     }
                 }
